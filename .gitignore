@@ -1,0 +1,17 @@
+# .gitignore
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.faiss
+*.pkl
+venv/
+.vscode/
+.idea/
+logs/api_call_history.txt # 실제 로그는 제외
+data/index.faiss # 인덱스 파일 제외
+data/doc_meta.jsonl # 실제 메타데이터 제외 (필요에 따라)
