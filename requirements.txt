@@ -1,0 +1,23 @@
+# requirements.txt
+
+# --- Core Framework ---
+fastapi         # Web framework
+uvicorn[standard] # ASGI server (for running FastAPI, [standard] includes websockets and http tools)
+
+# --- Configuration & Utilities ---
+python-dotenv   # Load environment variables from .env file
+requests        # For synchronous HTTP requests (used in test_runner)
+aiohttp         # For asynchronous HTTP requests (used for OpenAI API calls)
+
+# --- OpenAI & LLMs ---
+openai          # Official OpenAI library (useful even if calling API directly)
+tiktoken        # For token counting (used by Langchain or directly)
+
+# --- RAG Components ---
+langchain       # For text splitting and potentially other RAG utilities
+faiss-cpu       # Vector database (CPU version) - Use faiss-gpu if GPU is available
+sentence-transformers # For generating text embeddings (using open-source models)
+numpy           # Numerical library (dependency for faiss, sentence-transformers)
+
+# 위의 라이브러리 외에 특정 기능 구현에 따라 추가될 수 있습니다.
+# 예: 데이터 분석(pandas), DB 연동(SQLAlchemy, psycopg2-binary), 캐싱(redis) 등

@@ -61,7 +61,7 @@ async def call_gpt_async(
     Returns:
         Optional[Dict[str, Any]]: OpenAI API 응답 JSON 객체. 실패 시 None.
     """
-    openai_url = "[https://api.openai.com/v1/chat/completions](https://www.google.com/search?q=https://api.openai.com/v1/chat/completions)"
+    openai_url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json",
