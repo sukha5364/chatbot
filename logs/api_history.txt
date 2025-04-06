@@ -1,0 +1,41 @@
+2025-04-06 15:58:16,683 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 15:58:52,851 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:05:09,911 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:05:19,815 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:09:35,453 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:09:35,453 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:12:25,518 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:15:55,061 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:26:59,392 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:32:39,214 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:32:40,241 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:32:41,188 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:33:02,909 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 16:33:17,308 - INFO - Sending ChatCompletion request for model gpt-3.5-turbo
+2025-04-06 16:33:17,309 - INFO - Sending ChatCompletion request for model gpt-4o
+2025-04-06 16:33:17,309 - INFO - Sending Embedding request for model text-embedding-3-large
+2025-04-06 16:33:18,243 - INFO - Received Embedding response status: 200 for model text-embedding-3-large
+2025-04-06 16:33:18,471 - INFO - Embedding success. Model: text-embedding-3-large, Tokens: 4 (Prompt: 4)
+2025-04-06 16:33:18,489 - INFO - Received ChatCompletion response status: 200 for model gpt-4o
+2025-04-06 16:33:18,498 - INFO - ChatCompletion success. Model: gpt-4o, Tokens: 341 (Prompt: 325, Completion: 16)
+2025-04-06 16:33:19,037 - INFO - Received ChatCompletion response status: 200 for model gpt-3.5-turbo
+2025-04-06 16:33:19,040 - INFO - ChatCompletion success. Model: gpt-3.5-turbo, Tokens: 1046 (Prompt: 943, Completion: 103)
+2025-04-06 16:33:19,061 - INFO - Sending ChatCompletion request for model gpt-3.5-turbo
+2025-04-06 16:33:20,155 - INFO - Received ChatCompletion response status: 200 for model gpt-3.5-turbo
+2025-04-06 16:33:20,161 - INFO - ChatCompletion success. Model: gpt-3.5-turbo, Tokens: 2460 (Prompt: 2386, Completion: 74)
+2025-04-06 20:33:20,032 - INFO - Sending ChatCompletion request for model gpt-3.5-turbo
+2025-04-06 20:33:20,035 - INFO - Sending ChatCompletion request for model gpt-4o
+2025-04-06 20:33:20,035 - INFO - Sending Embedding request for model text-embedding-3-large
+2025-04-06 20:33:20,991 - INFO - Received Embedding response status: 200 for model text-embedding-3-large
+2025-04-06 20:33:21,165 - INFO - Received ChatCompletion response status: 200 for model gpt-4o
+2025-04-06 20:33:21,165 - INFO - ChatCompletion success. Model: gpt-4o, Tokens: 341 (Prompt: 325, Completion: 16)
+2025-04-06 20:33:21,317 - INFO - Embedding success. Model: text-embedding-3-large, Tokens: 4 (Prompt: 4)
+2025-04-06 20:33:22,270 - INFO - Received ChatCompletion response status: 200 for model gpt-3.5-turbo
+2025-04-06 20:33:22,272 - INFO - ChatCompletion success. Model: gpt-3.5-turbo, Tokens: 1046 (Prompt: 943, Completion: 103)
+2025-04-06 20:33:22,276 - INFO - Sending ChatCompletion request for model gpt-3.5-turbo
+2025-04-06 20:33:23,412 - INFO - Received ChatCompletion response status: 200 for model gpt-3.5-turbo
+2025-04-06 20:33:23,415 - INFO - ChatCompletion success. Model: gpt-3.5-turbo, Tokens: 2464 (Prompt: 2386, Completion: 78)
+2025-04-06 20:35:38,249 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 20:37:24,198 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 20:38:08,565 - INFO - API Logger initialized with File and Console handlers.
+2025-04-06 20:38:40,761 - INFO - API Logger initialized with File and Console handlers.

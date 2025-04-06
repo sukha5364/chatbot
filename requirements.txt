@@ -19,5 +19,5 @@ faiss-cpu       # Vector database (CPU version) - Use faiss-gpu if GPU is availa
 sentence-transformers # For generating text embeddings (using open-source models)
 numpy           # Numerical library (dependency for faiss, sentence-transformers)
 
-# 위의 라이브러리 외에 특정 기능 구현에 따라 추가될 수 있습니다.
-# 예: 데이터 분석(pandas), DB 연동(SQLAlchemy, psycopg2-binary), 캐싱(redis) 등
+# --- other libraries ---
+PyYAML>=6.0 # Add this line for YAML parsing

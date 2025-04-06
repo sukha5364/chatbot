@@ -1,0 +1,66 @@
+# config.yaml - Chatbot Configuration File
+
+# --- 영향도 높음 (High Impact) ---
+# 모델 선택 및 사용 관련
+model_router:
+  classification_model: "gpt-4o"            # 모델 라우팅 분류 작업에 사용할 모델
+  routing_map:                              # 분류 결과에 따른 최종 응답 모델 매핑
+    easy: "gpt-3.5-turbo"
+    medium: "gpt-4"
+    hard: "gpt-4o"
+  medium_cot_step_generation_model: "gpt-4o" # 'medium' 난이도 CoT 스텝 생성 모델 (별도 함수 사용 시)
+  hard_cot_instruction_generation_model: "gpt-4o" # 'hard' 난이도 상세 CoT 지침 생성 모델 (하위 질문 대신 채택 시)
+  # hard_subquestion_generation_model: "gpt-4o" # 'hard' 난이도 하위 질문 생성 모델 (채택 시)
+
+# RAG 관련
+rag:
+  retrieval_k: 3                            # 검색할 상위 문서 개수 (prompt_builder에서 사용)
+  embedding_model: "text-embedding-3-large" # 임베딩 생성(오프라인) 및 검색(온라인) 시 사용할 모델
+  embedding_dimension: 3072                 # 임베딩 벡터 차원
+
+# 최종 응답 생성 관련 (gpt_interface.py 기본값)
+generation:
+  default_temperature: 0.7                  # GPT 응답 생성 시 기본 온도
+  default_max_tokens: 500                   # GPT 응답 생성 시 기본 최대 토큰 수
+
+# 프롬프트 관련 (prompt_builder.py)
+prompts:
+  default_system_prompt: "당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 제공된 참고 정보를 바탕으로 정확하고 간결하게 답변해주세요." # 기본 시스템 프롬프트
+  rag_context_header: "[참고 문서 정보]"      # RAG 컨텍스트 헤더
+  slot_context_header: "[파악된 사용자 정보]" # Slot 컨텍스트 헤더
+  grounding_instruction: "반드시 제공된 [참고 문서 정보] 내용만 바탕으로 대답하고, 모르면 모른다고 솔직하게 답변하세요." # Grounding 지시문 (필요시 prompt_builder에서 사용)
+  tone_instruction: "고객 응대는 항상 공식적이고 정중한 말투를 사용하세요." # 어조 지시문 (필요시 prompt_builder에서 사용)
+  length_constraint_instruction: "2~3문장 이내로 간결하게 핵심만 요약해서 답변해주세요." # 길이 제한 지시문 (필요시 prompt_builder에서 사용)
+
+# --- 영향도 중간 (Medium Impact) ---
+# 작업별 모델 (라우팅 외)
+tasks:
+  slot_extraction_model: "gpt-3.5-turbo"      # Slot 추출에 사용할 모델
+  summarization_model: "gpt-4"                # 대화 요약에 사용할 모델 (구현 시)
+  satisfaction_evaluation_model: "gpt-4o"     # 테스트 시 만족도 평가에 사용할 모델 (test_runner 수정 시 사용)
+
+# 프롬프트 구성 관련 (prompt_builder.py)
+prompt_options:
+  rag_results_count_limit: 3                  # 프롬프트에 포함할 최대 RAG 결과 수
+  include_summary_in_prompt: true             # 프롬프트에 대화 요약 포함 여부
+  include_slots_in_prompt: true               # 프롬프트에 Slot 정보 포함 여부
+  include_rag_context_in_prompt: true         # 프롬프트에 RAG 컨텍스트 포함 여부
+
+# RAG 파이프라인 관련 (pipeline/rag_generator.py)
+rag_pipeline:
+  splitter_chunk_size: 1000                   # 텍스트 분할 시 청크 크기 (토큰 기준)
+  splitter_chunk_overlap: 100                   # 텍스트 분할 시 청크 중첩 크기 (토큰 기준)
+  embedding_batch_size: 100                   # 임베딩 생성 시 배치 크기
+
+# --- 영향도 낮음 (Low Impact) ---
+# 로깅 및 기타
+logging:
+  log_level: "INFO"                           # 콘솔 및 파일 로그 레벨 (DEBUG, INFO, WARNING, ERROR)
+  log_date_format: "%Y%m%d"                   # 로그 파일명 날짜 형식 (TimedRotatingFileHandler suffix)
+  log_file_base_name: "api_history.txt"       # 로그 파일 기본 이름 (날짜가 뒤에 붙음)
+  log_backup_count: 30                        # 보관할 최대 로그 파일 개수 (일 단위)
+
+# 테스트 관련 (tests/test_runner.py)
+testing:
+  api_timeout: 60                             # 테스트 러너 API 호출 타임아웃 (초)
+  test_mode_header: "X-Test-Mode"             # 테스트 모드 식별용 HTTP 헤더 이름 (app.py 수정 시 사용)

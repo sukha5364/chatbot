@@ -3,33 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Decathlon Chatbot Test</title>
+    <title>Decathlon AI Chatbot</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
-        #chatbox { height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background-color: #fff; }
-        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; max-width: 70%; }
-        .user-message { background-color: #dcf8c6; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 0; }
-        .assistant-message { background-color: #eee; align-self: flex-start; border-bottom-left-radius: 0;}
-        #input-area { display: flex; }
-        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-right: 5px;}
-        #send-button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        #send-button:disabled { background-color: #ccc; cursor: not-allowed; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 10px auto; display: none; /* Initially hidden */ }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* 기본 스타일 및 다크 모드 설정 */
+        :root {
+            --bg-color: #1e1e1e; /* 어두운 배경색 */
+            --text-color: #e0e0e0; /* 기본 텍스트 색상 */
+            --container-bg: #2a2a2a; /* 채팅 컨테이너 배경색 */
+            --user-msg-bg: #005f8b; /* 사용자 메시지 배경색 (Decathlon Blue 계열, 약간 어둡게) */
+            --assistant-msg-bg: #3a3a3a; /* 어시스턴트 메시지 배경색 */
+            --input-bg: #333333; /* 입력창 배경색 */
+            --border-color: #444444; /* 테두리 색상 */
+            --accent-color: #007dbc; /* Decathlon Blue (버튼 등 강조색) */
+            --button-text-color: #ffffff; /* 버튼 텍스트 색상 */
+            --scrollbar-thumb-color: #555;
+            --scrollbar-track-color: #333;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* 화면 전체 높이 */
+        }
+
+        /* 채팅 컨테이너 */
+        .chat-container {
+            width: 100%;
+            max-width: 700px; /* 최대 너비 설정 */
+            height: 80vh; /* 화면 높이의 80% */
+            max-height: 800px; /* 최대 높이 설정 */
+            background-color: var(--container-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* 내부 요소 넘침 방지 */
+        }
+
+        /* 헤더 (선택 사항) */
+        .chat-header {
+            padding: 15px 20px;
+            background-color: var(--assistant-msg-bg); /* 어시스턴트 메시지 배경과 통일 */
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            font-weight: bold;
+            flex-shrink: 0; /* 높이 고정 */
+        }
+
+        /* 채팅 메시지 영역 */
+        #chatbox {
+            flex-grow: 1; /* 남은 공간 모두 차지 */
+            overflow-y: auto; /* 스크롤 자동 생성 */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* 메시지 사이 간격 */
+        }
+
+        /* 메시지 기본 스타일 */
+        .message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 75%; /* 메시지 최대 너비 */
+            line-height: 1.5;
+            word-wrap: break-word; /* 긴 단어 줄바꿈 */
+        }
+
+        /* 사용자 메시지 스타일 */
+        .user-message {
+            background-color: var(--user-msg-bg);
+            color: var(--button-text-color);
+            align-self: flex-end; /* 오른쪽 정렬 */
+            margin-left: auto;
+            border-bottom-right-radius: 4px; /* 뾰족한 모양 */
+        }
+
+        /* 어시스턴트 메시지 스타일 */
+        .assistant-message {
+            background-color: var(--assistant-msg-bg);
+            color: var(--text-color);
+            align-self: flex-start; /* 왼쪽 정렬 */
+            margin-right: auto;
+            border-bottom-left-radius: 4px; /* 뾰족한 모양 */
+        }
+
+        /* 입력 영역 */
+        #input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--assistant-msg-bg); /* 헤더와 통일 */
+            flex-shrink: 0; /* 높이 고정 */
+        }
+
+        /* 입력 필드 */
+        #user-input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border-radius: 20px; /* 둥근 모양 */
+            margin-right: 10px;
+            font-size: 1rem;
+            outline: none; /* 포커스 시 외곽선 제거 */
+        }
+        #user-input:focus {
+            border-color: var(--accent-color); /* 포커스 시 테두리 색상 */
+        }
+
+        /* 전송 버튼 */
+        #send-button {
+            padding: 12px 20px;
+            background-color: var(--accent-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 20px; /* 둥근 모양 */
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        #send-button:hover {
+            background-color: #005f8b; /* 호버 시 약간 어둡게 */
+        }
+        #send-button:disabled {
+            background-color: #555; /* 비활성화 시 색상 */
+            cursor: not-allowed;
+        }
+
+        /* 로딩 스피너 */
+        .loader-container {
+             text-align: center;
+             padding: 5px 0;
+             height: 20px; /* 높이 확보 */
+        }
+        .loader {
+            border: 4px solid #444; /* 어두운 테두리 */
+            border-top: 4px solid var(--accent-color); /* 강조색 */
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none; /* 초기 숨김 */
+            margin: 0 auto; /* 가운데 정렬 */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 스크롤바 스타일 (선택 사항, Webkit 브라우저) */
+        #chatbox::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chatbox::-webkit-scrollbar-track {
+            background: var(--scrollbar-track-color);
+            border-radius: 4px;
+        }
+        #chatbox::-webkit-scrollbar-thumb {
+            background-color: var(--scrollbar-thumb-color);
+            border-radius: 4px;
+            border: 2px solid var(--scrollbar-track-color); /* 트랙 배경 보이도록 */
+        }
+        #chatbox::-webkit-scrollbar-thumb:hover {
+            background-color: #777; /* 호버 시 약간 밝게 */
+        }
+
     </style>
 </head>
 <body>
-    <h1>데카트론 AI 챗봇 테스트</h1>
-    <div id="chatbox">
-        <div class="message assistant-message">안녕하세요! 데카트론 AI 챗봇입니다. 무엇을 도와드릴까요?</div>
+    <div class="chat-container">
+        <div class="chat-header">Decathlon AI Chatbot</div> <div id="chatbox">
+            <div class="message assistant-message">안녕하세요! 데카트론 AI 챗봇입니다. 무엇을 도와드릴까요?</div>
+        </div>
+         <div class="loader-container"> <div id="loader" class="loader"></div>
+         </div>
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="메시지를 입력하세요..." autocomplete="off">
+            <button id="send-button">전송</button>
+        </div>
     </div>
-    <div id="input-area">
-        <input type="text" id="user-input" placeholder="여기에 메시지를 입력하세요...">
-        <button id="send-button">전송</button>
-    </div>
-     <div id="loader" class="loader"></div>
 
     <script>
+        // JavaScript 로직은 이전과 동일하게 유지됩니다.
         const chatbox = document.getElementById('chatbox');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
@@ -38,10 +201,11 @@
         function addMessage(message, type) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', type === 'user' ? 'user-message' : 'assistant-message');
-            // Simple text display, could be enhanced to render markdown or HTML
+            // XSS 방지를 위해 textContent 사용 유지 (만약 마크다운 렌더링 원하면 별도 라이브러리 필요)
             messageDiv.textContent = message;
             chatbox.appendChild(messageDiv);
-            chatbox.scrollTop = chatbox.scrollHeight; // Scroll to bottom
+            // 새 메시지가 추가될 때 맨 아래로 스크롤
+            chatbox.scrollTop = chatbox.scrollHeight;
         }
 
         async function sendMessage() {
@@ -50,11 +214,11 @@
 
             addMessage(message, 'user');
             userInput.value = '';
-            sendButton.disabled = true; // Disable button while waiting
-            loader.style.display = 'block'; // Show loader
+            sendButton.disabled = true;
+            loader.style.display = 'block'; // 로더 보이기
 
             try {
-                const response = await fetch('/chat', {
+                const response = await fetch('/chat', { // CHATBOT_API_URL 사용 안 함 (상대 경로)
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -62,33 +226,41 @@
                     body: JSON.stringify({ user_input: message }),
                 });
 
-                loader.style.display = 'none'; // Hide loader
+                loader.style.display = 'none'; // 로더 숨기기
 
                 if (response.ok) {
                     const data = await response.json();
                     addMessage(data.response, 'assistant');
                 } else {
-                    const errorData = await response.json();
-                    addMessage(`오류: ${errorData.detail || response.statusText}`, 'assistant');
+                    let errorDetail = "알 수 없는 오류가 발생했습니다.";
+                    try {
+                         const errorData = await response.json();
+                         errorDetail = errorData.detail || response.statusText;
+                    } catch (e) {
+                         errorDetail = response.statusText; // JSON 파싱 실패 시 상태 텍스트 사용
+                    }
+                    addMessage(`오류 ${response.status}: ${errorDetail}`, 'assistant');
                 }
             } catch (error) {
-                loader.style.display = 'none'; // Hide loader on error too
+                loader.style.display = 'none'; // 에러 시 로더 숨기기
                 console.error('Error sending message:', error);
-                addMessage('메시지 전송 중 오류가 발생했습니다.', 'assistant');
+                addMessage('메시지 전송 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.', 'assistant');
             } finally {
-                 sendButton.disabled = false; // Re-enable button
-                 userInput.focus(); // Focus back on input
+                 sendButton.disabled = false; // 버튼 활성화
+                 userInput.focus(); // 입력창 포커스
             }
         }
 
         sendButton.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
+            // 입력 중 Enter 키 누르면 전송 (Shift+Enter는 줄바꿈 - textarea면 고려)
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // 기본 Enter 동작(줄바꿈) 방지
                 sendMessage();
             }
         });
 
-        userInput.focus(); // Focus on input on page load
+        userInput.focus(); // 페이지 로드 시 입력창 포커스
     </script>
 </body>
 </html>
