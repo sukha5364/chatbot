@@ -19,5 +19,11 @@ faiss-cpu       # Vector database (CPU version) - Use faiss-gpu if GPU is availa
 sentence-transformers # For generating text embeddings (using open-source models)
 numpy           # Numerical library (dependency for faiss, sentence-transformers)
 
+# For visualization
+pandas
+matplotlib
+seaborn
+
 # --- other libraries ---
 PyYAML>=6.0 # Add this line for YAML parsing
+python-json-logger

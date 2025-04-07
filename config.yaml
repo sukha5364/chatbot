@@ -1,66 +1,199 @@
-# config.yaml - Chatbot Configuration File
+# config.yaml - Chatbot Configuration File (수정된 최종본)
 
-# --- 영향도 높음 (High Impact) ---
-# 모델 선택 및 사용 관련
+# --- API 기본 설정 ---
+# OpenAI API 키는 .env 파일 또는 환경 변수에서 로드 (이 파일에 저장하지 않음)
+
+# --- 작업별 모델 및 파라미터 설정 ---
+tasks:
+  # Slot 추출 설정
+  slot_extraction:
+    model: "gpt-3.5-turbo" # Slot 추출에 사용할 모델
+    temperature: 0.1       # 낮은 값 권장 (일관성)
+    max_tokens: 250        # 추출할 Slot 개수 및 길이에 따라 조절
+
+  # 대화 요약 설정 [신규]
+  summarization:
+    enabled: true                 # 기능 활성화 여부
+    model: "gpt-4"                # 요약 모델 (상황에 따라 gpt-3.5-turbo도 가능)
+    temperature: 0.3              # 약간의 창의성 허용
+    max_tokens: 300               # 요약문 최대 길이 (토큰)
+    trigger_turn_count: 6         # 요약 시도 기준 *총* 턴 수 (user+assistant)
+    max_history_turns_for_summary: 4 # 요약 입력으로 사용할 최대 최근 *상호작용* 턴 수 (user+assistant 쌍 기준)
+
+  # 만족도 평가 설정 (test_runner용, 기존 모델 유지)
+  satisfaction_evaluation:
+    model: "gpt-4o"               # 만족도 평가 모델
+
+# --- 모델 라우팅 및 CoT 생성 설정 ---
 model_router:
-  classification_model: "gpt-4o"            # 모델 라우팅 분류 작업에 사용할 모델
-  routing_map:                              # 분류 결과에 따른 최종 응답 모델 매핑
+  # 복잡도 분류 설정
+  complexity_classification:
+    model: "gpt-4o"               # 복잡도 분류 모델
+    temperature: 0.1              # 정확한 분류 위해 낮은 값
+    max_tokens: 100               # JSON 응답 받기에 충분한 길이
+
+  # 라우팅 결과에 따른 최종 응답 모델 매핑 (기존 유지)
+  routing_map:
     easy: "gpt-3.5-turbo"
     medium: "gpt-4"
     hard: "gpt-4o"
-  medium_cot_step_generation_model: "gpt-4o" # 'medium' 난이도 CoT 스텝 생성 모델 (별도 함수 사용 시)
-  hard_cot_instruction_generation_model: "gpt-4o" # 'hard' 난이도 상세 CoT 지침 생성 모델 (하위 질문 대신 채택 시)
-  # hard_subquestion_generation_model: "gpt-4o" # 'hard' 난이도 하위 질문 생성 모델 (채택 시)
 
-# RAG 관련
-rag:
-  retrieval_k: 3                            # 검색할 상위 문서 개수 (prompt_builder에서 사용)
-  embedding_model: "text-embedding-3-large" # 임베딩 생성(오프라인) 및 검색(온라인) 시 사용할 모델
-  embedding_dimension: 3072                 # 임베딩 벡터 차원
+  # Medium CoT 스텝 생성 설정
+  medium_cot_generation:
+    model: "gpt-4o"               # CoT 스텝 생성 모델
+    temperature: 0.5              # 약간의 유연성
+    max_tokens: 200               # 3~5개 스텝 생성에 충분하도록
 
-# 최종 응답 생성 관련 (gpt_interface.py 기본값)
+  # Hard CoT 지침 생성 설정
+  hard_cot_generation:
+    model: "gpt-4o"               # 상세 CoT 지침 생성 모델
+    temperature: 0.5              # 약간의 유연성
+    max_tokens: 400               # 상세 지침 위해 넉넉하게
+
+# --- 최종 응답 생성 설정 ---
 generation:
-  default_temperature: 0.7                  # GPT 응답 생성 시 기본 온도
-  default_max_tokens: 500                   # GPT 응답 생성 시 기본 최대 토큰 수
+  final_response_temperature: 0.7 # 최종 답변 생성 온도
+  final_response_max_tokens: 500  # 최종 답변 생성 최대 토큰
 
-# 프롬프트 관련 (prompt_builder.py)
+# --- RAG 관련 설정 ---
+rag:
+  retrieval_k: 3                  # 검색할 상위 문서 개수
+  embedding_model: "text-embedding-3-large" # 임베딩 모델
+  embedding_dimension: 3072       # 임베딩 벡터 차원 (모델과 일치 필수)
+  # RAG 파이프라인 설정 (pipeline/rag_generator.py 용도)
+  pipeline:
+    splitter_chunk_size: 1000     # 텍스트 분할 시 청크 크기 (토큰 기준)
+    splitter_chunk_overlap: 100     # 텍스트 분할 시 청크 중첩 크기 (토큰 기준)
+    embedding_batch_size: 100     # 임베딩 생성 시 배치 크기
+
+# --- 프롬프트 템플릿 및 관련 텍스트 ---
 prompts:
-  default_system_prompt: "당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 제공된 참고 정보를 바탕으로 정확하고 간결하게 답변해주세요." # 기본 시스템 프롬프트
-  rag_context_header: "[참고 문서 정보]"      # RAG 컨텍스트 헤더
-  slot_context_header: "[파악된 사용자 정보]" # Slot 컨텍스트 헤더
-  grounding_instruction: "반드시 제공된 [참고 문서 정보] 내용만 바탕으로 대답하고, 모르면 모른다고 솔직하게 답변하세요." # Grounding 지시문 (필요시 prompt_builder에서 사용)
-  tone_instruction: "고객 응대는 항상 공식적이고 정중한 말투를 사용하세요." # 어조 지시문 (필요시 prompt_builder에서 사용)
-  length_constraint_instruction: "2~3문장 이내로 간결하게 핵심만 요약해서 답변해주세요." # 길이 제한 지시문 (필요시 prompt_builder에서 사용)
+  # 기본 시스템 프롬프트
+  default_system_prompt: |
+    당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 제공된 참고 정보를 바탕으로 정확하고 간결하게 답변해주세요.
 
-# --- 영향도 중간 (Medium Impact) ---
-# 작업별 모델 (라우팅 외)
-tasks:
-  slot_extraction_model: "gpt-3.5-turbo"      # Slot 추출에 사용할 모델
-  summarization_model: "gpt-4"                # 대화 요약에 사용할 모델 (구현 시)
-  satisfaction_evaluation_model: "gpt-4o"     # 테스트 시 만족도 평가에 사용할 모델 (test_runner 수정 시 사용)
+  # 각 기능별 프롬프트 템플릿
+  slot_extraction_prompt_template: |
+    다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
 
-# 프롬프트 구성 관련 (prompt_builder.py)
+    **추출 대상 Slot:**
+    * `customer_gender`: 사용자 성별 (예: 남성, 여성)
+    * `customer_age_group`: 사용자 연령대 (예: 20대, 40대, 청소년, 성인)
+    * `customer_skill_level`: 특정 활동 관련 사용자 숙련도 (예: 러닝 초보, 등산 중급)
+    * `context_activity`: 사용하려는 활동이나 스포츠 (예: 달리기, 등산, 캠핑, 축구, 일상)
+    * `context_environment`: 활동 환경 (예: 로드, 트레일, 실내 체육관, 겨울 산, 도심)
+    * `context_goal`: 활동 목적 (예: 다이어트, 대회 준비, 주말 레저, 편안한 착용감)
+    * `brand`: 언급된 브랜드 명 (예: 데카트론, 나이키, 킵런, 퀘차, 아디다스)
+    * `product_category`: 언급된 제품 분류 (예: 러닝화, 등산화, 텐트, 배낭, 자켓, 운동화)
+    * `size`: 언급된 사이즈 (예: 270mm, M, 95, US 10, L)
+    * `foot_width`: 발볼 너비 관련 언급 (예: 발볼 넓음, 보통, 좁은 편, 2E)
+    * `product_feature_preference`: 선호하는 제품 특징 (예: 쿠션 좋은 것, 가벼운 것, 방수 기능, 통기성)
+    * `product_budget_range`: 희망 예산 범위 (예: 10만원대, 20만원 이하, 5만원 미만)
+    * `query_type`: 질문의 주된 의도 (예: 제품 추천, 사이즈 문의, 정보 검색, 비교 요청, 재고 확인, 매장 문의)
+    * `problem_description`: 사용자가 겪고 있는 문제 상황 (예: 신발 특정 부위 통증, 텐트 설치 어려움, 반품 문의)
+
+    **규칙:**
+    - 문장에서 해당 정보를 찾을 수 없으면 값으로 `null`을 사용해줘.
+    - 값은 최대한 간결하게 핵심 내용만 추출해줘.
+    - 반드시 아래 예시와 같이 JSON 형식으로만 응답하고, 다른 설명은 절대 붙이지 마.
+
+    **출력 형식 예시:**
+    ```json
+    {{
+      "customer_gender": null,
+      "customer_age_group": "30대",
+      "customer_skill_level": "러닝 초보",
+      "context_activity": "러닝",
+      "context_environment": "로드",
+      "context_goal": "다이어트",
+      "brand": "데카트론",
+      "product_category": "러닝화",
+      "size": "260mm",
+      "foot_width": "넓은 편",
+      "product_feature_preference": "쿠션 좋은 것",
+      "product_budget_range": "10만원 이하",
+      "query_type": "제품 추천",
+      "problem_description": null
+    }}
+    ```
+
+    입력 문장: "{user_input}"
+
+    추출 결과 (JSON):
+  complexity_classification_prompt_template: |
+    사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분류해주세요.
+
+    [분류 기준]
+    - easy: 단순 정보 검색, FAQ, 단일 의도의 짧은 질문 (예: "매장 위치 알려줘", "반품 규정 뭐야?", "이 신발 재고 있어?")
+    - medium: 제품 비교, 기능 설명 요구, 여러 조건이 포함된 추천 요청, 약간의 추론 필요 (예: "A랑 B 중에 뭐가 더 나아?", "이 텐트의 장단점 설명해줘", "발볼 넓고 쿠션 좋은 10만원대 러닝화 추천해줘")
+    - hard: 매우 복잡한 다중 조건, 심층적인 이유 분석 요구, 사용자의 특정 상황에 대한 깊은 이해와 종합적 추론 필요 (예: "지난번 구매한 등산화가 특정 상황에서 불편했는데, 내 등반 스타일과 발 상태(넓고 평발)를 고려해서 대안 제품과 그 이유를 상세히 설명해줘", "내년 국토대장정에 필요한 모든 장비 목록과 각 장비 선택 시 주의사항을 알려줘")
+
+    분석 결과는 반드시 다음 JSON 형식으로만 응답하고, 다른 설명은 절대 붙이지 마세요:
+    ```json
+    {{
+      "complexity_level": "easy" | "medium" | "hard"
+    }}
+    ```
+
+    사용자 질문: "{user_input}"
+
+    분석 결과 (JSON):
+  medium_cot_generation_prompt_template: |
+    다음 사용자 질문에 답변하기 위한 단계별 사고(Chain-of-Thought) 과정을 3~5개의 간결한 핵심 단계로 작성해주세요. 각 단계는 답변 생성 모델을 위한 가이드라인 역할을 합니다. 답변 형식은 단계별 목록 형태로 명확하게 작성해주세요.
+
+    사용자 질문: "{user_input}"
+
+    단계별 사고 과정 (예시:
+
+    사용자의 핵심 질문 파악: ...
+    관련 정보(Slot, RAG) 검토: ...
+    주요 고려사항 및 비교 분석: ...
+    최종 답변 구성 방향 설정: ... ):
+  hard_cot_generation_prompt_template: |
+    다음 사용자 질문은 복잡도가 높아 답변 생성 시 상세한 단계별 접근이 필요합니다. 이 질문에 답변하기 위한 구체적인 사고 과정 지침(Instruction)을 체계적으로 작성해주세요. 지침은 답변 생성 모델이 따라야 할 명확한 로드맵을 제공해야 합니다. RAG 정보 활용 방안, 추론 과정, 답변 구조 등을 포함하여 상세하게 기술해주세요.
+
+    사용자 질문: "{user_input}"
+
+    상세 사고 과정 지침:
+  summarization_prompt_template: |
+    다음 대화 기록을 핵심 내용을 중심으로 2~3 문장으로 간결하게 요약해줘. 요약은 전체 대화의 맥락을 이해하는 데 도움이 되어야 해.
+
+    [대화 기록]
+    {conversation_history}
+
+    [요약 결과]
+
+  # 프롬프트 구성 요소 텍스트
+  rag_context_header: "[참고 문서 정보]"
+  slot_context_header: "[파악된 사용자 정보]"
+  summary_context_header: "[요약된 이전 대화 맥락]"
+  cot_context_header: "[단계별 사고 가이드 (CoT)]"
+  grounding_instruction: "반드시 제공된 [참고 문서 정보] 내용만 바탕으로 대답하고, 모르면 모른다고 솔직하게 답변하세요."
+  tone_instruction: "고객 응대는 항상 공식적이고 정중한 말투를 사용하세요."
+  length_constraint_instruction: "2~3문장 이내로 간결하게 핵심만 요약해서 답변해주세요."
+  rag_fallback_message: "- 관련된 문서 정보를 찾지 못했습니다." # RAG 실패 시 메시지
+  cot_follow_instruction: "(중요: 답변 생성 시, 반드시 위에 제시된 '[단계별 사고 가이드 (CoT)]'를 참고하여 그 논리적 흐름과 지침에 따라 단계적으로 생각하고 답변을 구성하세요.)" # CoT 지시문
+
+# --- 프롬프트 구성 옵션 ---
 prompt_options:
-  rag_results_count_limit: 3                  # 프롬프트에 포함할 최대 RAG 결과 수
-  include_summary_in_prompt: true             # 프롬프트에 대화 요약 포함 여부
-  include_slots_in_prompt: true               # 프롬프트에 Slot 정보 포함 여부
-  include_rag_context_in_prompt: true         # 프롬프트에 RAG 컨텍스트 포함 여부
+  rag_results_count_limit: 3         # 프롬프트에 포함할 최대 RAG 결과 수
+  include_summary_in_prompt: true    # 프롬프트에 대화 요약 포함 여부
+  include_slots_in_prompt: true      # 프롬프트에 Slot 정보 포함 여부
+  include_rag_context_in_prompt: true # 프롬프트에 RAG 컨텍스트 포함 여부
+  use_rag_grounding_instruction: true # Grounding 지시문 사용 여부
+  use_tone_instruction: true         # 어조 지시문 사용 여부
+  use_length_constraint_instruction: true # 길이 제한 지시문 사용 여부
 
-# RAG 파이프라인 관련 (pipeline/rag_generator.py)
-rag_pipeline:
-  splitter_chunk_size: 1000                   # 텍스트 분할 시 청크 크기 (토큰 기준)
-  splitter_chunk_overlap: 100                   # 텍스트 분할 시 청크 중첩 크기 (토큰 기준)
-  embedding_batch_size: 100                   # 임베딩 생성 시 배치 크기
-
-# --- 영향도 낮음 (Low Impact) ---
-# 로깅 및 기타
+# --- 로깅 설정 ---
 logging:
-  log_level: "INFO"                           # 콘솔 및 파일 로그 레벨 (DEBUG, INFO, WARNING, ERROR)
-  log_date_format: "%Y%m%d"                   # 로그 파일명 날짜 형식 (TimedRotatingFileHandler suffix)
-  log_file_base_name: "api_history.txt"       # 로그 파일 기본 이름 (날짜가 뒤에 붙음)
-  log_backup_count: 30                        # 보관할 최대 로그 파일 개수 (일 단위)
+  log_level: "DEBUG"                 # 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  log_date_format: "%Y%m%d"          # 로그 파일명 날짜 형식
+  log_file_base_name: "api_history.txt" # 로그 파일 기본 이름
+  log_backup_count: 30              # 보관할 로그 파일 개수 (일별 로테이션)
+  log_timestamp_format: "%Y-%m-%d %H:%M:%S"
 
-# 테스트 관련 (tests/test_runner.py)
+# --- 테스트 설정 ---
 testing:
-  api_timeout: 60                             # 테스트 러너 API 호출 타임아웃 (초)
-  test_mode_header: "X-Test-Mode"             # 테스트 모드 식별용 HTTP 헤더 이름 (app.py 수정 시 사용)
+  chatbot_api_url: "http://127.0.0.1:8000/chat" # 테스트 대상 챗봇 API URL
+  api_timeout: 60                   # 테스트 API 호출 타임아웃 (초)
+  test_mode_header: "X-Test-Mode"   # 테스트 모드 식별용 HTTP 헤더 이름
