@@ -1,24 +1,27 @@
-# config.yaml - Chatbot Configuration File (수정된 최종본)
+# config.yaml - Chatbot Configuration File (요구사항 반영 최종본)
 
 # --- API 기본 설정 ---
 # OpenAI API 키는 .env 파일 또는 환경 변수에서 로드 (이 파일에 저장하지 않음)
 
 # --- 작업별 모델 및 파라미터 설정 ---
 tasks:
-  # Slot 추출 설정
+  # Slot 추출 설정 (기존 유지)
   slot_extraction:
     model: "gpt-3.5-turbo" # Slot 추출에 사용할 모델
-    temperature: 0.1       # 낮은 값 권장 (일관성)
-    max_tokens: 250        # 추출할 Slot 개수 및 길이에 따라 조절
+    temperature: 0.1      # 낮은 값 권장 (일관성)
+    max_tokens: 250       # 추출할 Slot 개수 및 길이에 따라 조절
 
-  # 대화 요약 설정 [신규]
+  # 대화 요약 설정 [수정됨]
   summarization:
-    enabled: true                 # 기능 활성화 여부
-    model: "gpt-4"                # 요약 모델 (상황에 따라 gpt-3.5-turbo도 가능)
-    temperature: 0.3              # 약간의 창의성 허용
-    max_tokens: 300               # 요약문 최대 길이 (토큰)
-    trigger_turn_count: 6         # 요약 시도 기준 *총* 턴 수 (user+assistant)
-    max_history_turns_for_summary: 4 # 요약 입력으로 사용할 최대 최근 *상호작용* 턴 수 (user+assistant 쌍 기준)
+    enabled: true                  # 기능 활성화 여부
+    model: "gpt-4"                 # 요약 모델 (상황에 따라 gpt-3.5-turbo도 가능)
+    temperature: 0.3               # 약간의 창의성 허용
+    max_tokens: 300                # 요약문 최대 길이 (토큰) - 넉넉하게 설정
+    # trigger_turn_count 제거됨
+    summarize_every_n_turns: 3     # 몇 턴마다 요약을 시도할지 (user+assistant 합쳐서 1턴)
+    target_summary_tokens: 100     # 목표 요약 토큰 수 (프롬프트 지침용)
+    update_summary_incrementally: true # 이전 요약을 기반으로 증분 업데이트할지 여부
+    # max_history_turns_for_summary 제거됨 (항상 전체 사용)
 
   # 만족도 평가 설정 (test_runner용, 기존 모델 유지)
   satisfaction_evaluation:
@@ -26,11 +29,11 @@ tasks:
 
 # --- 모델 라우팅 및 CoT 생성 설정 ---
 model_router:
-  # 복잡도 분류 설정
+  # 복잡도 분류 설정 (기존 유지)
   complexity_classification:
-    model: "gpt-4o"               # 복잡도 분류 모델
-    temperature: 0.1              # 정확한 분류 위해 낮은 값
-    max_tokens: 100               # JSON 응답 받기에 충분한 길이
+    model: "gpt-4o"                # 복잡도 분류 모델
+    temperature: 0.1               # 정확한 분류 위해 낮은 값
+    max_tokens: 100                # JSON 응답 받기에 충분한 길이
 
   # 라우팅 결과에 따른 최종 응답 모델 매핑 (기존 유지)
   routing_map:
@@ -38,17 +41,26 @@ model_router:
     medium: "gpt-4"
     hard: "gpt-4o"
 
-  # Medium CoT 스텝 생성 설정
+  # Medium CoT 스텝 생성 설정 (기존 유지)
   medium_cot_generation:
-    model: "gpt-4o"               # CoT 스텝 생성 모델
-    temperature: 0.5              # 약간의 유연성
-    max_tokens: 200               # 3~5개 스텝 생성에 충분하도록
+    model: "gpt-4o"                # CoT 스텝 생성 모델
+    temperature: 0.5               # 약간의 유연성
+    max_tokens: 200                # 3~5개 스텝 생성에 충분하도록
 
-  # Hard CoT 지침 생성 설정
+  # Hard CoT 지침 생성 설정 (기존 유지)
   hard_cot_generation:
-    model: "gpt-4o"               # 상세 CoT 지침 생성 모델
-    temperature: 0.5              # 약간의 유연성
-    max_tokens: 400               # 상세 지침 위해 넉넉하게
+    model: "gpt-4o"                # 상세 CoT 지침 생성 모델
+    temperature: 0.5               # 약간의 유연성
+    max_tokens: 400                # 상세 지침 위해 넉넉하게
+
+  #cot_generation:
+  #  # Multi-Stage CoT 설정 [주석 처리됨]
+  #  #multi_stage:
+  #  #  enabled: false # 기본적으로 비활성화
+  #  #  initial_plan_model: "gpt-4"
+  #  #  step_execution_model: "gpt-4o"
+  #  #  final_synthesis_model: "gpt-4"
+  #  #  max_steps: 5
 
 # --- 최종 응답 생성 설정 ---
 generation:
@@ -57,22 +69,25 @@ generation:
 
 # --- RAG 관련 설정 ---
 rag:
-  retrieval_k: 3                  # 검색할 상위 문서 개수
+  retrieval_k: 3                   # 검색할 상위 문서 개수
   embedding_model: "text-embedding-3-large" # 임베딩 모델
-  embedding_dimension: 3072       # 임베딩 벡터 차원 (모델과 일치 필수)
-  # RAG 파이프라인 설정 (pipeline/rag_generator.py 용도)
+  embedding_dimension: 3072        # 임베딩 벡터 차원 (모델과 일치 필수)
+  # RAG 파이프라인 설정 (pipeline/rag_generator.py 용도) [수정/추가됨]
   pipeline:
-    splitter_chunk_size: 1000     # 텍스트 분할 시 청크 크기 (토큰 기준)
-    splitter_chunk_overlap: 100     # 텍스트 분할 시 청크 중첩 크기 (토큰 기준)
-    embedding_batch_size: 100     # 임베딩 생성 시 배치 크기
+    document_delimiter: "\n\n\n"    # 의미 단위 문단 구분자 (예: 3번 줄바꿈)
+    splitter_type: "tiktoken"      # 사용할 스플리터 종류 ('tiktoken' 또는 'character')
+    splitter_model_name: "gpt-4"   # tiktoken 스플리터 사용 시 기준 모델 (cl100k_base 인코딩)
+    splitter_chunk_size: 1000      # 텍스트 분할 시 청크 크기 (토큰 기준)
+    splitter_chunk_overlap: 100      # 텍스트 분할 시 청크 중첩 크기 (토큰 기준)
+    embedding_batch_size: 100      # 임베딩 생성 시 배치 크기
 
 # --- 프롬프트 템플릿 및 관련 텍스트 ---
 prompts:
-  # 기본 시스템 프롬프트
+  # 기본 시스템 프롬프트 (기존 유지)
   default_system_prompt: |
     당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 제공된 참고 정보를 바탕으로 정확하고 간결하게 답변해주세요.
 
-  # 각 기능별 프롬프트 템플릿
+  # Slot 추출 프롬프트 (기존 유지)
   slot_extraction_prompt_template: |
     다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
 
@@ -120,6 +135,8 @@ prompts:
     입력 문장: "{user_input}"
 
     추출 결과 (JSON):
+
+  # 복잡도 분류 프롬프트 (기존 유지)
   complexity_classification_prompt_template: |
     사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분류해주세요.
 
@@ -138,6 +155,8 @@ prompts:
     사용자 질문: "{user_input}"
 
     분석 결과 (JSON):
+
+  # Medium CoT 생성 프롬프트 (기존 유지)
   medium_cot_generation_prompt_template: |
     다음 사용자 질문에 답변하기 위한 단계별 사고(Chain-of-Thought) 과정을 3~5개의 간결한 핵심 단계로 작성해주세요. 각 단계는 답변 생성 모델을 위한 가이드라인 역할을 합니다. 답변 형식은 단계별 목록 형태로 명확하게 작성해주세요.
 
@@ -149,24 +168,32 @@ prompts:
     관련 정보(Slot, RAG) 검토: ...
     주요 고려사항 및 비교 분석: ...
     최종 답변 구성 방향 설정: ... ):
+
+  # Hard CoT 지침 생성 프롬프트 (기존 유지)
   hard_cot_generation_prompt_template: |
     다음 사용자 질문은 복잡도가 높아 답변 생성 시 상세한 단계별 접근이 필요합니다. 이 질문에 답변하기 위한 구체적인 사고 과정 지침(Instruction)을 체계적으로 작성해주세요. 지침은 답변 생성 모델이 따라야 할 명확한 로드맵을 제공해야 합니다. RAG 정보 활용 방안, 추론 과정, 답변 구조 등을 포함하여 상세하게 기술해주세요.
 
     사용자 질문: "{user_input}"
 
     상세 사고 과정 지침:
-  summarization_prompt_template: |
-    다음 대화 기록을 핵심 내용을 중심으로 2~3 문장으로 간결하게 요약해줘. 요약은 전체 대화의 맥락을 이해하는 데 도움이 되어야 해.
 
-    [대화 기록]
+  # 대화 요약 프롬프트 [수정됨]
+  summarization_prompt_template: |
+    다음은 이전 대화 요약과 최근 대화 기록입니다. 전체 대화의 핵심 내용을 반영하여 {target_summary_tokens} 토큰 내외로 간결하게 업데이트된 요약을 작성해주세요. 이전 요약이 있다면 그 내용을 자연스럽게 이어받아 업데이트하고, 없다면 전체 대화 기록을 바탕으로 새로 요약해주세요. 반드시 완결된 문장 형태로 마무리해야 합니다.
+
+    [이전 대화 요약]
+    {previous_summary}
+
+    [최근 대화 기록]
     {conversation_history}
 
-    [요약 결과]
+    [업데이트된 요약 결과]
 
-  # 프롬프트 구성 요소 텍스트
+
+  # 프롬프트 구성 요소 텍스트 (기존 유지)
   rag_context_header: "[참고 문서 정보]"
   slot_context_header: "[파악된 사용자 정보]"
-  summary_context_header: "[요약된 이전 대화 맥락]"
+  summary_context_header: "[요약된 이전 대화 맥락]" # 이 헤더는 실제 프롬프트 빌더에서는 사용하지 않을 수 있음 (요약 결과는 시스템 프롬프트 일부로 통합)
   cot_context_header: "[단계별 사고 가이드 (CoT)]"
   grounding_instruction: "반드시 제공된 [참고 문서 정보] 내용만 바탕으로 대답하고, 모르면 모른다고 솔직하게 답변하세요."
   tone_instruction: "고객 응대는 항상 공식적이고 정중한 말투를 사용하세요."
@@ -176,8 +203,8 @@ prompts:
 
 # --- 프롬프트 구성 옵션 ---
 prompt_options:
-  rag_results_count_limit: 3         # 프롬프트에 포함할 최대 RAG 결과 수
-  include_summary_in_prompt: true    # 프롬프트에 대화 요약 포함 여부
+  rag_results_count_limit: 3       # 프롬프트에 포함할 최대 RAG 결과 수
+  include_summary_in_prompt: true    # 프롬프트에 대화 요약 포함 여부 (Summarizer 결과 활용)
   include_slots_in_prompt: true      # 프롬프트에 Slot 정보 포함 여부
   include_rag_context_in_prompt: true # 프롬프트에 RAG 컨텍스트 포함 여부
   use_rag_grounding_instruction: true # Grounding 지시문 사용 여부
@@ -186,14 +213,23 @@ prompt_options:
 
 # --- 로깅 설정 ---
 logging:
-  log_level: "DEBUG"                 # 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-  log_date_format: "%Y%m%d"          # 로그 파일명 날짜 형식
-  log_file_base_name: "api_history.txt" # 로그 파일 기본 이름
-  log_backup_count: 30              # 보관할 로그 파일 개수 (일별 로테이션)
-  log_timestamp_format: "%Y-%m-%d %H:%M:%S"
+  log_level: "DEBUG"                 # 코드에서 DEBUG로 고정되므로 참고용
+  # log_date_format 제거됨
+  log_file_base_name: "api_history"  # 로그 파일 기본 이름 (날짜/시간은 코드에서 추가)
+  log_backup_count: 30               # 로테이션 방식 변경으로 현재 사용되지 않음 (참고용)
+  log_timestamp_format: "%Y-%m-%d %H:%M:%S" # 로그 내 타임스탬프 형식
 
 # --- 테스트 설정 ---
 testing:
   chatbot_api_url: "http://127.0.0.1:8000/chat" # 테스트 대상 챗봇 API URL
-  api_timeout: 60                   # 테스트 API 호출 타임아웃 (초)
-  test_mode_header: "X-Test-Mode"   # 테스트 모드 식별용 HTTP 헤더 이름
+  api_timeout: 60                  # 테스트 API 호출 타임아웃 (초)
+  test_mode_header: "X-Test-Mode"  # 테스트 모드 식별용 HTTP 헤더 이름
+  default_baseline_model: "gpt-3.5-turbo" # Mode 1/2 비교 시 사용할 기본 모델 [신규]
+  # 테스트 케이스 생성 관련 확률 값 [신규]
+  generation_probabilities:
+    decathlon_brand_focus_prob: 0.9 # 일반 제품 질문 생성 시 데카트론 브랜드 선택 확률
+    template_type_weights:          # 전체 테스트셋 생성 시 각 템플릿 유형별 가중치 (합이 1이 아니어도 됨)
+      decathlon_specific: 30
+      generic_product: 30
+      comparison: 20
+      general_faq: 20

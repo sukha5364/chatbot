@@ -1,29 +1,31 @@
-# requirements.txt
+# requirements.txt (최신화 버전)
 
-# --- Core Framework ---
-fastapi         # Web framework
-uvicorn[standard] # ASGI server (for running FastAPI, [standard] includes websockets and http tools)
+# --- Core Web Framework ---
+fastapi
+uvicorn[standard] # ASGI server (FastAPI 실행용)
 
 # --- Configuration & Utilities ---
-python-dotenv   # Load environment variables from .env file
-requests        # For synchronous HTTP requests (used in test_runner)
-aiohttp         # For asynchronous HTTP requests (used for OpenAI API calls)
+python-dotenv  # .env 파일 로드
+PyYAML>=6.0     # YAML 설정 파일 파싱
+
+# --- Asynchronous HTTP & API Calls ---
+aiohttp        # 비동기 HTTP 클라이언트 (OpenAI API 호출 등)
+tenacity       # 재시도 로직 (pipeline/rag_generator.py 에서 사용)
 
 # --- OpenAI & LLMs ---
-openai          # Official OpenAI library (useful even if calling API directly)
-tiktoken        # For token counting (used by Langchain or directly)
+openai         # OpenAI 공식 라이브러리
+tiktoken       # 토큰 계산 및 Langchain Splitter 사용
 
 # --- RAG Components ---
-langchain       # For text splitting and potentially other RAG utilities
-faiss-cpu       # Vector database (CPU version) - Use faiss-gpu if GPU is available
-sentence-transformers # For generating text embeddings (using open-source models)
-numpy           # Numerical library (dependency for faiss, sentence-transformers)
+langchain      # Text Splitting 등 유틸리티 (CharacterTextSplitter 사용)
+faiss-cpu      # 벡터 데이터베이스 (CPU 버전, GPU 사용 시 faiss-gpu 설치)
+numpy          # FAISS 및 기타 수치 연산 의존성
 
-# --- For visualization ---
-pandas
-matplotlib
-seaborn
+# --- Testing & Visualization ---
+pandas         # 데이터 처리 (visualize_results.py)
+matplotlib     # 데이터 시각화 (visualize_results.py)
+seaborn        # 데이터 시각화 (visualize_results.py)
 
-# --- other libraries ---
-PyYAML>=6.0 # Add this line for YAML parsing
-python-json-logger
+# 필요한 경우 아래 라이브러리 설치 (이미 설치되어 있을 수 있음)
+# pytest         # 테스트 자동화 프레임워크 (test_runner.py 등을 pytest로 실행 시)
+# pytest-asyncio # pytest에서 비동기 코드 테스트 지원

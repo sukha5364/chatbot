@@ -1,200 +1,301 @@
-# chatbot/searcher.py
+# chatbot/searcher.py (요구사항 반영 최종본: Docstring 및 주석 보강, 안정성 강화)
 
 import os
 import json
 from typing import List, Dict, Optional
 import numpy as np
-import logging # 로깅 추가
+import logging
 
-# --- 필요한 라이브러리 임포트 (SentenceTransformer 제거) ---
+# --- 필요한 라이브러리 임포트 ---
 try:
     import faiss
+    logging.info("FAISS library imported successfully.")
 except ImportError:
     # FAISS가 없으면 RAG 기능 사용 불가
-    logging.error("FAISS library not found. RAG search functionality will be disabled. Please install it: pip install faiss-cpu or faiss-gpu")
-    faiss = None
+    logging.error("CRITICAL: faiss library not found. RAG search functionality will be disabled. Please install it: pip install faiss-cpu or faiss-gpu")
+    faiss = None # None으로 설정하여 이후 로직에서 체크
 
-# 설정 로더 임포트
-from .config_loader import get_config
+# --- 설정 로더 임포트 ---
+try:
+    # searcher.py는 chatbot/chatbot/ 안에 있으므로 상대 경로 사용
+    from .config_loader import get_config
+    logging.info("config_loader imported successfully in searcher.")
+    config = get_config() # 설정 로드
+    if not config: raise ValueError("Configuration could not be loaded.")
+except ImportError as ie:
+    logging.error(f"ERROR (searcher): Failed to import config_loader: {ie}. Check relative paths.", exc_info=True)
+    config = {} # 빈 dict로 설정하여 이후 로직에서 오류 방지
+except Exception as conf_e:
+     logging.error(f"ERROR (searcher): Failed to load configuration: {conf_e}", exc_info=True)
+     config = {}
 
-# 로거 설정
+
+# --- 로거 설정 (기본 설정 상속) ---
 logger = logging.getLogger(__name__)
-config = get_config()
+# logger.setLevel(logging.DEBUG) # 필요 시 명시적 설정
 
-# --- 설정 (경로만 사용, 모델명 및 임베딩 로직 제거) ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# 설정 파일에서 경로 읽어오도록 수정 (선택 사항)
-data_config = config.get('rag', {})
-FAISS_INDEX_PATH = os.path.join(BASE_DIR, 'data', 'index.faiss') # 경로는 유지하거나 config에서 관리
-METADATA_PATH = os.path.join(BASE_DIR, 'data', 'doc_meta.jsonl') # 경로는 유지하거나 config에서 관리
-EXPECTED_EMBEDDING_DIM = data_config.get('embedding_dimension') # 설정에서 차원 수 읽기
+# --- 경로 및 설정값 ---
+# 프로젝트 루트 디렉토리 기준 경로 설정
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # chatbot/chatbot -> chatbot/
+
+# 설정 파일에서 경로 및 차원 읽기 (없으면 기본값 사용)
+# TODO: 경로도 config.yaml에서 관리하도록 변경 고려 가능
+data_dir_config = config.get('data', {}).get('path', 'data') # config에 data.path 설정 추가 가능 (예: 'data')
+FAISS_INDEX_PATH = os.path.join(BASE_DIR, data_dir_config, 'index.faiss')
+METADATA_PATH = os.path.join(BASE_DIR, data_dir_config, 'doc_meta.jsonl')
+# 예상 임베딩 차원 (config에서 읽기, rag_generator와 일치해야 함)
+EXPECTED_EMBEDDING_DIM = config.get('rag', {}).get('embedding_dimension', 3072) # 기본값 설정
+
 
 # --- RAG 검색 클래스 ---
 class RagSearcher:
+    """
+    미리 빌드된 FAISS 인덱스와 메타데이터를 로드하여,
+    주어진 쿼리 임베딩 벡터와 유사한 문서 Chunk를 검색하는 클래스.
+
+    Attributes:
+        index_path (str): 로드할 FAISS 인덱스 파일 경로.
+        metadata_path (str): 로드할 메타데이터 파일 경로 (JSON Lines 형식).
+        index (Optional[faiss.Index]): 로드된 FAISS 인덱스 객체. 로드 실패 시 None.
+        metadata (List[Dict]): 로드된 메타데이터 리스트. 로드 실패 시 빈 리스트.
+    """
     def __init__(
         self,
         index_path: str = FAISS_INDEX_PATH,
         metadata_path: str = METADATA_PATH,
-        # embedding_model_name 제거
     ):
+        """
+        RagSearcher 인스턴스를 초기화하고 관련 리소스를 로드합니다.
+
+        Args:
+            index_path (str, optional): FAISS 인덱스 파일 경로. Defaults to FAISS_INDEX_PATH.
+            metadata_path (str, optional): 메타데이터 파일 경로. Defaults to METADATA_PATH.
+        """
         self.index_path = index_path
         self.metadata_path = metadata_path
-        # self.embedding_model_name 제거
-
-        self.index = None
+        self.index: Optional[faiss.Index] = None
         self.metadata: List[Dict] = []
-        # self.embedding_model 제거
 
-        self._load_resources()
+        logger.info("Initializing RagSearcher...")
+        self._load_resources() # 인스턴스 생성 시 리소스 로드 실행
 
     def _load_resources(self):
-        """FAISS 인덱스와 메타데이터를 로드합니다. (임베딩 모델 로딩 제거)"""
-        logger.info("Loading RAG resources...")
+        """
+        FAISS 인덱스와 메타데이터 파일을 로드합니다.
+        성공적으로 로드되면 self.index와 self.metadata 속성에 저장됩니다.
+        """
+        logger.info("Loading RAG resources (FAISS index and metadata)...")
+        load_success = True # 로드 성공 플래그
+
         # 1. Load FAISS index
-        if faiss and os.path.exists(self.index_path):
+        if not faiss:
+            logger.error("FAISS library is not installed. Cannot load FAISS index.")
+            load_success = False
+        elif not os.path.exists(self.index_path):
+             logger.error(f"FAISS index file not found at: {self.index_path}")
+             load_success = False
+        else:
             try:
                 self.index = faiss.read_index(self.index_path)
                 logger.info(f"FAISS index loaded successfully from {self.index_path}")
-                logger.info(f"Index size: {self.index.ntotal} vectors, Dimension: {self.index.d}")
-                # 로드된 인덱스 차원과 설정값 비교
-                if EXPECTED_EMBEDDING_DIM and self.index.d != EXPECTED_EMBEDDING_DIM:
-                     logger.warning(f"FAISS index dimension ({self.index.d}) does not match expected dimension ({EXPECTED_EMBEDDING_DIM}) in config!")
+                # 로드된 인덱스 정보 로깅
+                index_size = getattr(self.index, 'ntotal', 'N/A')
+                index_dim = getattr(self.index, 'd', 'N/A')
+                logger.info(f"Loaded index size: {index_size} vectors, Dimension: {index_dim}")
+
+                # 로드된 인덱스 차원과 설정값 비교 검증
+                if EXPECTED_EMBEDDING_DIM and index_dim != EXPECTED_EMBEDDING_DIM:
+                    logger.warning(f"FAISS index dimension ({index_dim}) does not match expected dimension ({EXPECTED_EMBEDDING_DIM}) in config! Ensure consistency with rag_generator.py.")
+                    # 차원 불일치 시 검색이 실패하거나 잘못될 수 있음
+                    # load_success = False # 엄격하게 처리하려면 로드 실패로 간주 가능
+
             except Exception as e:
-                logger.error(f"Error loading FAISS index: {e}", exc_info=True)
-                self.index = None
-        else:
-            logger.error(f"FAISS index file not found at {self.index_path} or FAISS library not installed.")
-            self.index = None # 명시적으로 None 설정
+                logger.error(f"Error loading FAISS index from {self.index_path}: {e}", exc_info=True)
+                self.index = None # 로드 실패 시 None으로 설정
+                load_success = False
 
         # 2. Load Metadata
-        if os.path.exists(self.metadata_path):
+        if not os.path.exists(self.metadata_path):
+            logger.error(f"Metadata file not found at: {self.metadata_path}")
+            load_success = False
+        else:
             try:
+                loaded_meta = []
                 with open(self.metadata_path, 'r', encoding='utf-8') as f:
-                    self.metadata = [json.loads(line.strip()) for line in f if line.strip()]
+                    for i, line in enumerate(f):
+                        line = line.strip()
+                        if not line: continue
+                        try:
+                             loaded_meta.append(json.loads(line))
+                        except json.JSONDecodeError:
+                             logger.warning(f"Skipping invalid JSON line {i+1} in metadata file: {line[:100]}...")
+                self.metadata = loaded_meta
                 logger.info(f"Metadata loaded successfully from {self.metadata_path}. Total chunks: {len(self.metadata)}")
-                # 메타데이터 개수와 인덱스 벡터 개수 일치 확인
+
+                # 메타데이터 개수와 인덱스 벡터 개수 일치 확인 (인덱스 로드 성공 시)
                 if self.index and self.index.ntotal != len(self.metadata):
-                    logger.warning(f"FAISS index size ({self.index.ntotal}) != Metadata size ({len(self.metadata)}). Index might be outdated.")
+                    logger.warning(f"FAISS index size ({self.index.ntotal}) does not match metadata size ({len(self.metadata)}). Search results might be incorrect if index is outdated.")
+                    # load_success = False # 엄격하게 처리하려면 로드 실패로 간주 가능
+
             except Exception as e:
-                logger.error(f"Error loading or parsing metadata: {e}", exc_info=True)
-                self.metadata = []
+                logger.error(f"Error loading or parsing metadata from {self.metadata_path}: {e}", exc_info=True)
+                self.metadata = [] # 로드 실패 시 빈 리스트로 설정
+                load_success = False
+
+        # 최종 로드 결과 로깅
+        if load_success and self.index and self.metadata:
+             logger.info("RAG searcher resources loaded successfully.")
         else:
-            logger.error(f"Metadata file not found at {self.metadata_path}")
-            self.metadata = []
-
-        # 3. 임베딩 모델 로딩 로직 제거
-
-        if self.index is None or not self.metadata:
-             logger.error("RAG searcher initialization failed due to missing index or metadata.")
-        else:
-             logger.info("RAG searcher initialized successfully.")
-
-    # _get_embedding 메서드 제거
+             logger.error("RAG searcher initialization failed due to missing or erroneous resources. RAG search will not function.")
+             # 실패 시 self.index 또는 self.metadata가 None/[] 상태 유지
 
     def search(self, query_embedding: np.ndarray, k: int) -> List[Dict]:
         """
-        주어진 쿼리 임베딩 벡터와 가장 유사한 문서 Chunk K개를 검색합니다.
+        주어진 쿼리 임베딩 벡터와 가장 유사한 문서 Chunk K개를 FAISS 인덱스에서 검색합니다.
 
         Args:
-            query_embedding (np.ndarray): 미리 계산된 쿼리 텍스트의 임베딩 벡터 (Numpy 배열, float32, shape (1, D)).
-            k (int): 반환할 결과 개수.
+            query_embedding (np.ndarray): 미리 계산된 쿼리 텍스트의 임베딩 벡터.
+                                         Numpy 배열 형태이며, float32 타입, shape는 (1, D)여야 함 (D는 임베딩 차원).
+            k (int): 검색하여 반환할 상위 결과의 개수.
 
         Returns:
-            List[Dict]: 검색된 Chunk 리스트. 각 Chunk는 메타데이터와 유사도 점수 포함.
-                       실패 시 빈 리스트 반환.
+            List[Dict]: 검색된 상위 K개의 Chunk 메타데이터 리스트. 각 딕셔너리에는
+                        원본 메타데이터와 함께 'similarity_score'(유사도 점수)가 추가됨.
+                        유사도 점수가 높은 순서로 정렬됨.
+                        검색 실패 또는 결과 없음 시 빈 리스트 반환.
+
+        Note:
+            - 이 메서드는 임베딩 생성을 수행하지 않으며, 외부에서 생성된 임베딩 벡터를 입력받습니다.
+            - 현재 IndexFlatIP를 사용하므로, 반환되는 score는 내적(Inner Product) 값입니다.
+              OpenAI 임베딩 등 정규화된 벡터에서는 이 값이 코사인 유사도와 비례합니다.
         """
-        # 리소스 로드 확인 (embedding_model 확인 제거)
+        # 1. 리소스 로드 상태 및 입력 유효성 검사
         if not self.index or not self.metadata:
             logger.error("Cannot perform search: RAG index or metadata not loaded properly.")
             return []
-
-        # 입력된 임베딩 벡터 유효성 검사 (형태 및 차원)
-        if not isinstance(query_embedding, np.ndarray) or query_embedding.ndim != 2 or query_embedding.shape[0] != 1:
-             logger.error(f"Invalid query embedding shape: {query_embedding.shape}. Expected (1, D).")
-             return []
-        if self.index.d != query_embedding.shape[1]:
-             logger.error(f"Query embedding dimension ({query_embedding.shape[1]}) does not match index dimension ({self.index.d}).")
+        if not isinstance(k, int) or k <= 0:
+             logger.error(f"Invalid value for k (number of results): {k}. Must be a positive integer.")
              return []
 
-        logger.debug(f"Performing FAISS search with k={k}")
+        # 입력 임베딩 벡터 형태 및 타입 검증
+        if not isinstance(query_embedding, np.ndarray):
+             logger.error(f"Invalid query embedding type: {type(query_embedding)}. Expected NumPy ndarray.")
+             return []
+        if query_embedding.ndim != 2 or query_embedding.shape[0] != 1:
+            logger.error(f"Invalid query embedding shape: {query_embedding.shape}. Expected (1, D).")
+            return []
+        if query_embedding.dtype != np.float32:
+             logger.warning(f"Query embedding dtype is {query_embedding.dtype}. Converting to float32 for FAISS.")
+             query_embedding = query_embedding.astype('float32') # FAISS는 float32 필요
+
+        # 입력 임베딩 차원과 인덱스 차원 일치 검증
+        index_dim = getattr(self.index, 'd', None)
+        if index_dim is None or index_dim != query_embedding.shape[1]:
+            logger.error(f"Query embedding dimension ({query_embedding.shape[1]}) does not match loaded FAISS index dimension ({index_dim}). Cannot perform search.")
+            return []
+
+        logger.debug(f"Performing FAISS search with k={k} for query embedding shape {query_embedding.shape}")
+
+        # 2. FAISS 인덱스 검색 실행
         try:
-            # 1. Search FAISS index (쿼리 임베딩 직접 사용)
-            # index.search는 float32 NumPy 배열을 기대함
-            distances, indices = self.index.search(query_embedding.astype('float32'), k)
-            logger.debug(f"FAISS search completed. Found indices: {indices[0]}, Distances: {distances[0]}")
+            start_time = time.time()
+            # index.search()는 (distances, indices) 튜플 반환
+            # distances: 각 결과까지의 거리(또는 유사도 점수) 배열 (shape: (1, k))
+            # indices: 각 결과의 인덱스 배열 (shape: (1, k))
+            distances, indices = self.index.search(query_embedding, k)
+            search_duration = time.time() - start_time
+            logger.debug(f"FAISS search completed in {search_duration:.4f} seconds.")
+            logger.debug(f"Found indices: {indices[0]}, Distances/Scores: {distances[0]}")
 
-            # 2. Retrieve metadata and format results
+            # 3. 결과 처리 및 메타데이터 결합
             results = []
-            if len(indices[0]) > 0 and indices[0][0] != -1: # -1은 결과 없을 때 반환될 수 있음
+            # indices[0] 에 검색된 인덱스들이 들어있음
+            if len(indices[0]) > 0 and indices[0][0] != -1: # -1은 결과가 없을 때 FAISS가 반환할 수 있음
                 for i, idx in enumerate(indices[0]):
-                    if 0 <= idx < len(self.metadata):
-                        result_item = self.metadata[idx].copy() # 원본 메타데이터 변경 방지 위해 복사
+                    if 0 <= idx < len(self.metadata): # 유효한 인덱스 범위 확인
+                        # 원본 메타데이터 복사하여 수정 방지
+                        result_item = self.metadata[idx].copy()
 
-                        # [수정] 유사도 점수 처리: IndexFlatIP는 내적값(거리) 반환.
-                        # OpenAI 임베딩은 정규화되어 있으므로 내적값은 코사인 유사도와 비례.
-                        # 값의 범위는 보통 -1 ~ 1 사이 (완전히 같으면 1). 그대로 사용하거나 필요시 조정.
-                        inner_product_score = float(distances[0][i])
-                        result_item['similarity_score'] = inner_product_score # 점수 기록
-                        # result_item['distance'] = inner_product_score # 필요시 distance 이름으로도 저장
+                        # 유사도 점수 추가 (IndexFlatIP는 내적값을 반환)
+                        similarity_score = float(distances[0][i])
+                        result_item['similarity_score'] = similarity_score
 
-                        # 너무 낮은 유사도 결과는 제외 (선택 사항, 임계값은 실험 필요)
+                        # TODO: 향후 특정 메타데이터 필터링 로직 추가 가능
+                        # if result_item.get('brand') != 'Decathlon': continue
+
+                        # 너무 낮은 유사도 결과는 제외 (선택 사항, 임계값 설정 필요)
                         # similarity_threshold = 0.7 # 예시 임계값
-                        # if inner_product_score < similarity_threshold:
-                        #    logger.debug(f"Skipping result index {idx} due to low similarity score: {inner_product_score:.4f}")
-                        #    continue
+                        # if similarity_score < similarity_threshold:
+                        #     logger.debug(f"Skipping result index {idx} due to low similarity score: {similarity_score:.4f}")
+                        #     continue
 
                         results.append(result_item)
                     else:
-                        logger.warning(f"Found index {idx} is out of bounds for metadata (size: {len(self.metadata)}).")
+                        # 검색된 인덱스가 메타데이터 범위를 벗어나는 경우 (데이터 불일치 가능성)
+                        logger.warning(f"Found index {idx} from FAISS search is out of bounds for loaded metadata (size: {len(self.metadata)}). Skipping this result.")
             else:
-                 logger.info("FAISS search returned no results.")
+                logger.info("FAISS search returned no valid results (indices might be empty or -1).")
 
-            # 유사도 점수 기준으로 내림차순 정렬 (이미 FAISS가 정렬해서 반환하지만 확인차)
-            results.sort(key=lambda x: x.get('similarity_score', -1.0), reverse=True)
+            # 유사도 점수 기준으로 내림차순 정렬 (FAISS가 보통 정렬해서 주지만 확인차)
+            # IndexFlatIP는 값이 클수록 유사도가 높음
+            results.sort(key=lambda x: x.get('similarity_score', -float('inf')), reverse=True)
 
+            logger.info(f"Returning {len(results)} RAG results after processing.")
             return results
 
+        except AttributeError as ae:
+             # self.index가 None일 경우 등
+             logger.error(f"AttributeError during search, likely index not loaded: {ae}", exc_info=True)
+             return []
         except Exception as e:
-            logger.error(f"Error during FAISS search: {e}", exc_info=True)
+            # FAISS 검색 중 발생할 수 있는 기타 예외 처리
+            logger.error(f"Error during FAISS search execution: {e}", exc_info=True)
             return []
 
-# --- 전역 검색기 인스턴스 ---
-# 애플리케이션 시작 시 RagSearcher 인스턴스를 생성하고 리소스를 로드
-# rag_searcher_instance = RagSearcher()
-
-# --- 예시 사용법 (수정됨: 직접 실행 어려움) ---
+# --- 예시 사용법 (직접 실행 어려움) ---
 if __name__ == "__main__":
-    # 이 파일을 직접 실행하여 테스트하는 것은 이제 더 복잡합니다.
-    # query_embedding을 먼저 생성해야 하기 때문입니다.
-    # 테스트는 chatbot/scheduler.py 또는 통합 테스트(test_runner.py)를 통해 수행하는 것이 좋습니다.
+    # searcher.py를 직접 실행하여 테스트하는 것은 임베딩 벡터가 필요하므로 어려움.
+    # 통합 테스트(test_runner.py) 또는 chatbot/app.py를 통해 테스트 권장.
+    logging.basicConfig(level=logging.DEBUG) # 테스트 시 DEBUG 레벨
+    logger = logging.getLogger(__name__)
 
     print("\n--- RAG Searcher Module Loaded ---")
-    print("This module requires pre-generated FAISS index and metadata.")
-    print("To test search functionality:")
-    print("1. Ensure the chatbot server (app.py) is running.")
-    print("2. Send a query to the /chat endpoint.")
-    print("3. Check the logs from scheduler.py and searcher.py for search results.")
+    print("This module encapsulates FAISS index search logic.")
+    print("It requires pre-calculated query embeddings to perform search.")
+    print("To test search functionality, run the main chatbot application (app.py) or integration tests.")
 
-    # 아래는 직접 테스트를 위한 의사 코드 (실행 불가)
-    # logger.basicConfig(level=logging.DEBUG)
-    # test_query = "발볼 넓은 러닝화 추천"
-    # print(f"\n[Manual Test Example - Requires Pre-calculated Embedding]")
-    # print(f"Simulating search for: '{test_query}' with k=3")
-    #
-    # # 1. 먼저 test_query에 대한 OpenAI 임베딩 벡터(numpy 배열)를 얻어야 함
-    # # embedding_vector = get_openai_embedding_for_query(test_query) # 이 함수는 별도 구현 필요
-    # embedding_vector = None # Placeholder
-    #
-    # if embedding_vector is not None and rag_searcher_instance.index:
-    #     search_results = rag_searcher_instance.search(embedding_vector, k=3)
-    #     if search_results:
-    #         print("\nSearch Results (Simulated):")
-    #         for i, result in enumerate(search_results):
-    #             print(f"\n--- Result {i+1} ---")
-    #             print(f"Score: {result.get('similarity_score', 'N/A'):.4f}")
-    #             # ... (다른 메타데이터 출력) ...
-    #             print(f"Text: {result.get('text', 'N/A')[:100]}...")
-    #     else:
-    #         print("No results found or error occurred.")
-    # else:
-    #     print("Could not perform manual test: Embedding vector missing or RAG resources not loaded.")
+    # 로드 테스트 (인스턴스 생성 시 자동 로드)
+    print("\n--- Attempting to initialize RagSearcher (will load resources) ---")
+    try:
+        # 인스턴스 생성 시 _load_resources 자동 호출
+        searcher_instance = RagSearcher()
+        if searcher_instance.index and searcher_instance.metadata:
+            print("\n--- RagSearcher initialized successfully. Ready for search (if embedding provided). ---")
+            print(f"Index size: {searcher_instance.index.ntotal}")
+            print(f"Metadata size: {len(searcher_instance.metadata)}")
+            print(f"Index dimension: {searcher_instance.index.d}")
+        else:
+            print("\n--- RagSearcher initialization failed. Check logs for errors. ---")
+
+        # 가상 검색 예시 (실제 실행은 어려움)
+        if searcher_instance.index:
+             print("\n--- Simulating a search (requires a valid query embedding) ---")
+             # 가상의 3072차원 임베딩 벡터 생성 (실제로는 OpenAI API 등으로 생성해야 함)
+             dummy_embedding = np.random.rand(1, EXPECTED_EMBEDDING_DIM).astype('float32')
+             print(f"Using a dummy query embedding with shape: {dummy_embedding.shape}")
+             k_results = 3
+             print(f"Searching for top {k_results} results...")
+             search_results = searcher_instance.search(dummy_embedding, k=k_results)
+             if search_results:
+                 print(f"\nFound {len(search_results)} results (showing top {k_results}):")
+                 for i, result in enumerate(search_results):
+                     print(f"\n--- Result {i+1} ---")
+                     print(f"  ID: {result.get('id', 'N/A')}")
+                     print(f"  Source: {result.get('source_file', 'N/A')}")
+                     print(f"  Score: {result.get('similarity_score', 'N/A'):.4f}")
+                     print(f"  Text Preview: {result.get('text', 'N/A')[:100]}...")
+             else:
+                  print("Search returned no results or failed.")
+
+    except Exception as e:
+        print(f"\nAn error occurred during RagSearcher initialization test: {e}")
