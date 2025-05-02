@@ -15,7 +15,7 @@ import time # Formatter에서 사용
 try:
     # gpt_interface.py는 chatbot/chatbot/ 안에 있으므로, 프로젝트 루트는 상위의 상위
     current_dir_gpt = os.path.dirname(os.path.abspath(__file__))
-    project_root_gpt = os.path.dirname(os.path.dirname(current_dir_gpt)) # 프로젝트 루트 계산
+    project_root_gpt = os.path.dirname(current_dir_gpt) # 프로젝트 루트 계산
     # chatbot 모듈 경로 추가 (get_config 접근 위함)
     import sys
     if project_root_gpt not in sys.path: # 중복 추가 방지
@@ -33,6 +33,8 @@ except Exception as config_e:
 # --- .env 파일 로드 (프로젝트 루트 기준) ---
 try:
     dotenv_path = os.path.join(project_root_gpt, '.env')
+    print(f"DEBUG PRINT: Calculated dotenv_path is: {dotenv_path}")
+    print(f"DEBUG PRINT: Does the file exist? {os.path.exists(dotenv_path)}")
     logging.debug(f"Attempting to load .env file from project root: {dotenv_path}")
     if os.path.exists(dotenv_path):
         load_dotenv(dotenv_path=dotenv_path)
@@ -41,6 +43,8 @@ try:
         logging.info(f".env file not found at ({dotenv_path}), relying solely on system environment variables.")
 except Exception as env_e:
     logging.error(f"Error loading .env file: {env_e}", exc_info=True)
+
+
 
 # --- 환경 변수 로드 (OpenAI API 키) ---
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

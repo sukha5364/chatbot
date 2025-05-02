@@ -7,19 +7,18 @@ from typing import Dict, Any, Optional, List, Union
 import aiohttp
 import numpy as np
 
-# --- 필요한 모듈 임포트 ---
+# --- 필요한 모듈 임포트 (파일 상단에 이미 정의되어 있어야 함) ---
 try:
-    # scheduler.py는 chatbot/chatbot/ 안에 있으므로 상대 경로 사용
     from .slot_extractor import extract_slots_with_gpt
     from .model_router import determine_routing_and_reasoning
     from .searcher import RagSearcher # 클래스 임포트
     from .conversation_state import ConversationState
     from .gpt_interface import get_openai_embedding_async
     from .config_loader import get_config
-    logging.info("Required modules imported successfully in scheduler.")
+    # logging.info("Required modules imported successfully in scheduler.") # 이미 로깅됨
 except ImportError as ie:
     logging.error(f"ERROR (scheduler): Failed to import modules: {ie}. Check relative paths.", exc_info=True)
-    # 필수 모듈 실패 시 스케줄러 기능 사용 불가
+    # 필수 모듈 실패 시 스케줄러 기능 사용 불가 (이 함수 호출 전에 체크될 수도 있음)
     extract_slots_with_gpt = None
     determine_routing_and_reasoning = None
     RagSearcher = None
@@ -27,13 +26,12 @@ except ImportError as ie:
     get_openai_embedding_async = None
     get_config = None
 
-# --- 로거 설정 (기본 설정 상속) ---
+# --- 로거 설정 (파일 상단에 이미 정의되어 있어야 함) ---
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG) # 필요 시 명시적 설정
 
-# --- RAG 검색 비동기 실행 함수 ---
+# --- RAG 검색 비동기 실행 함수 (이 함수 위에 정의되어 있어야 함) ---
 async def run_rag_search_async(
-    query_embedding: Union[List[float], np.ndarray, None], # None 타입 추가
+    query_embedding: Union[List[float], np.ndarray, None],
     k: int,
     rag_searcher: Optional[RagSearcher]
 ) -> List[Dict]:
@@ -42,8 +40,7 @@ async def run_rag_search_async(
     FAISS 검색은 동기 함수이므로 asyncio.get_running_loop().run_in_executor를 사용합니다.
 
     Args:
-        query_embedding (Union[List[float], np.ndarray, None]): 검색할 쿼리의 임베딩 벡터 (리스트 또는 Numpy 배열).
-                                                                 생성 실패 시 None일 수 있음.
+        query_embedding (Union[List[float], np.ndarray, None]): 검색할 쿼리의 임베딩 벡터. 생성 실패 시 None일 수 있음.
         k (int): 검색할 상위 결과의 개수 (config에서 읽어옴).
         rag_searcher (Optional[RagSearcher]): 초기화된 RagSearcher 인스턴스. None이면 검색 건너뜀.
 
@@ -71,14 +68,13 @@ async def run_rag_search_async(
             logger.error(f"Invalid query embedding type: {type(query_embedding)}. Skipping RAG search.")
             return []
 
-        # FAISS 인덱스 차원과 맞는지 확인
         index_dim = getattr(rag_searcher.index, 'd', None)
         if index_dim is None or index_dim != query_embedding_np.shape[1]:
             logger.error(f"Query embedding dimension ({query_embedding_np.shape[1]}) does not match index dimension ({index_dim}). Skipping RAG search.")
             return []
     except Exception as e:
-         logger.error(f"Error processing query embedding for RAG search: {e}", exc_info=True)
-         return []
+        logger.error(f"Error processing query embedding for RAG search: {e}", exc_info=True)
+        return []
 
     # 3. 비동기 실행 준비
     loop = asyncio.get_running_loop()
@@ -86,25 +82,25 @@ async def run_rag_search_async(
 
     # 4. FAISS 검색 실행 (run_in_executor 사용)
     try:
-        # rag_searcher.search는 동기 함수이므로 executor에서 실행
         start_t = time.time()
         results = await loop.run_in_executor(
             None, # 기본 스레드 풀 사용
-            rag_searcher.search, # 호출할 동기 함수 (RagSearcher 인스턴스의 메서드)
+            rag_searcher.search, # 호출할 동기 함수
             query_embedding_np, # 인자 1
             k                   # 인자 2
         )
         duration_t = time.time() - start_t
         logger.debug(f"Async RAG search execution finished in {duration_t:.4f}s. Found {len(results)} results.")
-        return results # 검색 결과 반환 (성공 시 리스트, 실패 시 빈 리스트)
-    except RuntimeError as re: # run_in_executor 관련 오류
-         logger.error(f"RuntimeError during async RAG search execution (often related to event loop): {re}", exc_info=True)
-         return []
-    except Exception as e: # rag_searcher.search 내부에서 발생한 예외 포함
+        return results
+    except RuntimeError as re:
+        logger.error(f"RuntimeError during async RAG search execution: {re}", exc_info=True)
+        return []
+    except Exception as e:
         logger.error(f"Error during async RAG search execution via executor: {e}", exc_info=True)
         return []
 
-# --- 병렬/순차 작업 실행 메인 함수 ---
+
+# --- 병렬/순차 작업 실행 메인 함수 (수정된 버전) ---
 async def run_parallel_tasks(
     user_input: str,
     conversation_state: ConversationState,
@@ -128,11 +124,22 @@ async def run_parallel_tasks(
                        예: {'slots': {...}, 'routing_info': {...}, 'rag_results': [...]}.
                        오류 발생 시 해당 키의 값은 None 또는 기본값일 수 있음.
     """
-    # 필수 모듈 확인
+    # 필수 모듈 확인 (함수 시작 시)
     if not all([extract_slots_with_gpt, determine_routing_and_reasoning, get_openai_embedding_async, get_config]):
         logger.error("CRITICAL: Required functions or config loader not available in scheduler. Cannot run tasks.")
         # 필수 기능 누락 시 비정상 상태 반환
         return {"error": "Scheduler dependencies missing", "slots": None, "routing_info": None, "rag_results": []}
+
+    # --- <<< 여기에 config 로드 코드 추가 >>> ---
+    try:
+        config = get_config() # 함수 시작 시 config 로드
+        if not config:
+            raise ValueError("Configuration could not be loaded in scheduler.")
+    except Exception as conf_e:
+        logger.error(f"CRITICAL: Failed to load configuration within scheduler: {conf_e}", exc_info=True)
+        # 설정 로드 실패 시 오류 반환
+        return {"error": "Configuration load failed in scheduler", "slots": None, "routing_info": None, "rag_results": []}
+    # --- <<< config 로드 코드 끝 >>> ---
 
     start_time_scheduler = time.time()
     logger.info("--- Running Parallel/Sequential Tasks in Scheduler ---")
@@ -141,42 +148,32 @@ async def run_parallel_tasks(
     # 결과 저장용 딕셔너리
     final_results: Dict[str, Any] = {
         "slots": None,
-        "routing_info": None, # 기본값 None, 실패 시 fallback 값으로 채움
-        "rag_results": [] # 기본값 빈 리스트
-        # query_embedding 결과는 RAG 검색에만 사용되므로 최종 결과에 포함 안 함
+        "routing_info": None,
+        "rag_results": []
     }
-    # 각 작업의 비동기 Task 객체 저장용
     tasks: Dict[str, asyncio.Task] = {}
-    # 작업 시작 시간 기록용
     task_start_times: Dict[str, float] = {}
 
     # --- 1. 병렬 실행 가능 작업 정의 ---
-    # Slot 추출, 모델 라우팅, 쿼리 임베딩은 서로 의존성 없이 병렬 실행 가능
     parallel_task_definitions = {
         "slots": extract_slots_with_gpt(user_input, session),
         "routing_info": determine_routing_and_reasoning(user_input, session),
         "query_embedding": get_openai_embedding_async(user_input, session),
-        # TODO: 만약 요약 작업도 병렬 실행 필요하다면 여기에 추가
-        # "summary": summarizer.summarize_conversation_async(...)
     }
 
     logger.info(f"Creating parallel tasks: {list(parallel_task_definitions.keys())}")
-    # 각 작업을 asyncio.Task로 생성하여 즉시 실행 시작
     for name, coro in parallel_task_definitions.items():
-        task_start_times[name] = time.time() # 작업 시작 시간 기록
+        task_start_times[name] = time.time()
         tasks[name] = asyncio.create_task(coro)
 
     # --- 2. 병렬 작업 완료 대기 및 결과 처리 ---
     parallel_task_keys = list(tasks.keys())
     logger.info(f"Waiting for {len(parallel_task_keys)} parallel tasks to complete...")
-    # asyncio.gather를 사용하여 모든 병렬 작업이 완료될 때까지 대기
-    # return_exceptions=True 로 설정하여 작업 중 예외 발생 시 예외 객체를 결과로 받음
     parallel_results_list = await asyncio.gather(*tasks.values(), return_exceptions=True)
     logger.info("All parallel tasks finished.")
 
-    # 각 병렬 작업 결과 처리
-    query_embedding_vector: Union[List[float], np.ndarray, None] = None # RAG 검색에 사용할 임베딩 결과 저장 변수
-    routing_info_result: Optional[Dict] = None # 라우팅 결과 저장 변수
+    query_embedding_vector: Union[List[float], np.ndarray, None] = None
+    routing_info_result: Optional[Dict] = None
 
     for i, task_result in enumerate(parallel_results_list):
         task_name = parallel_task_keys[i]
@@ -184,52 +181,43 @@ async def run_parallel_tasks(
         duration = time.time() - start_time if start_time else 0
 
         if isinstance(task_result, Exception):
-            # 작업 실행 중 예외 발생
-            logger.error(f"Task '{task_name}' failed after {duration:.3f}s with Exception: {task_result}", exc_info=(logger.getEffectiveLevel() <= logging.DEBUG)) # DEBUG 레벨일 때만 스택 트레이스 로깅
-            # 실패 시 final_results에는 해당 키의 값은 초기값(None 또는 []) 유지
-            # routing_info는 실패 시 fallback 처리 필요
+            logger.error(f"Task '{task_name}' failed after {duration:.3f}s with Exception: {task_result}", exc_info=(logger.getEffectiveLevel() <= logging.DEBUG))
             if task_name == "routing_info":
-                 routing_info_result = None # 실패 표시
-            # 임베딩 실패 시 query_embedding_vector는 None 유지
+                routing_info_result = None
         else:
-            # 작업 성공
             logger.info(f"Task '{task_name}' completed successfully in {duration:.3f}s.")
-            # 성공 결과를 final_results 딕셔너리에 저장
             if task_name == "slots":
                 final_results["slots"] = task_result
             elif task_name == "routing_info":
-                routing_info_result = task_result # 임시 변수에 저장 (None일 수 있음)
+                routing_info_result = task_result
             elif task_name == "query_embedding":
-                query_embedding_vector = task_result # 임베딩 결과 저장
+                query_embedding_vector = task_result
 
-    # 라우팅 결과 최종 처리 (실패 시 fallback 적용)
-    if routing_info_result is None: # 작업 자체가 실패했거나, 내부 로직에서 None 반환한 경우
+    # --- 라우팅 결과 최종 처리 (실패 시 fallback 적용) ---
+    if routing_info_result is None:
         logger.warning("Routing info task failed or returned None. Applying default routing.")
+        # 이제 config는 이미 로드되어 있으므로 바로 사용 가능
         try:
-            config = get_config() # 설정 다시 로드 (안전 차원)
+            # config = get_config() # <- 이 줄 제거!
             default_model = config.get('model_router', {}).get('routing_map', {}).get('easy', 'gpt-3.5-turbo')
             final_results['routing_info'] = {"level": "easy", "model": default_model, "cot_data": None}
-        except Exception as conf_e:
-             logger.error(f"Failed to get default routing model from config: {conf_e}. Using hardcoded default.")
-             final_results['routing_info'] = {"level": "easy", "model": 'gpt-3.5-turbo', "cot_data": None}
-    else: # 성공 결과 저장
+        except Exception as conf_e: # config 접근 시 오류 발생 가능성 대비
+            logger.error(f"Failed to get default routing model from already loaded config: {conf_e}. Using hardcoded default.")
+            final_results['routing_info'] = {"level": "easy", "model": 'gpt-3.5-turbo', "cot_data": None}
+    else:
         final_results['routing_info'] = routing_info_result
 
-
     # --- 3. RAG 검색 실행 (순차적 실행: 쿼리 임베딩 필요) ---
-    # 쿼리 임베딩 생성에 성공하고, RAG 검색기가 유효할 때만 실행
     if query_embedding_vector is not None and rag_searcher is not None:
         logger.info("Query embedding generated, proceeding with RAG search task...")
         try:
-            # config에서 검색할 k값 읽기
+            # config에서 검색할 k값 읽기 (이제 config 변수 사용 가능)
             rag_k = config.get('rag', {}).get('retrieval_k', 3) # 기본값 3
             if not isinstance(rag_k, int) or rag_k <= 0:
-                 logger.warning(f"Invalid 'retrieval_k' value ({rag_k}) in config. Using default k=3.")
-                 rag_k = 3
+                logger.warning(f"Invalid 'retrieval_k' value ({rag_k}) in config. Using default k=3.")
+                rag_k = 3
 
-            # RAG 검색 비동기 함수 호출 (내부에서 run_in_executor 사용)
             rag_search_start_time = time.time()
-            # run_rag_search_async 함수는 실패 시 빈 리스트 반환 보장
             final_results['rag_results'] = await run_rag_search_async(
                 query_embedding=query_embedding_vector,
                 k=rag_k,
@@ -238,25 +226,21 @@ async def run_parallel_tasks(
             rag_search_duration = time.time() - rag_search_start_time
             logger.info(f"RAG search task finished in {rag_search_duration:.3f}s. Found {len(final_results['rag_results'])} results.")
 
-        except Exception as e:
-            # run_rag_search_async 호출 자체의 오류 (거의 발생 안 함)
+        except Exception as e: # run_rag_search_async 호출 자체의 오류 (거의 발생 안 함)
             logger.error(f"Unexpected error initiating or awaiting RAG search task: {e}", exc_info=True)
             final_results['rag_results'] = [] # 오류 시 빈 결과
 
     else:
-        # RAG 검색 건너뛰는 경우 로깅
         if query_embedding_vector is None:
             logger.warning("Skipping RAG search because query embedding generation failed or returned None.")
         if rag_searcher is None:
             logger.warning("Skipping RAG search because RagSearcher instance is not available.")
-        # final_results['rag_results']는 이미 []로 초기화되어 있음
 
     # --- 4. 최종 결과 반환 ---
     end_time_scheduler = time.time()
     total_duration = end_time_scheduler - start_time_scheduler
     logger.info(f"--- Scheduler Finished All Tasks in {total_duration:.3f} seconds ---")
 
-    # DEBUG 레벨에서 최종 결과 요약 로깅
     if logger.getEffectiveLevel() <= logging.DEBUG:
         summary_log = {
             "slots_found": bool(final_results.get("slots")),

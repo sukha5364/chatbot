@@ -5,6 +5,7 @@ import json
 from typing import List, Dict, Optional
 import numpy as np
 import logging
+import time
 
 # --- 필요한 라이브러리 임포트 ---
 try:

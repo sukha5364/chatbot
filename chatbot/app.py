@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import aiohttp
+from datetime import datetime
 
 # --- 필요한 모듈 임포트 ---
 try:

@@ -1,0 +1,301 @@
+[2025-05-02 17:33:24] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250502_1733.txt
+================================================================================
+[2025-05-02 17:33:35] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T17:33:35.792
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 11
+================================================================================
+
+================================================================================
+[2025-05-02 17:33:36] [INFO] - Embedding success from text-embedding-3-large. Tokens: 14
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T17:33:35.792
+Response TS: 2025-05-02T17:33:36.480
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 14 / ? / 14
+================================================================================
+
+================================================================================
+[2025-05-02 17:33:36] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T17:33:36.494
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 나이키 신발 추천해줘...
+================================================================================
+
+================================================================================
+[2025-05-02 17:33:37] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1229
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T17:33:36.494
+Response TS: 2025-05-02T17:33:37.949
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSg7teSZHJ4ZQPeyM2M2h37Y6VVHM
+  Choices Count  : 1
+  Usage (P/C/T)  : 1109 / 120 / 1229
+  Content Preview: 물론입니다, 나이키 제품 중 가격 대비 품질이 뛰어나며 편안한 착용감을 제공하는 '나이키 DC3728-003'을 추천드립니다. 사용자 리뷰에서 ...
+================================================================================
+
+================================================================================
+[2025-05-02 17:33:37] [INFO] - Sending ChatCompletion request to gpt-4 (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T17:33:37.952
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Messages Preview: System: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입... User: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입...
+================================================================================
+
+================================================================================
+[2025-05-02 17:33:46] [INFO] - ChatCompletion success from gpt-4. Tokens: 799
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T17:33:37.952
+Response TS: 2025-05-02T17:33:46.567
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSg7uTGfmYn3f3kNPQT8s9HZOMx7o
+  Choices Count  : 1
+  Usage (P/C/T)  : 654 / 145 / 799
+  Content Preview: 사용자가 나이키 신발에 대한 추천을 요청하였고, AI는 가격 대비 품질이 뛰어나며 편안한 착용감을 제공하는 '나이키 DC3728-003'을 추천...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:02] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T17:34:02.242
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 52
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:03] [INFO] - Embedding success from text-embedding-3-large. Tokens: 63
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T17:34:02.242
+Response TS: 2025-05-02T17:34:02.962
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 63 / ? / 63
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:03] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T17:34:03.241
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 나 나이키 신발보단 데카트론이 좋더라 나이키 에어포스 신었는데 비슷한 데카트론 신발이 없을...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:04] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 859
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T17:34:03.241
+Response TS: 2025-05-02T17:34:04.652
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSg8KdIMjArvCaXGD4P2HUPJdIR0T
+  Choices Count  : 1
+  Usage (P/C/T)  : 757 / 102 / 859
+  Content Preview: 데카트론의 남성 운동화 CJ80은 현재 저희가 판매 중인 제품이며, 나이키 에어 포스 1과 유사한 스타일과 품질을 제공합니다. 혹시 CJ80에 ...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:04] [INFO] - Sending ChatCompletion request to gpt-4 (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T17:34:04.658
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Messages Preview: System: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입... User: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:17] [INFO] - ChatCompletion success from gpt-4. Tokens: 1265
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T17:34:04.658
+Response TS: 2025-05-02T17:34:17.385
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSg8Ld1ekG6wx3op1I7eQ7ZUKSIZs
+  Choices Count  : 1
+  Usage (P/C/T)  : 963 / 302 / 1265
+  Content Preview: 사용자는 처음에 나이키 신발에 대한 추천을 요청하였고, AI는 가격 대비 품질이 뛰어나며 편안한 착용감을 제공하는 '나이키 DC3728-003'...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:32] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T17:34:32.989
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 17
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:33] [INFO] - Embedding success from text-embedding-3-large. Tokens: 21
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T17:34:32.989
+Response TS: 2025-05-02T17:34:33.444
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 21 / ? / 21
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:33] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T17:34:33.580
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 내가 어떤 신발 신는다고 했지?...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:35] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1443
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T17:34:33.580
+Response TS: 2025-05-02T17:34:35.020
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSg8oTYTHSQCNX2ULj2nBeDnVjcCK
+  Choices Count  : 1
+  Usage (P/C/T)  : 1345 / 98 / 1443
+  Content Preview: 당신은 나이키 신발을 선호한다고 말씀하셨습니다. 그러나 데카트론의 남성 운동화 CJ80을 추천해 드렸습니다. 해당 제품은 나이키 에어포스 1과 ...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:35] [INFO] - Sending ChatCompletion request to gpt-4 (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T17:34:35.025
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Messages Preview: System: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입... User: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입...
+================================================================================
+
+================================================================================
+[2025-05-02 17:34:51] [INFO] - ChatCompletion success from gpt-4. Tokens: 1631
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T17:34:35.025
+Response TS: 2025-05-02T17:34:51.226
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSg8pUkeFHTQHOrpFEpOFOY9JmVH8
+  Choices Count  : 1
+  Usage (P/C/T)  : 1243 / 388 / 1631
+  Content Preview: 사용자는 처음에 나이키 신발에 대한 추천을 요청하였고, AI는 가격 대비 품질이 뛰어나며 편안한 착용감을 제공하는 '나이키 DC3728-003'...
+================================================================================
+

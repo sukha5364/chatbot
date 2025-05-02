@@ -1,0 +1,301 @@
+[2025-05-02 18:07:33] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250502_1807.txt
+================================================================================
+[2025-05-02 18:07:45] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T18:07:45.765
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 27
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:47] [INFO] - Embedding success from text-embedding-3-large. Tokens: 28
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T18:07:45.765
+Response TS: 2025-05-02T18:07:46.733
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 28 / ? / 28
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:47] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T18:07:47.059
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 안녕 난 나이키 신발을 신고 있어 이름은 에어포스...
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:48] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 993
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T18:07:47.059
+Response TS: 2025-05-02T18:07:48.543
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSgeygbPit3hJklGheNJuZqgYyKB4
+  Choices Count  : 1
+  Usage (P/C/T)  : 912 / 81 / 993
+  Content Preview: 안녕하세요. 나이키 신발 '에어 포스'를 신고 계시군요. 어떤 제품인지 정확한 모델명이나 특징을 알려주시면 도움을 드릴 수 있을 것 같습니다....
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:48] [INFO] - Sending ChatCompletion request to gpt-4 (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T18:07:48.545
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Messages Preview: System: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입... User: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입...
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:53] [INFO] - ChatCompletion success from gpt-4. Tokens: 732
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T18:07:48.545
+Response TS: 2025-05-02T18:07:53.580
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSgezlna60wSLMOJaB2nwQqczjM6G
+  Choices Count  : 1
+  Usage (P/C/T)  : 627 / 105 / 732
+  Content Preview: 사용자는 자신이 현재 신고 있는 나이키의 '에어포스' 신발에 대해 언급하였다. AI는 사용자에게 해당 제품의 정확한 모델명이나 특징에 대한 정보...
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:55] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T18:07:55.643
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 29
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:56] [INFO] - Embedding success from text-embedding-3-large. Tokens: 33
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T18:07:55.643
+Response TS: 2025-05-02T18:07:56.378
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 33 / ? / 33
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:56] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T18:07:56.657
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 이 신발과 비슷한 데카트론 신발을 추천해줄 수 있을까...
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:57] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 645
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T18:07:56.657
+Response TS: 2025-05-02T18:07:57.857
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSgf7sgwOmw29ht8NeDkND776jvwd
+  Choices Count  : 1
+  Usage (P/C/T)  : 548 / 97 / 645
+  Content Preview: 죄송하지만, 데카트론의 제품 중에서 사용자가 언급한 나이키 '에어포스'와 유사한 제품은 없습니다. 현재 제공된 정보로는 해당 제품과 유사한 데카...
+================================================================================
+
+================================================================================
+[2025-05-02 18:07:57] [INFO] - Sending ChatCompletion request to gpt-4 (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T18:07:57.862
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Messages Preview: System: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입... User: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입...
+================================================================================
+
+================================================================================
+[2025-05-02 18:08:07] [INFO] - ChatCompletion success from gpt-4. Tokens: 1090
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T18:07:57.862
+Response TS: 2025-05-02T18:08:07.145
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSgf8m4ECX6RXX6BqURYb6O4bryBL
+  Choices Count  : 1
+  Usage (P/C/T)  : 862 / 228 / 1090
+  Content Preview: 사용자는 현재 신고 있는 나이키의 '에어포스' 신발에 대해 언급하였고, 이와 유사한 데카트론 신발을 추천해달라는 요청을 하였다. AI는 사용자에...
+================================================================================
+
+================================================================================
+[2025-05-02 18:08:10] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T18:08:10.673
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 20
+================================================================================
+
+================================================================================
+[2025-05-02 18:08:11] [INFO] - Embedding success from text-embedding-3-large. Tokens: 22
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-02T18:08:10.673
+Response TS: 2025-05-02T18:08:11.142
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 22 / ? / 22
+================================================================================
+
+================================================================================
+[2025-05-02 18:08:11] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T18:08:11.467
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 내가 어떤 신발을 신고 있다고 했지?...
+================================================================================
+
+================================================================================
+[2025-05-02 18:08:12] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1338
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-02T18:08:11.467
+Response TS: 2025-05-02T18:08:12.446
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSgfMqIocR76df2ReJTZ6cwlYUGgm
+  Choices Count  : 1
+  Usage (P/C/T)  : 1301 / 37 / 1338
+  Content Preview: 당신은 나이키의 '에어포스' 신발을 신고 있다고 말씀하셨습니다....
+================================================================================
+
+================================================================================
+[2025-05-02 18:08:12] [INFO] - Sending ChatCompletion request to gpt-4 (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T18:08:12.457
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Messages Preview: System: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입... User: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입...
+================================================================================
+
+================================================================================
+[2025-05-02 18:08:23] [INFO] - ChatCompletion success from gpt-4. Tokens: 1333
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-05-02T18:08:12.457
+Response TS: 2025-05-02T18:08:23.090
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BSgfNGzBuFAxcJos7EjLzworriYto
+  Choices Count  : 1
+  Usage (P/C/T)  : 1048 / 285 / 1333
+  Content Preview: 사용자는 현재 나이키의 '에어포스' 신발을 착용하고 있으며, 이와 유사한 데카트론 신발을 추천해달라는 요청을 하였다. AI는 사용자에게 해당 제...
+================================================================================
+

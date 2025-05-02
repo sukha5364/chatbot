@@ -1,0 +1,773 @@
+[2025-04-29 17:54:28] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250429_1754.txt
+[2025-04-29 17:54:35] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250429_1754.txt
+================================================================================
+[2025-04-29 17:54:38] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:38.828
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Messages Preview: System: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+...... User: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+......
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:38] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:54:38.830
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Messages Preview: System: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분... User: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:38] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:54:38.830
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 2
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:39] [ERROR] - ChatCompletion API Error (HTTP 400 Bad Request). Check payload/parameters.
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:54:38.830
+Response TS: 2025-04-29T17:54:39.254
+Status Code: 400
+
+--- Response Info ---
+  ID             : None
+  Choices Count  : 0
+  Content Preview: N/A
+
+--- Error Details ---
+  Type   : invalid_request_error
+  Code   : None
+  Param  : messages
+  Message: 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.
+
+--- Failed Prompt (DEBUG Level Only) ---
+  (Set log level to DEBUG to view full failed prompt)
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:39] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 94
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:38.828
+Response TS: 2025-04-29T17:54:39.756
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb1cp7kCZwkip3msaH48Ig6ZvVEs
+  Choices Count  : 1
+  Usage (P/C/T)  : 46 / 48 / 94
+  Content Preview: 
+{
+  "Slot": {
+    "사용자 입력 문장": "다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘."...
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:40] [INFO] - Embedding success from text-embedding-3-large. Tokens: 4
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:54:38.830
+Response TS: 2025-04-29T17:54:39.754
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 4 / ? / 4
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:40] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:40.053
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 안녕...
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:40] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1026
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:40.053
+Response TS: 2025-04-29T17:54:40.836
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb1dwQDQGxtRf3TR1O3B2cruLbJf
+  Choices Count  : 1
+  Usage (P/C/T)  : 1001 / 25 / 1026
+  Content Preview: 안녕하세요! 어떤 도움을 드릴까요?...
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:54] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:54.183
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Messages Preview: System: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+...... User: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+......
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:54] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:54:54.185
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Messages Preview: System: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분... User: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:54] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:54:54.185
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 26
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:54] [ERROR] - ChatCompletion API Error (HTTP 400 Bad Request). Check payload/parameters.
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:54:54.185
+Response TS: 2025-04-29T17:54:54.578
+Status Code: 400
+
+--- Response Info ---
+  ID             : None
+  Choices Count  : 0
+  Content Preview: N/A
+
+--- Error Details ---
+  Type   : invalid_request_error
+  Code   : None
+  Param  : messages
+  Message: 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.
+
+--- Failed Prompt (DEBUG Level Only) ---
+  (Set log level to DEBUG to view full failed prompt)
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:55] [INFO] - Embedding success from text-embedding-3-large. Tokens: 33
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:54:54.185
+Response TS: 2025-04-29T17:54:54.960
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 33 / ? / 33
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:55] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 94
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:54.183
+Response TS: 2025-04-29T17:54:55.338
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb1rLGkJ6zUmLVON63cT6TZ3hoSL
+  Choices Count  : 1
+  Usage (P/C/T)  : 46 / 48 / 94
+  Content Preview: 
+{
+  "Slot": {
+    "사용자 입력 문장": "다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘."...
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:55] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:55.354
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 나 런닝 하고 싶은데 관련 제품 추천해줘 ㅠㅠㅠ...
+================================================================================
+
+================================================================================
+[2025-04-29 17:54:57] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1267
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:54:55.354
+Response TS: 2025-04-29T17:54:57.160
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb1sItQuySUIlgdPIXjI7DpXip9r
+  Choices Count  : 1
+  Usage (P/C/T)  : 1135 / 132 / 1267
+  Content Preview: 저희 데카트론 코리아에서는 여러 제품 중에서 남성 7인치 러닝 쇼츠를 추천드립니다. 이 제품은 가볍고 통기성이 우수하며, 스마트폰 및 열쇠 수납...
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:48] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:55:48.072
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Messages Preview: System: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+...... User: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+......
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:48] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:55:48.074
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Messages Preview: System: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분... User: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:48] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:55:48.074
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 42
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:48] [ERROR] - ChatCompletion API Error (HTTP 400 Bad Request). Check payload/parameters.
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:55:48.074
+Response TS: 2025-04-29T17:55:48.469
+Status Code: 400
+
+--- Response Info ---
+  ID             : None
+  Choices Count  : 0
+  Content Preview: N/A
+
+--- Error Details ---
+  Type   : invalid_request_error
+  Code   : None
+  Param  : messages
+  Message: 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.
+
+--- Failed Prompt (DEBUG Level Only) ---
+  (Set log level to DEBUG to view full failed prompt)
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:49] [INFO] - Embedding success from text-embedding-3-large. Tokens: 41
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:55:48.074
+Response TS: 2025-04-29T17:55:48.725
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 41 / ? / 41
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:49] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 94
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:55:48.072
+Response TS: 2025-04-29T17:55:49.085
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb2jioUXzBcdsfy6lmPLMhxgmhIp
+  Choices Count  : 1
+  Usage (P/C/T)  : 46 / 48 / 94
+  Content Preview: 
+{
+  "Slot": {
+    "사용자 입력 문장": "다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘."...
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:49] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:55:49.095
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 비오는데 좋고 발볼이 좀 넒고, 재고가 있는 제품으로 추천을 해줬으면 좋겠어...
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:50] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1339
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:55:49.095
+Response TS: 2025-04-29T17:55:50.601
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb2kH90QAwOz1sn5BkVoa0Jw49FJ
+  Choices Count  : 1
+  Usage (P/C/T)  : 1222 / 117 / 1339
+  Content Preview: 비오는 날씨에 적합하고 발볼이 넓은 제품으로 데카트론 Van Rysel 남성 로드 자전거 방수 경량 레인 재킷 ROADR900을 추천드립니다. ...
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:50] [INFO] - Sending ChatCompletion request to gpt-4 (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-04-29T17:55:50.606
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Messages Preview: System: 다음은 이전 대화 요약과 최근 대화 기록입니다. 전체 대화의 핵심 내용을 반영하여 500 ... User: 다음은 이전 대화 요약과 최근 대화 기록입니다. 전체 대화의 핵심 내용을 반영하여 500 ...
+================================================================================
+
+================================================================================
+[2025-04-29 17:55:53] [INFO] - ChatCompletion success from gpt-4. Tokens: 153
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4
+Request TS : 2025-04-29T17:55:50.606
+Response TS: 2025-04-29T17:55:53.892
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb2lgWruWTS5KEml8Ed1UWKufXpV
+  Choices Count  : 1
+  Usage (P/C/T)  : 86 / 67 / 153
+  Content Preview: 죄송합니다, 이전 대화 요약과 최근 대화 기록이 제공되지 않았습니다. 해당 정보를 제공해주시면 업데이트된 요약을 작성하는 데 도움이 될 것입니다...
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:39] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:56:39.793
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Messages Preview: System: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+...... User: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+......
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:39] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:56:39.794
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Messages Preview: System: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분... User: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:39] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:56:39.794
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 41
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:40] [ERROR] - ChatCompletion API Error (HTTP 400 Bad Request). Check payload/parameters.
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:56:39.794
+Response TS: 2025-04-29T17:56:40.202
+Status Code: 400
+
+--- Response Info ---
+  ID             : None
+  Choices Count  : 0
+  Content Preview: N/A
+
+--- Error Details ---
+  Type   : invalid_request_error
+  Code   : None
+  Param  : messages
+  Message: 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.
+
+--- Failed Prompt (DEBUG Level Only) ---
+  (Set log level to DEBUG to view full failed prompt)
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:40] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 70
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:56:39.793
+Response TS: 2025-04-29T17:56:40.561
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb3Z5iLCL9OV9rNHPmhU2WQXyh2d
+  Choices Count  : 1
+  Usage (P/C/T)  : 46 / 24 / 70
+  Content Preview: 
+{
+  "Slot": {
+    "SlotType": "사용자 입력 문장"
+  }
+}...
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:40] [INFO] - Embedding success from text-embedding-3-large. Tokens: 42
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:56:39.794
+Response TS: 2025-04-29T17:56:40.317
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 42 / ? / 42
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:40] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:56:40.607
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 나이키 에어 포스 신고 있는데 이거하고 가장 비슷한 데카트론 제품을 뭘까?...
+================================================================================
+
+================================================================================
+[2025-04-29 17:56:42] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1275
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:56:40.607
+Response TS: 2025-04-29T17:56:42.807
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb3ZMmRcC5pmUDeUeKwrxrwUq0Cx
+  Choices Count  : 1
+  Usage (P/C/T)  : 1125 / 150 / 1275
+  Content Preview: 데카트론의 제품 중에서 나이키 에어 포스와 비슷한 제품은 '데카트론 댄스 퍼포먼스 운동화'일 것으로 예상됩니다. 이 제품은 댄스 퍼포먼스에 최적...
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:50] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:58:50.360
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Messages Preview: System: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+...... User: 다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘.
+......
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:50] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:58:50.361
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Messages Preview: System: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분... User: 사용자 질문의 복잡도를 분석하여 "easy", "medium", "hard" 중 하나로 분...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:50] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:58:50.361
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 16
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:50] [ERROR] - ChatCompletion API Error (HTTP 400 Bad Request). Check payload/parameters.
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-04-29T17:58:50.361
+Response TS: 2025-04-29T17:58:50.787
+Status Code: 400
+
+--- Response Info ---
+  ID             : None
+  Choices Count  : 0
+  Content Preview: N/A
+
+--- Error Details ---
+  Type   : invalid_request_error
+  Code   : None
+  Param  : messages
+  Message: 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.
+
+--- Failed Prompt (DEBUG Level Only) ---
+  (Set log level to DEBUG to view full failed prompt)
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:51] [INFO] - Embedding success from text-embedding-3-large. Tokens: 19
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-04-29T17:58:50.361
+Response TS: 2025-04-29T17:58:50.893
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 19 / ? / 19
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:51] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 94
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:58:50.360
+Response TS: 2025-04-29T17:58:51.660
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb5ffnSDpeikhGWMX5gTUQJMtLhZ
+  Choices Count  : 1
+  Usage (P/C/T)  : 46 / 48 / 94
+  Content Preview: 
+{
+  "Slot": {
+    "사용자 입력 문장": "다음 사용자 입력 문장에서 아래 정의된 Slot 정보를 JSON 형식으로 추출해줘."...
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:51] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:58:51.670
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 내가 이전에 물어봤던게 뭐야?...
+================================================================================
+
+================================================================================
+[2025-04-29 17:58:52] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1416
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-04-29T17:58:51.670
+Response TS: 2025-04-29T17:58:52.929
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BRb5gJDPP1dpamLH9aIbJoX4GJTUL
+  Choices Count  : 1
+  Usage (P/C/T)  : 1333 / 83 / 1416
+  Content Preview: 죄송합니다, 이전 대화 요약과 최근 대화 기록이 제공되지 않아서 이전에 물어보신 내용을 확인할 수 없습니다. 어떤 문제가 있으셨는지 다시 말씀해...
+================================================================================
+
