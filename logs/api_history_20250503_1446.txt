@@ -1,0 +1,2 @@
+[2025-05-03 14:46:01] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250503_1446.txt
+[2025-05-03 14:46:16] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250503_1446.txt
