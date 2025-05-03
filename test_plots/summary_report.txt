@@ -1,0 +1,36 @@
+--- Chatbot Test Results Summary Report ---
+Report Generated On : 2025-05-03 15:13:17
+Input Result Files  : tests/test_results/test_run_overall_set1_20250503_150718.jsonl
+Total Test Cases    : 100
+
+--- Average Latency (seconds, successful runs) ---
+Mode 1: 2.6800 (from 100 successful runs)
+Mode 2: 2.5052 (from 100 successful runs)
+Mode 3: 7.7452 (from 53 successful runs)
+
+--- Success Rate (%) ---
+Mode 1: 100.00%
+Mode 2: 100.00%
+Mode 3: 53.00%
+
+--- Average Response Length (characters, successful runs) ---
+Mode 1: 227.6
+Mode 2: 218.8
+Mode 3: 148.3
+
+--- Mode 3 Satisfaction Evaluation (Overall Score 1-5) ---
+  Average : 3.92
+  Median  : 4.00
+  Std Dev : 0.70
+  Min Score: 2
+  Max Score: 5
+  Evaluated Count: 50 / 100
+
+--- Mode 3 Model Usage Distribution ---
+  - Unknown: 47.0%
+  - gpt-3.5-turbo: 25.0%
+  - gpt-4: 19.0%
+  - gpt-4o: 9.0%
+
+Mode 3 CoT Usage Rate : 25.0%
+Mode 3 Average RAG Chunks Found : 1.6

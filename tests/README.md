@@ -42,15 +42,20 @@ python tests/test_generator.py
 
 프로젝트 루트 디렉토리에서 아래 형식의 명령어를 사용하여 테스트를 실행합니다. `-m` 옵션을 사용하여 모듈로 실행하는 것이 좋습니다.
 
+VS Code를 이용해 실행하고 있다면 VS Code의 Pylance 임포트 과정에서 문제가 발생할 수 있습니다.
+(예시 : Import 'config_loader' could not be resolved / Import 'gpt_interface' could not be resolved)
+이를 해결하기 위해 .vscode 파일 안의 settings.json 파일을 통해 Pylance 문제를 해결하고 있으므로 이 경우에는 .vscode 파일을 제거해서는 안 됩니다.
+그렇지 않은 경우는 제거해도 무관합니다.
+
 ```bash
 # 기능 테스트 실행 예시
-python -m tests.test_runner --test-type function
+python tests/test_runner.py --test-type function
 
 # 전체 테스트 세트 1번 실행 예시
-python -m tests.test_runner --test-type overall --set 1
+python tests/test_runner.py --test-type overall --set 1
 
 # 전체 테스트 세트 2번을 동시 요청 10개로 실행 예시
-python -m tests.test_runner --test-type overall --set 2 --concurrency 10
+python tests/test_runner.py --test-type overall --set 2 --concurrency 10
 ```
 
 **명령줄 인자:**

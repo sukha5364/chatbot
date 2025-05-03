@@ -1,30 +1,30 @@
-{"question": "나는 20대 남자인데, 데카트론에서 헬스용으로 5만원 근처 가격대의 침낭를 찾고 있어. 어떤 게 좋을까?", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "데카트론 뉴페일 매장 전화번호 알려줘.", "test_difficulty": "basic", "template_type": "decathlon_specific"}
-{"question": "데카트론 등산화 사용법 알려줘.", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "가장 인기 있는 데카트론 수영복 제품 추천해줘. 내구성 강한 기능이 있으면 좋겠어.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "영업시간이 어떻게 되나요?", "test_difficulty": "basic", "template_type": "general_faq"}
-{"question": "뉴페일 바지 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "돔요스 등산화 XS 재고 있어?", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "돔요스 배낭 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "포클라즈 배낭 265 재고 있어?", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "온라인 주문 배송 얼마나 걸려요?", "test_difficulty": "basic", "template_type": "general_faq"}
-{"question": "포클라즈 스포츠 양말 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "가장 인기 있는 데카트론 러닝화 제품 추천해줘. 빠르게 마르는 기능이 있으면 좋겠어.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "데카트론 침낭 285 재고 확인해줘.", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "데카트론 아식스 매장 전화번호 알려줘.", "test_difficulty": "basic", "template_type": "decathlon_specific"}
-{"question": "발볼이 보통 편인데 아르텡고 신발 괜찮을까요? 주로 실내에서 신을 거야.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "발볼이 넓은 편인데 돔요스 신발 괜찮을까요? 주로 도심에서 신을 거야.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "칼렌지 축구화 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "K2 260mm 신는데 데카트론 등산화는 어떤 사이즈 신어야해?", "test_difficulty": "advanced", "template_type": "comparison"}
-{"question": "데카트론 러닝화 L 재고 확인해줘.", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "가장 인기 있는 데카트론 자켓 제품 추천해줘. 내구성 강한 기능이 있으면 좋겠어.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "지난 번 데카트론에서 구매한 자켓에 사용법을 모르겠어 문제가 발생했어. 어떻게 해결해야 할까?", "test_difficulty": "advanced", "template_type": "general_faq"}
-{"question": "아디다스 침낭 285 재고 있어?", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "데카트론 수영복 XL 재고 확인해줘.", "test_difficulty": "basic", "template_type": "generic_product"}
-{"question": "겨울철 등산에 적합한 데카트론 수영복를 찾는데, 내구성 강한 기능이랑 신축성 있는 기능 둘 다 중요해. 어떤 제품이 좋을지 이유와 함께 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "가장 인기 있는 데카트론 수영복 제품 추천해줘. 방수되는 기능이 있으면 좋겠어.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "노스페이스 자켓랑 데카트론 스포츠 양말 비교해줘.", "test_difficulty": "advanced", "template_type": "comparison"}
-{"question": "가장 인기 있는 데카트론 텐트 제품 추천해줘. 방수되는 기능이 있으면 좋겠어.", "test_difficulty": "advanced", "template_type": "generic_product"}
-{"question": "퀘차 요가 매트랑 데카트론 등산화 비교해줘.", "test_difficulty": "advanced", "template_type": "comparison"}
-{"question": "지난 번 데카트론에서 구매한 요가 매트에 사용법을 모르겠어 문제가 발생했어. 어떻게 해결해야 할까?", "test_difficulty": "advanced", "template_type": "general_faq"}
-{"question": "겨울철 캠핑에 적합한 데카트론 텐트를 찾는데, 방수되는 기능이랑 미끄럼 방지 기능 둘 다 중요해. 어떤 제품이 좋을지 이유와 함께 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product"}
+{"question": "포클라즈 침낭 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"brand": "포클라즈", "category": "침낭"}}
+{"question": "데카트론 퀘차 매장 전화번호 알려줘.", "test_difficulty": "basic", "template_type": "decathlon_specific", "generation_params": {"brand": "퀘차"}}
+{"question": "가까운 데카트론 매장 위치 알려줘.", "test_difficulty": "basic", "template_type": "decathlon_specific", "generation_params": {}}
+{"question": "오라오 러닝화 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product", "generation_params": {"product_category": "러닝화", "brand": "오라오"}}
+{"question": "지난 번 데카트론에서 구매한 배낭에 배송이 안 와 문제가 발생했어. 어떻게 해결해야 할까?", "test_difficulty": "advanced", "template_type": "general_faq", "generation_params": {"product_category": "배낭", "problem": "배송이 안 와"}}
+{"question": "푸마 등산화랑 데카트론 배낭 비교해줘.", "test_difficulty": "advanced", "template_type": "comparison", "generation_params": {"product_category": "등산화", "brand": "푸마", "product_category2": "배낭"}}
+{"question": "뉴페일 자전거 의류 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"brand": "뉴페일", "category": "자전거 의류"}}
+{"question": "나는 20대 여성인데, 데카트론에서 등산용으로 가성비 좋은 가격대의 등산화를 찾고 있어. 어떤 게 좋을까?", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"budget": "가성비 좋은", "activity": "등산", "product_category": "등산화", "age_group": "20대", "gender": "여성"}}
+{"question": "데카트론 트레킹화 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product", "generation_params": {"product_category": "트레킹화", "brand": "데카트론"}}
+{"question": "나는 30대 남성인데, 데카트론에서 일상용으로 10만원대 가격대의 스포츠 양말를 찾고 있어. 어떤 게 좋을까?", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"budget": "10만원대", "activity": "일상", "product_category": "스포츠 양말", "age_group": "30대", "gender": "남성"}}
+{"question": "가장 인기 있는 데카트론 요가 매트 제품 추천해줘. 내구성 강한 기능이 있으면 좋겠어.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"category": "요가 매트", "feature": "내구성 강한"}}
+{"question": "발볼이 아주 넓은 편인데 포클라즈 신발 괜찮을까요? 주로 트레일에서 신을 거야.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"brand": "포클라즈", "environment": "트레일", "foot_width": "아주 넓은"}}
+{"question": "겨울철 축구에 적합한 데카트론 트레킹화를 찾는데, 방수되는 기능이랑 신축성 있는 기능 둘 다 중요해. 어떤 제품이 좋을지 이유와 함께 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"product_category": "트레킹화", "activity": "축구", "feature2": "신축성 있는", "feature": "방수되는"}}
+{"question": "영업시간이 어떻게 되나요?", "test_difficulty": "basic", "template_type": "general_faq", "generation_params": {}}
+{"question": "K2 축구화 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product", "generation_params": {"product_category": "축구화", "brand": "K2"}}
+{"question": "오라오 텐트 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product", "generation_params": {"product_category": "텐트", "brand": "오라오"}}
+{"question": "지난 번 데카트론에서 구매한 기능성 티셔츠에 환불하고 싶어 문제가 발생했어. 어떻게 해결해야 할까?", "test_difficulty": "advanced", "template_type": "general_faq", "generation_params": {"product_category": "기능성 티셔츠", "problem": "환불하고 싶어"}}
+{"question": "나이키 축구화랑 데카트론 기능성 티셔츠 비교해줘.", "test_difficulty": "advanced", "template_type": "comparison", "generation_params": {"product_category": "축구화", "brand": "나이키", "product_category2": "기능성 티셔츠"}}
+{"question": "칼렌지 100 신는데 데카트론 스포츠 양말는 어떤 사이즈 신어야해?", "test_difficulty": "advanced", "template_type": "comparison", "generation_params": {"product_category": "스포츠 양말", "size": "100", "brand": "칼렌지"}}
+{"question": "칼렌지 105 신는데 데카트론 등산화는 어떤 사이즈 신어야해?", "test_difficulty": "advanced", "template_type": "comparison", "generation_params": {"product_category": "등산화", "size": "105", "brand": "칼렌지"}}
+{"question": "아르텡고 기능성 티셔츠 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"brand": "아르텡고", "category": "기능성 티셔츠"}}
+{"question": "지난 번 데카트론에서 구매한 수영복에 사이즈가 안맞아 문제가 발생했어. 어떻게 해결해야 할까?", "test_difficulty": "advanced", "template_type": "general_faq", "generation_params": {"product_category": "수영복", "problem": "사이즈가 안맞아"}}
+{"question": "발볼이 좁은 편인데 칼렌지 신발 괜찮을까요? 주로 우천 시에서 신을 거야.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"brand": "칼렌지", "environment": "우천 시", "foot_width": "좁은"}}
+{"question": "발볼이 아주 넓은 편인데 데카트론 신발 괜찮을까요? 주로 강에서 신을 거야.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"brand": "데카트론", "environment": "강", "foot_width": "아주 넓은"}}
+{"question": "칼렌지 스포츠 양말 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product", "generation_params": {"product_category": "스포츠 양말", "brand": "칼렌지"}}
+{"question": "나는 성인 남자인데, 데카트론에서 낚시용으로 20만원 미만 가격대의 러닝화를 찾고 있어. 어떤 게 좋을까?", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"budget": "20만원 미만", "activity": "낚시", "product_category": "러닝화", "age_group": "성인", "gender": "남자"}}
+{"question": "데카트론 멤버십 혜택 뭐에요?", "test_difficulty": "basic", "template_type": "decathlon_specific", "generation_params": {}}
+{"question": "킵런 텐트 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘.", "test_difficulty": "advanced", "template_type": "generic_product", "generation_params": {"brand": "킵런", "category": "텐트"}}
+{"question": "퀘차 바지 중에 제일 싼 거 뭐야?", "test_difficulty": "basic", "template_type": "generic_product", "generation_params": {"product_category": "바지", "brand": "퀘차"}}
+{"question": "데카트론 반품 정책 알려줘.", "test_difficulty": "basic", "template_type": "decathlon_specific", "generation_params": {}}

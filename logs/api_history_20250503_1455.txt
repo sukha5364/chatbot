@@ -1,0 +1,2 @@
+[2025-05-03 14:55:42] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\user\Desktop\git\logs\api_history_20250503_1455.txt
+[2025-05-03 14:55:50] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\user\Desktop\git\logs\api_history_20250503_1455.txt
