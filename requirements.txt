@@ -1,4 +1,4 @@
-# requirements.txt (최신화 버전)
+# requirements.txt (Tool Use 적용 및 의존성 검토 버전)
 
 # --- Core Web Framework ---
 fastapi
@@ -14,14 +14,14 @@ tenacity       # 재시도 로직 (pipeline/rag_generator.py 에서 사용)
 
 # --- OpenAI & LLMs ---
 openai         # OpenAI 공식 라이브러리
-tiktoken       # 토큰 계산 및 Langchain Splitter 사용
+# tiktoken       # [제거 검토] Langchain Splitter 의존성 제거로 인해 불필요할 수 있음 (토큰 수 계산 등 다른 용도 확인 필요)
 
 # --- RAG Components ---
-langchain      # Text Splitting 등 유틸리티 (CharacterTextSplitter 사용)
+# langchain      # [제거 검토] Text Splitting 등 유틸리티 (현재 제품 블록 기반 청킹 사용으로 불필요할 수 있음)
 faiss-cpu      # 벡터 데이터베이스 (CPU 버전, GPU 사용 시 faiss-gpu 설치)
 numpy          # FAISS 및 기타 수치 연산 의존성
 
-# --- Testing & Visualization ---
+# --- Testing & Visualization (현재 수정 대상 아님) ---
 pandas         # 데이터 처리 (visualize_results.py)
 matplotlib     # 데이터 시각화 (visualize_results.py)
 seaborn        # 데이터 시각화 (visualize_results.py)

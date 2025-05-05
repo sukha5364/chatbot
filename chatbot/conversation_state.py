@@ -1,7 +1,8 @@
-# chatbot/conversation_state.py (요구사항 반영 최종본: Docstring 및 주석 보강)
+# chatbot/conversation_state.py (백그라운드 업데이트 완료 Event 추가)
 
 import logging
-from typing import Dict, Any, Optional, List # List 임포트 추가
+import asyncio # asyncio 임포트 추가
+from typing import Dict, Any, Optional, List
 
 # 로거 설정 (기본 설정 상속)
 logger = logging.getLogger(__name__)
@@ -11,23 +12,23 @@ class ConversationState:
     """
     단일 사용자 세션의 대화 상태를 인메모리에서 관리하는 클래스.
     추출된 Slot 정보, 대화 요약, 전체 대화 기록을 저장합니다.
+    [신규] 백그라운드 슬롯/요약 업데이트 완료를 위한 Event 객체를 포함합니다.
 
     Attributes:
-        slots (Dict[str, Any]): 추출된 Slot 정보를 저장하는 딕셔너리. (예: {'brand': '나이키', 'size': '270mm'})
-        summary (Optional[str]): 현재까지의 대화 요약 문자열. None일 수 있음.
-        history (List[Dict[str, str]]): 전체 대화 기록 리스트. 각 항목은 {"role": "user"|"assistant", "content": "..."} 형식.
-
-    Note:
-        이 클래스는 단일 사용자 및 단일 세션 환경에 적합합니다.
-        실제 다중 사용자 서비스 환경에서는 사용자별 세션 ID와 함께 Redis 같은
-        외부 저장소를 사용하여 대화 상태를 관리하는 것이 일반적입니다.
+        slots (Dict[str, Any]): 추출된 Slot 정보를 저장하는 딕셔너리.
+        summary (Optional[str]): 현재까지의 대화 요약 문자열.
+        history (List[Dict[str, str]]): 전체 대화 기록 리스트.
+        update_complete_event (asyncio.Event): 백그라운드 업데이트 작업 완료 시그널 이벤트.
     """
     def __init__(self):
         """ConversationState 인스턴스를 초기화합니다."""
-        self.slots: Dict[str, Any] = {}         # Slot 정보를 저장할 딕셔너리 초기화
-        self.summary: Optional[str] = None      # 대화 요약을 저장할 변수 초기화 (처음에는 None)
-        self.history: List[Dict[str, str]] = [] # 대화 기록을 저장할 리스트 초기화
-        logger.debug("ConversationState initialized.")
+        self.slots: Dict[str, Any] = {}
+        self.summary: Optional[str] = None
+        self.history: List[Dict[str, str]] = []
+        # [신규] 업데이트 완료 이벤트 객체 생성 및 초기 상태 '완료(set)'로 설정
+        self.update_complete_event = asyncio.Event()
+        self.update_complete_event.set() # 초기에는 업데이트가 완료된 상태
+        logger.debug("ConversationState initialized with update_complete_event set.")
 
     def update_slots(self, new_slots: Dict[str, Any]):
         """
@@ -35,26 +36,21 @@ class ConversationState:
 
         Args:
             new_slots (Dict[str, Any]): 새로 추출된 Slot 정보 딕셔너리.
-                                         키는 Slot 이름, 값은 추출된 값.
         """
         if not isinstance(new_slots, dict):
             logger.warning(f"Invalid type for new_slots: {type(new_slots)}. Expected dict. Skipping update.")
             return
 
         updated_keys = []
-        # 새로운 슬롯 정보를 순회하며 업데이트
         for key, value in new_slots.items():
-            # 값이 None이 아닌 경우에만 업데이트 (None 값은 무시)
-            # 또는 다른 정책 적용 가능 (예: None이면 기존 슬롯 삭제)
             if value is not None:
-                # 기존 값과 다를 경우에만 로그 기록 (선택 사항)
                 if key not in self.slots or self.slots[key] != value:
-                     updated_keys.append(key)
+                    updated_keys.append(key)
                 self.slots[key] = value
 
         if updated_keys:
-             logger.debug(f"Slots updated for keys: {updated_keys}")
-             # logger.debug(f"Current Slots: {self.slots}") # 디버깅 시 전체 슬롯 확인용
+            logger.debug(f"Slots updated for keys: {updated_keys}")
+            # logger.debug(f"Current Slots: {self.slots}") # 디버깅 시
 
     def get_slots(self) -> Dict[str, Any]:
         """
@@ -73,12 +69,11 @@ class ConversationState:
             summary (str): 새로 생성된 대화 요약 문자열.
         """
         if isinstance(summary, str):
-            self.summary = summary.strip() # 앞뒤 공백 제거 후 저장
+            self.summary = summary.strip()
             logger.debug(f"Conversation summary updated. New length: {len(self.summary)} chars.")
-            # logger.debug(f"Current Summary: {self.summary[:100]}...") # 디버깅 시 요약 내용 확인용
+            # logger.debug(f"Current Summary: {self.summary[:100]}...") # 디버깅 시
         else:
             logger.warning(f"Invalid type for summary: {type(summary)}. Expected str. Skipping update.")
-
 
     def get_summary(self) -> Optional[str]:
         """
@@ -94,10 +89,11 @@ class ConversationState:
         대화 내용을 기록(history)에 추가합니다.
 
         Args:
-            role (str): 메시지 발화자 역할 ('user' 또는 'assistant').
+            role (str): 메시지 발화자 역할 ('user' 또는 'assistant' 또는 'tool').
             content (str): 메시지 내용.
         """
-        if role not in ["user", "assistant"]:
+        # [수정] 'tool' 역할 추가 허용
+        if role not in ["user", "assistant", "tool"]:
             logger.warning(f"Invalid role '{role}' for history. Using 'unknown'.")
             role = "unknown"
         if not isinstance(content, str):
@@ -117,19 +113,22 @@ class ConversationState:
         return self.history
 
     def clear(self):
-        """모든 대화 상태(slots, summary, history)를 초기화합니다."""
+        """모든 대화 상태(slots, summary, history)를 초기화하고 업데이트 완료 상태로 설정합니다."""
         self.slots = {}
         self.summary = None
         self.history = []
-        logger.info("Conversation state (slots, summary, history) has been cleared.")
+        self.update_complete_event.set() # 초기화 시에도 완료 상태로 설정
+        logger.info("Conversation state (slots, summary, history) has been cleared and update_complete_event is set.")
 
-# --- 예시 사용법 (기존 유지, 로깅 확인용) ---
+# --- 예시 사용법 (변경 없음) ---
 if __name__ == "__main__":
     # 메인 스크립트로 실행 시 로깅 레벨 DEBUG 설정
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
     logger.info("--- Running ConversationState Example ---")
 
     state = ConversationState()
+    print(f"Initial update_complete_event state (should be set): {state.update_complete_event.is_set()}")
 
     # Slot 업데이트
     initial_slots = {"brand": "나이키", "size": "270mm", "foot_width": None}
@@ -155,10 +154,18 @@ if __name__ == "__main__":
     state.add_to_history("assistant", "네, 발볼이 넓으시군요. 데카트론 킵런 시리즈를 추천합니다.")
     print(f"Current History: {state.get_history()}")
 
-    # 상태 초기화
+    # 상태 초기화 및 이벤트 상태 확인
     logger.info("Clearing conversation state...")
     state.clear()
     print(f"Slots after clear: {state.get_slots()}")
     print(f"Summary after clear: {state.get_summary()}")
     print(f"History after clear: {state.get_history()}")
+    print(f"update_complete_event state after clear (should be set): {state.update_complete_event.is_set()}")
+
+    # 이벤트 상태 변경 시뮬레이션 (실제로는 app.py에서 제어)
+    state.update_complete_event.clear()
+    print(f"update_complete_event state after clear() (should be cleared): {state.update_complete_event.is_set()}")
+    state.update_complete_event.set()
+    print(f"update_complete_event state after set() (should be set): {state.update_complete_event.is_set()}")
+
     logger.info("--- ConversationState Example Finished ---")

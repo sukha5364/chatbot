@@ -1,4 +1,4 @@
-# chatbot/summarizer.py (요구사항 반영 최종본: 증분 요약 로직 개선)
+# chatbot/summarizer.py (기존 코드 유지 - 변경 없음)
 
 import json
 import logging
@@ -58,11 +58,9 @@ async def summarize_conversation_async(
         model = summarization_config.get('model')
         temperature = summarization_config.get('temperature')
         max_tokens = summarization_config.get('max_tokens')
-        target_summary_tokens = summarization_config.get('target_summary_tokens', 100)
+        target_summary_tokens = summarization_config.get('target_summary_tokens', 500) # 기본값 수정
         update_incrementally = summarization_config.get('update_summary_incrementally', True)
-        # [수정] 증분 업데이트 시 사용할 턴 수 읽기 (기본값 1 -> 최근 1턴(user+assist))
-        summarize_every_n = summarization_config.get('summarize_every_n_turns', 1)
-        # N값이 0 이하거나 너무 크면 기본값 사용 (예: 1)
+        summarize_every_n = summarization_config.get('summarize_every_n_turns', 1) # config 에서 읽어옴
         if not isinstance(summarize_every_n, int) or summarize_every_n <= 0:
             logger.warning(f"Invalid 'summarize_every_n_turns' value ({summarize_every_n}). Using default 1.")
             summarize_every_n = 1
@@ -81,7 +79,7 @@ async def summarize_conversation_async(
 
     logger.info(f"Attempting to summarize conversation history (Update Incrementally: {update_incrementally})...")
 
-    # --- [수정] 히스토리 및 이전 요약 준비 ---
+    # --- 히스토리 및 이전 요약 준비 ---
     history_for_prompt_str = ""
     summary_for_prompt = "N/A" # 기본값
 
@@ -115,7 +113,6 @@ async def summarize_conversation_async(
 
     if not history_for_prompt_str.strip():
         logger.warning("Formatted conversation history for prompt is empty.")
-        # 이 경우 요약을 시도하는 의미가 없을 수 있으므로 None 반환 또는 다른 처리
         return None
 
     # --- 프롬프트 생성 ---
@@ -123,7 +120,7 @@ async def summarize_conversation_async(
         # .format()으로 변수 주입
         prompt = prompt_template.format(
             conversation_history=history_for_prompt_str.strip(), # 포맷팅된 히스토리 전달
-            previous_summary=summary_for_prompt,           # 이전 요약 또는 "N/A" 전달
+            previous_summary=summary_for_prompt,             # 이전 요약 또는 "N/A" 전달
             target_summary_tokens=target_summary_tokens
         )
         logger.debug(f"Summarization prompt created. Length: {len(prompt)} chars.")
@@ -167,10 +164,11 @@ async def summarize_conversation_async(
         logger.error(f"An unexpected error occurred during summarization API call: {e}", exc_info=True)
         return None
 
-# --- 예시 사용법 (기존과 동일, 변경된 로직 테스트 가능) ---
+# --- 예시 사용법 (변경 없음) ---
 if __name__ == "__main__":
     import asyncio
     import os # os 임포트 추가 (getenv 사용)
+    import time # time 임포트 추가
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logger.info("--- Running summarizer.py as main script for testing ---")
@@ -184,52 +182,58 @@ if __name__ == "__main__":
             if not os.getenv("OPENAI_API_KEY"): raise ValueError("API Key not found")
             logger.info("Config and API Key seem available for summarizer test.")
         except Exception as e:
-             logger.error(f"Prerequisites missing for test: {e}")
-             return
+            logger.error(f"Prerequisites missing for test: {e}")
+            return
 
         # 테스트용 대화 기록
         test_history_short = [
             {"role": "user", "content": "러닝화 추천해주세요."},
             {"role": "assistant", "content": "네, 어떤 종류의 러닝을 주로 하시나요?"},
             {"role": "user", "content": "주로 공원에서 가볍게 뛰어요."},
-            {"role": "assistant", "content": "공원에서 가볍게 뛰신다면 쿠션이 좋은 데일리 러닝화를 추천드립니다. 킵런 KD500 모델은 어떠신가요?"}, # 2턴 (4개 메시지)
+            {"role": "assistant", "content": "공원에서 가볍게 뛰신다면 쿠션이 좋은 데일리 러닝화를 추천드립니다. 킵런 KD500 모델은 어떠신가요?"},
         ]
         test_history_long = [
-            {"role": "user", "content": "안녕하세요, 데카트론 킵런 KS900 신발 사이즈 문의합니다."}, # 1
-            {"role": "assistant", "content": "네, 고객님. 어떤 사이즈를 찾으시나요? 평소 신으시는 운동화 사이즈를 알려주시겠어요?"}, # 2
-            {"role": "user", "content": "나이키 270mm 신는데, 발볼이 좀 넓은 편이에요."}, # 3
-            {"role": "assistant", "content": "나이키 270mm 신으시고 발볼이 넓으시다면, 킵런 KS900은 270mm 또는 275mm를 고려해보실 수 있습니다."}, # 4
-             {"role": "user", "content": "혹시 270 사이즈 강남점 재고 있나요?"}, # 5 (3번째 턴 시작)
-             {"role": "assistant", "content": "실시간 재고 확인은 어렵습니다. 온라인 스토어나 매장 연락을 통해 확인 가능합니다."}, # 6
-             {"role": "user", "content": "알겠습니다. 온라인으로 볼게요."}, # 7
-             {"role": "assistant", "content": "네, 감사합니다."} # 8 (4번째 턴 끝)
+            {"role": "user", "content": "안녕하세요, 데카트론 킵런 KS900 신발 사이즈 문의합니다."},
+            {"role": "assistant", "content": "네, 고객님. 어떤 사이즈를 찾으시나요? 평소 신으시는 운동화 사이즈를 알려주시겠어요?"},
+            {"role": "user", "content": "나이키 270mm 신는데, 발볼이 좀 넓은 편이에요."},
+            {"role": "assistant", "content": "나이키 270mm 신으시고 발볼이 넓으시다면, 킵런 KS900은 270mm 또는 275mm를 고려해보실 수 있습니다."},
+            {"role": "user", "content": "혹시 270 사이즈 강남점 재고 있나요?"},
+            {"role": "assistant", "content": "실시간 재고 확인은 어렵습니다. 온라인 스토어나 매장 연락을 통해 확인 가능합니다."},
+            {"role": "user", "content": "알겠습니다. 온라인으로 볼게요."},
+            {"role": "assistant", "content": "네, 감사합니다."}
         ]
 
         # config에서 summarize_every_n_turns 읽기 (없으면 기본값 1 사용)
         summarize_n = config.get('tasks', {}).get('summarization', {}).get('summarize_every_n_turns', 1)
         if not isinstance(summarize_n, int) or summarize_n <= 0: summarize_n = 1
+        update_inc = config.get('tasks', {}).get('summarization', {}).get('update_summary_incrementally', True)
 
         async with aiohttp.ClientSession() as session:
-            print(f"\n--- Testing Summarization (Short History, Incremental=True, N={summarize_n}) ---")
+            print(f"\n--- Testing Summarization (Short History, Incremental={update_inc}, N={summarize_n}) ---")
             prev_summary1 = "사용자가 러닝화 추천을 요청함."
+            start_t1 = time.time()
             summary1 = await summarize_conversation_async(test_history_short, previous_summary=prev_summary1, session=session)
+            dur_t1 = time.time() - start_t1
+            print(f"(Took {dur_t1:.3f}s)")
             if summary1: print(f"Generated Summary 1:\n{summary1}")
             else: print("Summarization 1 failed.")
             print("-" * 30)
 
-            print(f"\n--- Testing Summarization (Long History, Incremental=True, N={summarize_n}) ---")
-            # 긴 히스토리의 마지막 N턴만 사용하게 됨
-            # 예: N=1이면 마지막 2개 메시지, N=2면 마지막 4개 메시지 사용
+            print(f"\n--- Testing Summarization (Long History, Incremental={update_inc}, N={summarize_n}) ---")
             prev_summary2 = "고객은 킵런 KS900 사이즈(나이키 270mm, 발볼 넓음)를 문의했고, 270/275mm 추천받음."
+            start_t2 = time.time()
             summary2 = await summarize_conversation_async(test_history_long, previous_summary=prev_summary2, session=session)
+            dur_t2 = time.time() - start_t2
+            print(f"(Took {dur_t2:.3f}s)")
             if summary2: print(f"Generated Summary 2 (Incremental from N turns):\n{summary2}")
             else: print("Summarization 2 failed.")
             print("-" * 30)
 
-            print(f"\n--- Testing Summarization (Long History, Incremental=False) ---")
-            # 전체 히스토리 사용
-            # update_summary_incrementally 값을 False로 임시 변경하여 테스트 필요 -> 여기서는 None 전달로 테스트
+            print(f"\n--- Testing Summarization (Long History, From Scratch - previous_summary=None) ---")
+            start_t3 = time.time()
             summary3 = await summarize_conversation_async(test_history_long, previous_summary=None, session=session)
+            dur_t3 = time.time() - start_t3
+            print(f"(Took {dur_t3:.3f}s)")
             if summary3: print(f"Generated Summary 3 (From Scratch):\n{summary3}")
             else: print("Summarization 3 failed.")
             print("-" * 30)

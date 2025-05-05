@@ -1,4 +1,4 @@
-# chatbot/app.py (요구사항 반영 최종본: 요약/CoT 개선 반영)
+# chatbot/app.py (Tool Use, 백그라운드 작업 및 완료 대기 적용)
 
 import asyncio
 import time
@@ -6,8 +6,8 @@ import json
 import logging
 import traceback
 import os
-from typing import Optional
-from fastapi import FastAPI, Request, HTTPException
+from typing import Optional, List, Dict, Any # 타입 힌트 추가
+from fastapi import FastAPI, Request, HTTPException, BackgroundTasks # BackgroundTasks 임포트
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -18,19 +18,22 @@ from datetime import datetime
 try:
     # app.py는 chatbot/chatbot/ 안에 있으므로 상대 경로 사용
     from .conversation_state import ConversationState
-    from .scheduler import run_parallel_tasks
-    # [수정] prompt_builder 임포트
-    from .prompt_builder import build_final_prompt
-    from .gpt_interface import call_gpt_async
+    # [수정] scheduler 함수 이름 변경 (예시: orchestrate_chatbot_turn) 및 관련 함수 임포트
+    from .scheduler import orchestrate_chatbot_turn # run_parallel_tasks 대신 새 함수 임포트
+    # [삭제] prompt_builder 는 scheduler 내부에서 사용되거나 역할 변경
+    # from .prompt_builder import build_final_prompt
+    # [삭제] gpt_interface 는 scheduler 통해서 호출됨
+    # from .gpt_interface import call_gpt_async
     from .config_loader import get_config
     from .searcher import RagSearcher
-    # [삭제] summarizer 모듈 직접 임포트 불필요 (scheduler가 처리)
-    # from . import summarizer
+    # [신규] 백그라운드 작업 실행을 위한 함수 임포트 (scheduler.py에서 이동했거나 새로 정의)
+    from .slot_extractor import extract_slots_with_gpt
+    from .summarizer import summarize_conversation_async
+
     logging.info("Required chatbot modules imported successfully in app.py.")
 except ImportError as ie:
     logging.error(f"CRITICAL ERROR (app.py): Failed to import required modules: {ie}. Check relative paths and file existence.", exc_info=True)
-    # 필수 모듈 임포트 실패 시 앱 실행 불가
-    exit(1) # 즉시 종료
+    exit(1) # 필수 모듈 임포트 실패 시 즉시 종료
 
 # --- 로깅 설정 (DEBUG 고정) ---
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -49,7 +52,7 @@ except Exception as e:
     exit(1)
 
 # --- FastAPI 앱 초기화 ---
-app = FastAPI(title="Decathlon Chatbot API", version="1.1.0") # 버전 업데이트
+app = FastAPI(title="Decathlon Chatbot API", version="1.2.0") # 버전 업데이트 (Tool Use 반영)
 
 # --- 정적 파일 마운트 (변경 없음) ---
 static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static')
@@ -79,8 +82,9 @@ else:
 try:
     if not ConversationState: # 임포트 실패 체크
         raise ImportError("ConversationState class not available.")
+    # 애플리케이션 레벨에서 단일 인스턴스 유지 (실제 서비스에서는 세션별 관리 필요)
     conversation_handler = ConversationState()
-    logger.info("Initialized in-memory conversation handler.")
+    logger.info("Initialized in-memory conversation handler (SINGLE INSTANCE).")
 except Exception as cs_e:
     logger.critical(f"Failed to initialize ConversationState: {cs_e}. Exiting.", exc_info=True)
     exit(1)
@@ -156,17 +160,104 @@ async def read_root(request: Request):
         logger.error(f"Error reading or serving index.html: {e}", exc_info=True)
         return HTMLResponse(content="<html><body><h1>Internal Server Error</h1></body></html>", status_code=500)
 
-# --- 챗봇 응답 API 엔드포인트 ([수정됨]) ---
-@app.post("/chat", response_class=JSONResponse, summary="챗봇 응답 생성")
-async def handle_chat(chat_request: ChatRequest, request: Request):
+
+# --- [신규] 백그라운드 작업 실행 함수 ---
+async def run_post_response_tasks(
+    handler: ConversationState,
+    current_input: str,
+    history: List[Dict[str, str]], # 최종 업데이트된 히스토리
+    http_session: Optional[aiohttp.ClientSession]
+):
     """
-    사용자 입력을 받아 챗봇 파이프라인(병렬처리: 슬롯,라우팅,임베딩,CoT,요약 -> 순차: RAG)을
-    실행하고, 최종 응답 및 디버그 정보(테스트 모드 시)를 반환합니다.
-    요약은 병렬 처리된 결과를 사용하고, 상태 업데이트는 응답 후 수행합니다.
+    응답 전송 후 슬롯 추출 및 요약 업데이트를 백그라운드에서 비동기 실행합니다.
+    완료 후 ConversationState의 완료 이벤트를 설정합니다.
+    """
+    task_start_time = time.time()
+    logger.info("Starting post-response background tasks (slot extraction, summarization)...")
+
+    tasks_to_run = []
+
+    # 슬롯 추출 태스크 정의
+    async def slot_task_wrapper():
+        task_name = "background_slot_extraction"
+        logger.debug(f"Running {task_name}...")
+        start = time.time()
+        try:
+            if extract_slots_with_gpt: # 함수 존재 확인
+                slots = await extract_slots_with_gpt(current_input, http_session)
+                if slots is not None:
+                    handler.update_slots(slots) # 상태 업데이트
+                    logger.debug(f"{task_name} finished successfully. Slots: {list(slots.keys())}")
+                else:
+                    logger.warning(f"{task_name} returned None.")
+            else:
+                logger.error(f"Function 'extract_slots_with_gpt' not available for {task_name}.")
+        except Exception as e:
+            logger.error(f"Error in {task_name}: {e}", exc_info=True)
+        finally:
+            logger.debug(f"{task_name} execution took {time.time() - start:.3f}s")
+
+    tasks_to_run.append(asyncio.create_task(slot_task_wrapper()))
+
+    # 요약 업데이트 태스크 정의
+    async def summary_task_wrapper():
+        task_name = "background_summarization"
+        logger.debug(f"Running {task_name}...")
+        start = time.time()
+        try:
+            # 설정에서 요약 기능 활성화 여부 확인 (선택적)
+            summarization_enabled = config.get('tasks', {}).get('summarization', {}).get('enabled', False)
+            if summarization_enabled and summarize_conversation_async: # 함수 존재 확인
+                # 현재 상태의 요약을 previous_summary로 전달
+                summary = await summarize_conversation_async(history, handler.get_summary(), http_session)
+                if summary is not None:
+                    handler.update_summary(summary) # 상태 업데이트
+                    logger.debug(f"{task_name} finished successfully. Summary length: {len(summary)}")
+                else:
+                    logger.warning(f"{task_name} returned None.")
+            elif not summarization_enabled:
+                 logger.debug(f"Skipping {task_name} as it's disabled in config.")
+            else:
+                 logger.error(f"Function 'summarize_conversation_async' not available for {task_name}.")
+
+        except Exception as e:
+            logger.error(f"Error in {task_name}: {e}", exc_info=True)
+        finally:
+            logger.debug(f"{task_name} execution took {time.time() - start:.3f}s")
+
+    tasks_to_run.append(asyncio.create_task(summary_task_wrapper()))
+
+    # 두 백그라운드 작업 병렬 실행 및 대기
+    try:
+        await asyncio.gather(*tasks_to_run)
+        logger.info("All post-response background tasks completed successfully.")
+    except Exception as bg_e:
+        # gather 자체에서 예외 발생 시 (거의 없음) 또는 개별 태스크 예외는 이미 로깅됨
+        logger.error(f"Error during asyncio.gather for background tasks: {bg_e}", exc_info=True)
+    finally:
+        # 성공/실패 여부와 관계없이 완료 시그널 전송!
+        handler.update_complete_event.set()
+        task_duration = time.time() - task_start_time
+        logger.info(f"Post-response background task execution finished (event set). Duration: {task_duration:.3f}s")
+
+
+# --- 챗봇 응답 API 엔드포인트 ([수정됨]) ---
+@app.post("/chat", response_class=JSONResponse, summary="챗봇 응답 생성 (Tool Use 및 백그라운드 처리 적용)")
+async def handle_chat(
+    chat_request: ChatRequest,
+    request: Request,
+    background_tasks: BackgroundTasks # FastAPI의 BackgroundTasks 주입
+):
+    """
+    사용자 입력을 받아 Tool Use 기반 챗봇 파이프라인을 실행하고,
+    최종 응답 및 디버그 정보(테스트 모드 시)를 반환합니다.
+    응답 반환 후, 슬롯 추출 및 요약 업데이트를 백그라운드로 수행합니다.
+    다음 요청 처리 전, 이전 턴의 백그라운드 작업 완료를 대기합니다.
 
     Args:
         chat_request (ChatRequest): 사용자 입력을 포함하는 요청 본문.
         request (Request): FastAPI 요청 객체 (헤더 등 접근용).
+        background_tasks (BackgroundTasks): 백그라운드 작업 실행을 위한 FastAPI 객체.
 
     Returns:
         JSONResponse: 챗봇 응답 또는 오류 정보를 포함하는 JSON 응답.
@@ -174,7 +265,7 @@ async def handle_chat(chat_request: ChatRequest, request: Request):
     Raises:
         HTTPException: 잘못된 요청(400), 서비스 불가(503), 내부 서버 오류(500) 등.
     """
-    start_time = time.time()
+    request_received_time = time.time()
     user_input = chat_request.user_input
     if not user_input or not user_input.strip():
         logger.warning("Received empty or whitespace-only user input.")
@@ -187,6 +278,18 @@ async def handle_chat(chat_request: ChatRequest, request: Request):
     request_id = f"req_{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
     logger.info(f"[{request_id}] Received POST '/chat' from {client_host}. TestMode={is_test_mode}. Input: '{user_input[:50]}...'")
 
+    # --- [신규] 이전 턴 백그라운드 작업 완료 대기 ---
+    wait_start_time = time.time()
+    logger.debug(f"[{request_id}] Checking if previous background update is complete...")
+    # ConversationState의 이벤트 대기 (이미 set 상태면 즉시 통과)
+    await conversation_handler.update_complete_event.wait()
+    wait_duration = time.time() - wait_start_time
+    if wait_duration > 0.1: # 100ms 이상 대기 시 로그 기록
+        logger.info(f"[{request_id}] Waited {wait_duration:.3f}s for previous background tasks to complete.")
+    logger.debug(f"[{request_id}] Previous background update complete. Proceeding with current request.")
+
+
+    # --- 필수 서비스 (세션, RAG 검색기) 확인 ---
     session = app.state.http_session
     rag_searcher = app.state.rag_searcher_instance
 
@@ -194,178 +297,122 @@ async def handle_chat(chat_request: ChatRequest, request: Request):
         logger.error(f"[{request_id}] AIOHTTP session is not available or closed.")
         raise HTTPException(status_code=503, detail="Service temporarily unavailable: HTTP session not ready")
 
+    # RAG 검색기는 None일 수 있음 (scheduler에서 처리)
     if rag_searcher is None:
-        logger.warning(f"[{request_id}] RAG searcher instance is not available. Proceeding without RAG search.")
+        logger.warning(f"[{request_id}] RAG searcher instance is not available. RAG search will be skipped if requested.")
+
+    # --- 오케스트레이션 실행 (Scheduler 호출) ---
+    final_response = None
+    error_response = None
+    orchestration_debug_info = {} # 스케줄러의 디버그 정보 저장용
 
     try:
-        # --- 1. 병렬/순차 작업 실행 (Scheduler) [수정됨: 요약/CoT 병렬 포함] ---
-        logger.info(f"[{request_id}] Calling scheduler to run parallel tasks...")
-        scheduler_start_time = time.time()
-        scheduler_results = await run_parallel_tasks(
+        logger.info(f"[{request_id}] Calling scheduler (orchestrate_chatbot_turn)...")
+        orchestration_start_time = time.time()
+
+        # [수정] 새로운 오케스트레이션 함수 호출
+        orchestration_result = await orchestrate_chatbot_turn(
             user_input=user_input,
-            conversation_state=conversation_handler, # 현재 대화 상태 전달
+            conversation_state=conversation_handler, # 현재 상태 전달
             session=session,
             rag_searcher=rag_searcher
         )
-        scheduler_duration = time.time() - scheduler_start_time
-        logger.info(f"[{request_id}] Scheduler finished in {scheduler_duration:.3f}s.")
-        logger.debug(f"[{request_id}] Scheduler results keys: {list(scheduler_results.keys())}")
+        orchestration_duration = time.time() - orchestration_start_time
+        logger.info(f"[{request_id}] Scheduler finished in {orchestration_duration:.3f}s.")
+        orchestration_debug_info = orchestration_result.get('debug_info', {}) # 디버그 정보 추출
 
-        # --- 2. 스케줄러 결과 추출 및 상태 업데이트 (Slot) ---
-        # [수정] 요약 결과도 추출
-        extracted_slots = scheduler_results.get("slots")
-        routing_info = scheduler_results.get("routing_info") # level, model, cot_data 포함
-        rag_results = scheduler_results.get("rag_results", [])
-        new_summary = scheduler_results.get("summary") # 병렬 생성된 요약 결과
-
-        # 슬롯 정보 먼저 업데이트
-        if isinstance(extracted_slots, dict):
-            logger.info(f"[{request_id}] Updating conversation state with extracted slots: {list(extracted_slots.keys())}")
-            conversation_handler.update_slots(extracted_slots)
-            logger.debug(f"[{request_id}] Current slots after update: {conversation_handler.get_slots()}")
-        elif extracted_slots is not None:
-            logger.warning(f"[{request_id}] Received unexpected data type for slots: {type(extracted_slots)}. Skipping slot update.")
-
-        # --- 3. 최종 프롬프트 구성 요소 준비 ---
-        # 라우팅 정보 처리 (기본값 설정 강화)
-        if not isinstance(routing_info, dict) or not routing_info.get('model'):
-            default_model_name = config.get('model_router', {}).get('routing_map', {}).get('easy', 'gpt-3.5-turbo')
-            logger.warning(f"[{request_id}] Invalid routing info ({routing_info}), falling back to default: level='easy', model='{default_model_name}', cot_data=None")
-            routing_info = {"level": "easy", "model": default_model_name, "cot_data": None}
-
-        complexity_level = routing_info.get("level", "easy")
-        chosen_model = routing_info.get("model") # 이제 확실히 존재
-        cot_data = routing_info.get("cot_data")
-
-        logger.info(f"[{request_id}] Preparing final prompt components: Complexity='{complexity_level}', ChosenModel='{chosen_model}', RAG Results={len(rag_results)}, CoT Data Present={'Yes' if cot_data else 'No'}, Summary Present={'Yes' if new_summary else 'No'}")
-
-        # --- 4. 최종 프롬프트 생성 (Prompt Builder) [수정됨: 인자 전달 방식 변경] ---
-        logger.info(f"[{request_id}] Building final prompt...")
-        prompt_build_start_time = time.time()
-        try:
-            # [수정] build_final_prompt 호출 시 필요한 정보 직접 전달
-            # (prompt_builder.py의 함수 시그니처 변경 필요)
-            current_history_for_prompt = conversation_handler.get_history() # 현재까지의 히스토리
-            current_slots_for_prompt = conversation_handler.get_slots() # 업데이트된 슬롯
-
-            final_messages = build_final_prompt(
-                user_query=user_input,
-                summary=new_summary, # 스케줄러에서 생성된 (이전 턴까지의) 요약
-                history=current_history_for_prompt, # 현재까지의 히스토리 (마지막 user 입력 포함 X)
-                slots=current_slots_for_prompt,     # 현재 업데이트된 슬롯
-                rag_results=rag_results,
-                cot_data=cot_data
-            )
-            prompt_build_duration = time.time() - prompt_build_start_time
-            logger.info(f"[{request_id}] Final prompt built in {prompt_build_duration:.3f}s.")
-
-            if final_messages is None or not isinstance(final_messages, list) or not final_messages:
-                 logger.error(f"[{request_id}] Failed to build final prompt (returned None or empty list).")
-                 raise HTTPException(status_code=500, detail="Internal server error: Failed to construct AI prompt.")
-
-        except Exception as build_e:
-            logger.error(f"[{request_id}] Error during final prompt building: {build_e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Internal server error: Error building prompt.")
-        
-# --- 5. 최종 GPT 모델 호출 (GPT Interface) ---
-        logger.info(f"[{request_id}] Calling final GPT model: {chosen_model}")
-        final_call_start_time = time.time()
-        gpt_response_data = None # 초기화
-        try:
-            gen_config = config.get('generation', {})
-            final_temp = gen_config.get('final_response_temperature')
-            final_max_tokens = gen_config.get('final_response_max_tokens')
-
-            # 설정값 유효성 확인 강화
-            if not isinstance(final_temp, (int, float)):
-                logger.warning(f"[{request_id}] Invalid final_response_temperature in config. Using default 0.7.")
-                final_temp = 0.7
-            if not isinstance(final_max_tokens, int) or final_max_tokens <= 0:
-                logger.warning(f"[{request_id}] Invalid final_response_max_tokens in config. Using default 500.")
-                final_max_tokens = 500
-
-            # call_gpt_async 호출
-            gpt_response_data = await call_gpt_async(
-                messages=final_messages,
-                model=chosen_model,
-                temperature=final_temp,
-                max_tokens=final_max_tokens,
-                session=session
-            )
-            final_call_duration = time.time() - final_call_start_time
-            logger.info(f"[{request_id}] Final GPT call completed in {final_call_duration:.3f}s.")
-
-        except Exception as final_call_e:
-            final_call_duration = time.time() - final_call_start_time
-            logger.error(f"[{request_id}] Unexpected error during final GPT call setup or execution: {final_call_e}", exc_info=True)
-            # gpt_response_data는 None 상태 유지
-
-        # --- 6. 응답 처리 및 반환 ---
-        if gpt_response_data and gpt_response_data.get("choices"):
-            assistant_message = gpt_response_data["choices"][0].get("message", {}).get("content", "").strip()
-            if not assistant_message:
-                logger.warning(f"[{request_id}] Final GPT response content is empty from model {chosen_model}. Returning fallback message.")
-                assistant_message = "(죄송합니다, 답변을 생성하는 데 문제가 발생했습니다. 다시 시도해 주세요.)"
+        # --- 오케스트레이션 결과 처리 ---
+        if "response" in orchestration_result:
+            final_response = orchestration_result["response"]
+            if not final_response or not isinstance(final_response, str):
+                logger.warning(f"[{request_id}] Orchestrator returned success but response content is empty or invalid. Type: {type(final_response)}")
+                final_response = "(죄송합니다, 답변을 생성하는 데 문제가 발생했습니다.)" # Fallback
             else:
-                logger.info(f"[{request_id}] Received successful response from {chosen_model}. Length: {len(assistant_message)} chars.")
-
-            # --- 7. 대화 기록 저장 (사용자 입력 + 챗봇 응답) ---
-            conversation_handler.add_to_history("user", user_input)
-            conversation_handler.add_to_history("assistant", assistant_message)
-            logger.info(f"[{request_id}] Updated conversation history. Total turns: {len(conversation_handler.get_history())}")
-
-            # --- [수정됨] 8. 대화 상태 업데이트 (요약) ---
-            # 스케줄러에서 병렬로 생성된 요약 결과로 상태 업데이트
-            if new_summary is not None:
-                logger.info(f"[{request_id}] Updating conversation summary state with the result from scheduler.")
-                conversation_handler.update_summary(new_summary)
-                logger.debug(f"[{request_id}] New summary length: {len(new_summary)} chars.")
-            else:
-                logger.warning(f"[{request_id}] Summarization task in scheduler did not return a valid summary. Summary state not updated for this turn.")
-
-            # --- [삭제됨] 기존의 순차적 요약 실행 로직 제거 ---
-            # (이전에 여기에 있던 주기적 요약 실행 코드 블록 삭제됨)
-
-            # --- 9. 최종 응답 반환 ---
-            end_time = time.time()
-            total_request_time = end_time - start_time
-            logger.info(f"[{request_id}] Request processing finished successfully in {total_request_time:.3f} seconds.")
-
-            response_payload = {"response": assistant_message}
-            # 테스트 모드일 경우 디버그 정보 추가
-            if is_test_mode:
-                debug_info = {
-                    "request_id": request_id,
-                    "model_chosen": chosen_model,
-                    "complexity_level": complexity_level,
-                    "cot_data_present": bool(cot_data),
-                    "slots_extracted": extracted_slots if isinstance(extracted_slots, dict) else {},
-                    "rag_results_count": len(rag_results),
-                    # [수정] 현재 *상태*의 요약 (방금 업데이트됨) 포함
-                    "current_summary": conversation_handler.get_summary(),
-                    "total_processing_time_ms": int(total_request_time * 1000),
-                    # TODO: 토큰 사용량 정보는 gpt_interface 로그에서 확인 또는 call_gpt_async 반환값 활용 필요
-                }
-                # 스케줄러 자체 소요 시간 등 추가 정보 포함 가능
-                debug_info["scheduler_duration_ms"] = int(scheduler_duration * 1000)
-                response_payload["debug_info"] = debug_info
-                logger.info(f"[{request_id}] Returning response with debug info for test mode.")
-
-            return JSONResponse(content=response_payload)
+                logger.info(f"[{request_id}] Received successful response from orchestrator. Length: {len(final_response)} chars.")
+        elif "error_message_for_user" in orchestration_result:
+            # 스케줄러가 사용자에게 직접 전달할 오류 메시지를 반환한 경우 (예: 재검색 유도)
+            error_response = orchestration_result["error_message_for_user"]
+            logger.warning(f"[{request_id}] Orchestrator returned a user-facing error message: {error_response}")
+        elif "error" in orchestration_result:
+            # 스케줄러 내부 오류 발생 시
+            internal_error_msg = orchestration_result["error"]
+            logger.error(f"[{request_id}] Orchestrator returned an internal error: {internal_error_msg}")
+            error_response = "죄송합니다, 요청을 처리하는 중 오류가 발생했습니다." # 일반 오류 메시지
         else:
-            # 최종 GPT 호출 실패 시
-            logger.error(f"[{request_id}] Failed to get valid response from the final GPT call using {chosen_model}. Check previous logs for API errors.")
-            raise HTTPException(status_code=502, detail="Failed to generate response from AI model (Bad Gateway)")
+            # 예상치 못한 결과 구조
+            logger.error(f"[{request_id}] Orchestrator returned an unexpected result structure: {list(orchestration_result.keys())}")
+            error_response = "죄송합니다, 예상치 못한 오류가 발생했습니다."
 
-    # 핸들러 내 전역 예외 처리
-    except HTTPException as http_exc:
-        logger.warning(f"[{request_id}] Raising HTTPException: Status={http_exc.status_code}, Detail={http_exc.detail}")
+    except HTTPException as http_exc: # 스케줄러 내부에서 발생한 HTTPException 처리
+        logger.warning(f"[{request_id}] HTTPException raised from scheduler: Status={http_exc.status_code}, Detail={http_exc.detail}")
         raise http_exc
     except Exception as e:
-        end_time = time.time()
-        total_request_time = end_time - start_time
-        logger.error(f"[{request_id}] An unexpected error occurred in '/chat' after {total_request_time:.3f}s: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error.")
+        # 오케스트레이션 호출 자체에서 예외 발생
+        orchestration_duration = time.time() - orchestration_start_time
+        logger.error(f"[{request_id}] An unexpected error occurred calling orchestrator after {orchestration_duration:.3f}s: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error during orchestration.")
+
+
+    # --- 최종 응답 결정 및 기록 업데이트 ---
+    assistant_message = final_response if final_response else error_response
+    if not assistant_message: # 만약 둘 다 None이면 최종 Fallback
+        assistant_message = "(죄송합니다, 답변을 드릴 수 없습니다.)"
+
+    logger.info(f"[{request_id}] Final assistant message determined. Length: {len(assistant_message)}")
+
+    # [수정] 응답 반환 *전*에 현재 턴 히스토리 업데이트
+    try:
+        conversation_handler.add_to_history("user", user_input)
+        conversation_handler.add_to_history("assistant", assistant_message)
+        final_history_for_summary = conversation_handler.get_history() # 백그라운드 요약에 사용될 최종 히스토리
+        logger.info(f"[{request_id}] Updated conversation history. Total turns: {len(final_history_for_summary)}")
+    except Exception as history_e:
+        logger.error(f"[{request_id}] Failed to update conversation history: {history_e}", exc_info=True)
+        # 히스토리 업데이트 실패는 치명적이지 않을 수 있으므로 계속 진행하되 로깅
+
+
+    # --- [신규] 백그라운드 작업 예약 ---
+    try:
+        # 다음 요청을 위해 현재 업데이트 시작 상태로 변경
+        conversation_handler.update_complete_event.clear()
+        logger.debug(f"[{request_id}] Cleared update completion event, scheduling background tasks...")
+
+        # 백그라운드 작업 함수 등록 (슬롯 추출, 요약 업데이트 동시 실행)
+        background_tasks.add_task(
+            run_post_response_tasks,
+            conversation_handler,
+            user_input, # 현재 사용자 입력
+            final_history_for_summary, # 최종 업데이트된 히스토리
+            session # 공유 http 세션 전달
+        )
+        logger.info(f"[{request_id}] Scheduled post-response background tasks.")
+    except Exception as bg_schedule_e:
+         logger.error(f"[{request_id}] Failed to schedule background tasks: {bg_schedule_e}", exc_info=True)
+         # 백그라운드 작업 예약 실패 시 이벤트 다시 set (다음 요청 막지 않도록)
+         conversation_handler.update_complete_event.set()
+         logger.warning(f"[{request_id}] Set update completion event due to background scheduling failure.")
+
+
+    # --- 최종 응답 페이로드 구성 ---
+    end_time = time.time()
+    total_request_time = end_time - request_received_time
+    logger.info(f"[{request_id}] Request processing finished in {total_request_time:.3f} seconds.")
+
+    response_payload = {"response": assistant_message}
+    if is_test_mode:
+        # [수정] 스케줄러에서 받은 디버그 정보 통합
+        response_payload["debug_info"] = {
+            "request_id": request_id,
+            "total_processing_time_ms": int(total_request_time * 1000),
+            "wait_for_previous_update_ms": int(wait_duration * 1000),
+            **orchestration_debug_info # 스케줄러의 디버그 정보 합치기
+        }
+        logger.info(f"[{request_id}] Returning response with debug info for test mode.")
+
+    # --- 최종 응답 반환 (백그라운드 작업 실행 예약 포함) ---
+    # background 인자에 tasks 객체 전달
+    return JSONResponse(content=response_payload, background=background_tasks)
+
 
 # --- 서버 실행 (uvicorn 사용) (변경 없음) ---
 if __name__ == "__main__":
@@ -375,11 +422,12 @@ if __name__ == "__main__":
         server_host = main_config.get('server', {}).get('host', '127.0.0.1')
         server_port = main_config.get('server', {}).get('port', 8000)
         server_reload = main_config.get('server', {}).get('reload', True)
-        uvicorn_log_level = config.get('logging', {}).get('log_level', 'info').lower()
+        # logging 설정에서 log_level을 읽어 uvicorn에 반영
+        uvicorn_log_level = main_config.get('logging', {}).get('log_level', 'info').lower()
 
         logger.info(f"Starting FastAPI server using uvicorn (host={server_host}, port={server_port}, reload={server_reload}, uvicorn_log_level={uvicorn_log_level})...")
         uvicorn.run(
-            "chatbot.app:app", # 모듈 경로 확인
+            "chatbot.app:app", # 모듈 경로 확인 'chatbot' 패키지 내의 'app' 모듈의 'app' 객체
             host=server_host,
             port=server_port,
             reload=server_reload,

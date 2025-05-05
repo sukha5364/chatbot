@@ -1,80 +1,224 @@
-# config.yaml - Chatbot Configuration File (수정본: 요약/CoT 개선 반영)
+# config.yaml - Chatbot Configuration File (Tool Use 적용 버전)
 
 # --- API 기본 설정 ---
-# OpenAI API 키는 .env 파일 또는 환경 변수에서 로드 (이 파일에 저장하지 않음)
+# OpenAI API 키는 .env 파일 또는 환경 변수에서 로드
 
 # --- 작업별 모델 및 파라미터 설정 ---
 tasks:
-  # Slot 추출 설정 (변경 없음)
+  # Slot 추출 설정 (백그라운드 실행용)
   slot_extraction:
-    model: "gpt-3.5-turbo" # Slot 추출에 사용할 모델
-    temperature: 0.1       # 낮은 값 권장 (일관성)
-    max_tokens: 1000       # 추출할 Slot 개수 및 길이에 따라 조절
-
-  # 대화 요약 설정 (target_summary_tokens 확인, 나머지는 기존 값 유지)
-  summarization:
-    enabled: true
-    model: "gpt-4"         # 요약 모델 (상황에 따라 gpt-3.5-turbo도 가능)
-    temperature: 0.3       # 약간의 창의성 허용
-    max_tokens: 2000       # 요약문 최대 길이 (토큰) - 넉넉하게 설정
-    summarize_every_n_turns: 1 # 몇 턴마다 요약을 시도할지 (app.py에서 제거되므로 참고용)
-    target_summary_tokens: 500 # 목표 요약 토큰 수 (프롬프트 지침용) - 값 확인/설정
-    update_summary_incrementally: true # 이전 요약을 기반으로 증분 업데이트할지 여부
-
-  # 만족도 평가 설정 (test_runner용, 기존 모델 유지)
-  satisfaction_evaluation:
-    model: "gpt-4o"        # 만족도 평가 모델
-
-# --- 모델 라우팅 및 CoT 생성 설정 (CoT 부분 수정됨) ---
-model_router:
-  # 복잡도 분류 설정 (변경 없음)
-  complexity_classification:
-    model: "gpt-4o"
+    model: "gpt-4o" # Slot 추출에 사용할 모델
     temperature: 0.1
-    max_tokens: 300
+    max_tokens: 1000
 
-  # 라우팅 결과에 따른 최종 응답 모델 매핑 (변경 없음)
-  routing_map:
-    easy: "gpt-3.5-turbo"
-    medium: "gpt-4"
-    hard: "gpt-4o"
+  # 대화 요약 설정 (백그라운드 실행용)
+  summarization:
+    enabled: true # 백그라운드 실행 여부 결정 가능 (app.py 참조)
+    model: "gpt-4o" # 요약 모델
+    temperature: 0.3
+    max_tokens: 2000
+    target_summary_tokens: 500 # 목표 요약 토큰 수 (프롬프트 지침용)
+    update_summary_incrementally: true # 증분 업데이트 여부
+    summarize_every_n_turns: 1 # 증분 요약 시 참고할 최근 턴 수
 
-  # --- [수정됨] 범용 CoT 생성 설정 (기존 medium/hard 제거 후 통합) ---
-  general_cot_generation:
-    model: "gpt-4o"       # 범용 CoT 생성에 사용할 모델 (GPT-4o 등 유연한 모델 권장)
-    temperature: 0.5      # 적절한 창의성 허용
-    max_tokens: 1500      # 생성할 CoT 최대 길이 (medium/hard 커버하도록 설정)
+  # 만족도 평가 설정 (test_runner용)
+  satisfaction_evaluation:
+    model: "gpt-4o"
 
-# --- 최종 응답 생성 설정 (기존 유지) ---
-generation:
-  final_response_temperature: 0.7 # 최종 답변 생성 온도
-  final_response_max_tokens: 3000  # 최종 답변 생성 최대 토큰
+  # --- [신규] Tool Use 결정 및 최종 답변 생성 설정 ---
+  tool_use:
+    # 1차 LLM 호출 (Tool Use 결정) 및 2차 LLM 호출 (결과 기반 답변 생성)에 사용할 모델
+    model: "gpt-4o"
+    # 1차 LLM 호출 시 사용할 파라미터
+    decision_temperature: 0.2 # Tool 사용 여부 및 인수 생성 정확도 높이기 위해 낮은 값 권장
+    decision_max_tokens: 1500 # Tool call arguments 생성에 충분한 토큰
+    # 2차 LLM 호출 (최종 답변 생성) 시 사용할 파라미터
+    generation_temperature: 0.7 # 최종 답변 생성 온도
+    generation_max_tokens: 3000 # 최종 답변 생성 최대 토큰
 
-# --- RAG 관련 설정 (변경 없음) ---
+# --- [삭제됨] 모델 라우팅 및 CoT 생성 설정 ---
+# model_router: # 기존 model_router 섹션은 제거하거나 주석 처리합니다.
+#   complexity_classification: ...
+#   routing_map: ...
+#   general_cot_generation: ...
+
+# --- RAG 관련 설정 ---
 rag:
-  retrieval_k: 3           # 검색할 상위 문서(이제는 제품 블록) 개수
-  embedding_model: "text-embedding-3-large" # 임베딩 모델 (매우 중요, rag_generator와 일치해야 함)
-  embedding_dimension: 3072    # 임베딩 벡터 차원 (매우 중요, 모델과 일치 필수)
+  retrieval_k: 5 # 초기 검색할 문서(제품 블록) 개수 (후 필터링 전)
+  embedding_model: "text-embedding-3-large"
+  embedding_dimension: 3072
   # RAG 파이프라인 설정 (pipeline/rag_generator.py 용도)
   pipeline:
-    embedding_batch_size: 100  # 임베딩 생성 시 배치 크기
+    embedding_batch_size: 100
+
+# --- [신규] Tools 정의 ---
+tools:
+  - type: "function"
+    function:
+      name: "product_search"
+      description: "데카트론 제품 데이터베이스에서 사용자의 질문과 맥락에 맞는 제품 정보를 검색합니다. 제품 추천, 비교, 특정 기능/가격/브랜드 제품 찾기 등에 사용합니다."
+      parameters:
+        type: "object"
+        properties:
+          search_keywords:
+            type: "string"
+            description: "사용자의 질문과 대화 맥락을 종합하여 벡터 검색 임베딩 생성에 사용할 핵심 검색어 또는 자연어 질문. 의미적 유사성을 찾는 데 중점을 둡니다. 예: '방수 기능 있는 가벼운 트레일 러닝화', '나이키 에어포스와 비슷한 데카트론 신발은?'"
+          filters:
+            type: "object"
+            description: "검색 결과를 특정 조건으로 좁히기 위한 필터. AND 또는 OR 논리로 조건을 결합할 수 있습니다. 필터 필드가 메타데이터에 없는 경우, AND 조건에서는 제외되고 OR 조건에서는 다른 조건에 따라 포함될 수 있습니다."
+            properties:
+              logic:
+                type: "string"
+                enum: ["AND", "OR"]
+                default: "AND"
+                description: "conditions 배열 내의 필터 조건들을 결합할 논리 (AND 또는 OR). 기본값은 AND."
+              conditions:
+                type: "array"
+                description: "적용할 필터 조건들의 리스트."
+                items:
+                  type: "object"
+                  properties:
+                    field:
+                      type: "string"
+                      description: "필터링할 메타데이터 필드 이름. 사용 가능 필드: category, brand, features, price_numeric, target_audience 등 (pipeline/rag_generator.py에서 추출된 필드 기준)."
+                      # 실제 추출되는 메타데이터 필드로 업데이트 필요
+                      enum: ["category", "brand", "features", "price_numeric", "target_audience", "product_name"]
+                    operator:
+                      type: "string"
+                      description: "필터링 연산자. '=='(정확히 일치), '<='(작거나 같음), '>='(크거나 같음), 'contains'(포함 여부 - 주로 features 필드에 사용)."
+                      enum: ["==", "<=", ">=", "contains"]
+                    value:
+                      # 타입이 필드에 따라 달라질 수 있음을 명시
+                      oneOf:
+                        - type: string
+                        - type: integer
+                        - type: array
+                          items:
+                            type: string
+                      description: "필터링할 값. field 타입에 따라 string, integer, 또는 array(features 필터 시) 사용."
+                  required: ["field", "operator", "value"]
+          num_results:
+            type: "integer"
+            description: "반환받기를 원하는 최종 결과의 최대 개수 (기본값: 3)."
+            default: 3
+        required: ["search_keywords"]
 
 # --- 프롬프트 템플릿 및 관련 텍스트 ---
 prompts:
-  # 기본 시스템 프롬프트 (변경 없음)
+  # 기본 시스템 프롬프트 (어조/역할 정의 유지)
   default_system_prompt: |
-    당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 제공된 참고 정보를 바탕으로 정확하고 간결하게 답변해주세요.
+    당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 제공된 정보를 바탕으로 정확하고 간결하게 답변해주세요.
 
-  # Slot 추출 프롬프트 (변경 없음, JSON 예시 중괄호 이스케이프 유지)
+  # --- [신규/수정됨] Tool Use 관련 프롬프트 ---
+  tool_use_system_prompt: |
+    # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+    당신은 데카트론 고객 문의에 답변하는 AI 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 이전 대화 내용을 바탕으로 답변해야 합니다. 답변 생성에 필요한 최신 제품 정보가 부족하다고 판단되면 **반드시** `product_search` 도구를 사용하여 데카트론 제품 정보를 검색해야 합니다.
+
+    # `product_search` 도구 사용 지침
+    1.  **호출 시점:** 사용자가 특정 제품 정보(가격, 기능, 재고 유무 등), 제품 추천, 제품 비교, 특정 조건(브랜드, 가격대, 기능 등)에 맞는 제품을 **명시적 또는 암시적으로** 찾을 때 `product_search` 도구를 호출하세요. 단순 인사, 일반적인 대화, 이미 대화에서 충분히 답변된 내용, 도구 사용법 자체에 대한 질문에는 호출하지 마세요.
+    2.  **`search_keywords` 생성:** 사용자의 **핵심 의도**와 **대화 맥락**을 종합하여, **벡터 검색에 가장 적합한 자연어 검색어 또는 질문 형태**로 만드세요. 의미적으로 유사한 제품을 찾는 데 중점을 둡니다. (예: "나이키 페가수스 같은 데카트론 러닝화 추천", "비 오는 날 신을 방수 등산화", "초보자용 가성비 좋은 4인용 텐트")
+    3.  **`filters` 생성:** 사용자가 요구한 **객관적이고 명확한 조건** (예: 브랜드명 'Kiprun', 카테고리 '러닝화', 기능 '방수', 가격 10만원 이하)이 있다면 `filters` 인수로 구조화하여 전달하세요.
+        * `logic`: 여러 조건을 결합할 방식 (`AND` 또는 `OR`). 기본값은 `AND`. **검색 범위를 넓히거나, 특정 조건이 필수는 아닐 때 `OR`를 사용하세요.** (예: 브랜드는 '나이키' 또는 '아디다스') 메타데이터 필드가 없는 경우도 고려하여 OR 사용이 안전할 수 있습니다.
+        * `conditions`: 필터 조건 배열. 각 조건은 `field`, `operator`, `value`로 구성됩니다. (사용 가능 필드: `category`, `brand`, `features`, `price_numeric`, `target_audience` 등. 연산자: `==`, `<=`, `>=`, `contains`).
+        * **구분 중요:** `search_keywords`는 **유사한 의미**를 찾기 위해, `filters`는 **정확한 조건 충족**을 위해 사용됩니다.
+    4.  **결과 활용 및 최종 답변 생성:** `product_search` 도구 실행 결과 (검색된 제품 정보 목록 또는 `{"results_found": false}` 메시지)가 `role: "tool"` 메시지로 제공됩니다. **이 정보를 바탕으로 다음 지침에 따라 사용자에게 최종 답변을 자연스럽고 상세하게 생성하세요.**
+        * **결과 분석:** 제공된 검색 결과를 **사용자의 원래 질문 의도 및 대화 맥락과 비교**하여 관련성을 평가하세요.
+        * **정보 요약:** 관련성이 높은 제품에 대해, 전달받은 정보(제품명, 가격, 주요 특징, 리뷰 요약 등) 중 **핵심 내용을 간결하게 요약**하여 제시하세요.
+        * **비교 및 추천:** 사용자가 비교를 요청했거나 추천이 필요한 경우, 검색된 제품들의 **장단점이나 특징을 비교** 설명하거나, **요청 조건에 가장 부합하는 제품을 추천하고 그 이유를 명확히** 밝히세요.
+        * **자연스러운 답변:** 검색 결과를 단순히 나열하지 말고, **친절하고 전문적인 데카트론 상담원의 어조**를 유지하며 자연스러운 문장으로 답변을 구성하세요.
+        * **추측 금지:** 제공된 Tool 결과에 없는 정보는 **절대 추측하거나 만들어내지 마세요.** 정보가 부족하면 솔직하게 밝히세요.
+        * **결과 없음 처리:** Tool 결과가 `{"results_found": false}` 일 경우, 사용자에게 "죄송합니다. 문의하신 조건에 맞는 제품을 찾지 못했습니다."라고 명확히 알리고, 검색 조건을 완화하거나 다른 키워드로 다시 질문하도록 **친절하게 유도**하세요. (예: "혹시 가격대를 조금 높여볼까요?", "다른 기능의 제품은 어떠신가요?")
+    5.  ** 다중 제품 처리:** 사용자가 **여러 특정 제품**을 언급하거나 **두 개 이상의 제품 비교**를 요청하는 경우, 각 제품에 대한 상세 정보를 개별적으로 얻기 위해 **각 제품별로 별도의 `product_search` 호출**을 생성하는 것을 **강력히 권장**합니다. 이렇게 얻은 정보를 종합하여 최종 답변을 생성하면 더 정확하고 상세한 비교/설명이 가능합니다. (예: "A와 B 비교" 요청 시, A 검색 호출 1번, B 검색 호출 1번 생성)
+    
+    # 중요:
+    * 항상 대화의 맥락을 고려하여 도구 사용 여부와 파라미터를 결정하세요.
+    * `search_keywords`는 필수입니다. `filters`는 정확한 조건이 있을 때만 사용하세요.
+    * 검색되는 정보가 많아 제품 비교시 기존 제품의 특징을 사용해서 검색을 진행해야 합니다. 따라서 이 경우 여러번 검색을 호출하는 것이 권장됩니다. 맥락을 이해해서 여러번 검색을 호출하세요.
+    * 최종 답변은 반드시 Tool 결과와 사용자 질문/맥락에 기반해야 합니다.
+
+    # 예시 (Few-shot Prompting - 실제 구현 시 상세 내용 및 추가 예시 필요)
+    ## 예시 1: 비교 및 필터링
+    [대화 기록]
+    User: 나이키 에어포스 신고 있는데 비슷한 데카트론 신발 없을까? 발볼 넓은 편이야.
+    [1차 LLM 응답]
+    tool_calls:
+      - id: tool_1
+        type: function
+        function:
+          name: product_search
+          arguments: |-
+            {
+              "search_keywords": "나이키 에어포스와 비슷한 스타일의 데카트론 캐주얼 운동화",
+              "filters": {
+                "logic": "AND",
+                "conditions": [
+                  {"field": "category", "operator": "==", "value": "운동화"},
+                  {"field": "features", "operator": "contains", "value": "발볼 넓음 언급"}
+                ]
+              },
+              "num_results": 3
+            }
+    [Tool 결과 메시지 (시뮬레이션)]
+    role: tool
+    tool_call_id: tool_1
+    name: product_search
+    content: |-
+      {
+        "results_found": true,
+        "results": [
+          {"product_name": "데카트론 PW 540 남성 워킹화", "brand": "Newfeel", "category": "워킹화", "price": "44,900원", "features": ["유연함", "편안함", "발볼 넓음 언급"], "reviews_overall": "대체로 편안함"},
+          {"product_name": "데카트론 소프트 140 메쉬 운동화", "brand": "Newfeel", "category": "운동화", "price": "24,900원", "features": ["경량성", "통기성", "발볼 편안함 언급"], "reviews_overall": "가성비 좋음, 내구성 약함"}
+        ]
+      }
+    [2차 LLM 최종 답변 (Assistant)]
+    네, 고객님. 나이키 에어포스와 비슷한 캐주얼한 스타일이면서 발볼이 넓으신 분도 편안하게 신으실 수 있는 데카트론 제품으로 두 가지를 추천해 드립니다.
+
+    1.  **PW 540 남성 워킹화 (Newfeel 브랜드):** 44,900원이며, 유연하고 발볼이 넓은 사용자도 편안하다는 평가가 많습니다. 일상적인 워킹화로 적합합니다.
+    2.  **소프트 140 메쉬 운동화 (Newfeel 브랜드):** 24,900원으로 가성비가 좋고 매우 가볍고 통기성이 좋습니다. 다만 내구성은 조금 약할 수 있습니다.
+
+    두 제품 모두 에어포스처럼 일상적인 착용에 중점을 둔 모델입니다. 혹시 더 궁금한 점이 있으신가요?
+
+    ## 예시 2: 결과 없음 처리
+    [대화 기록]
+    User: 5만원 이하 완전 방수되는 킵런 여성 트레일 러닝화 찾아줘.
+    [1차 LLM 응답]
+    tool_calls:
+      - id: tool_2
+        type: function
+        function:
+          name: product_search
+          arguments: |-
+            {
+              "search_keywords": "여성 트레일 러닝화",
+              "filters": {
+                "logic": "AND",
+                "conditions": [
+                  {"field": "brand", "operator": "==", "value": "Kiprun"},
+                  {"field": "target_audience", "operator": "==", "value": "여성"},
+                  {"field": "features", "operator": "contains", "value": "완전 방수"},
+                  {"field": "price_numeric", "operator": "<=", "value": 50000}
+                ]
+              }
+            }
+    [Tool 결과 메시지 (시뮬레이션)]
+    role: tool
+    tool_call_id: tool_2
+    name: product_search
+    content: '{"results_found": false}'
+    [2차 LLM 최종 답변 (Assistant)]
+    죄송합니다. 문의하신 5만원 이하 가격대의 완전 방수 기능이 있는 킵런 여성 트레일 러닝화는 현재 찾기 어렵습니다. 킵런 브랜드의 다른 트레일 러닝화나, 가격대를 조금 높여서 방수 기능이 있는 제품을 찾아볼까요? 또는 생활 방수(발수) 기능이 있는 제품도 괜찮으실까요?
+
+  # --- [신규] Tool 인수 오류 시 LLM 안내 프롬프트 ---
+  tool_argument_error_prompt: |
+    죄송합니다. 제품 검색을 시도했지만, 필요한 정보가 명확하지 않아 검색을 진행할 수 없었습니다. 찾으시는 제품의 종류(예: 러닝화, 텐트), 특징(예: 방수, 경량), 브랜드, 가격대 등 원하시는 조건을 조금 더 자세히 말씀해주시겠어요?
+
+  # Slot 추출 프롬프트 (기존 유지 - 백그라운드 실행용)
   slot_extraction_prompt_template: |
     당신은 사용자의 자연어 문의에서 핵심 정보를 추출하여 구조화된 JSON 형식으로 반환하는 "슬롯 추출 전문 AI"입니다.
-
     # 작업 지시
     주어진 [사용자 입력]을 분석하여, 아래 [슬롯 정의]에 명시된 슬롯(Slot)들을 추출하고, 그 결과를 [출력 형식]에 맞는 JSON 객체로 만드세요.
-
     [사용자 입력]:
     {user_input}
-
     [슬롯 정의]
     * `sport_type`: 사용자가 관심을 보이는 스포츠 활동 (예: "러닝", "축구", "등산", "캠핑", "수영"). 문맥상 파악이 안되면 생략합니다.
     * `product_category`: 사용자가 찾거나 언급하는 제품의 분류 (예: "러닝화", "텐트", "등산 스틱", "수영복", "축구공", "자전거 의류"). 문맥상 파악이 안되면 생략합니다.
@@ -83,15 +227,13 @@ prompts:
     * `size_info`: 사용자가 언급한 사이즈 관련 정보 (예: "270mm", "L", "100", "M 사이즈"). 문맥상 파악이 안되면 생략합니다.
     * `feature_specific`: 사용자가 요구하는 구체적인 제품 기능이나 속성 (예: "고어텍스 소재", "충전식 램프", "지퍼 달린 주머니", "이너 팬츠 없는"). 문맥상 파악이 안되면 생략합니다.
     * `in_stock_requested`: 사용자가 재고 유무 확인을 요청했는지 여부 (Boolean 값: true). "재고 있는", "구매 가능한" 등의 표현이 있을 경우 true로 설정합니다. 문맥상 파악이 안되면 생략합니다.
-
     [출력 형식 및 규칙]
     * 오직 JSON 객체만을 출력해야 합니다. 다른 설명은 절대 포함하지 마세요.
     * [슬롯 정의]에 명시된 슬롯 중, [사용자 입력]에서 **실제로 추출된 정보가 있는 슬롯만** JSON 객체에 키(key)와 값(value)으로 포함시키세요.
     * [사용자 입력]에서 해당 슬롯 정보를 찾을 수 **없는 경우에는, 해당 슬롯의 키 자체를 최종 JSON 결과에서 반드시 생략**해야 합니다. (주의: `null` 이나 빈 문자열 `""`을 값으로 넣지 마세요.)
     * 값(value)은 사용자 입력의 핵심 내용을 간결하게 담아야 합니다. `user_preference` 처럼 여러 값이 나올 수 있는 슬롯은 리스트([])로 값을 만듭니다.
     * 최종 출력은 반드시 다음 형식의 유효한 JSON 이어야 합니다: `{{"slot_name1": "value1", "slot_name2": ["value2a", "value2b"], ...}}`
-    * 사용자의 입력이 슬롯과 아무련 관련이 없을 경우 아무 것도 출력하지 마세요.
-
+    * 해당 슬롯이 비어있고, 사용자의 입력이 슬롯과 아무련 관련이 없을 경우 아무 것도 넣지 마세요.
     [예시 1]
     사용자 입력: "안녕하세요, 캠핑 가서 쓸 가성비 좋은 4인용 텐트 있을까요?"
     JSON 출력:
@@ -102,7 +244,6 @@ prompts:
       "user_preference": ["가성비 좋음", "4인용"]
     }}
     ```
-
     [예시 2]
     사용자 입력: "발볼 넓은 사람도 편하게 신을 수 있는 런닝화 M 사이즈 재고 있나요?"
     JSON 출력:
@@ -114,7 +255,6 @@ prompts:
       "in_stock_requested": true
     }}
     ```
-
     [예시 3]
     사용자 입력: "나이키 에어포스랑 비슷한 데카트론 신발은 뭔가요?"
     JSON 출력:
@@ -125,178 +265,50 @@ prompts:
     }}
     ```
 
-  # 복잡도 분류 프롬프트 (변경 없음, JSON 예시 중괄호 이스케이프 유지)
-  complexity_classification_prompt_template: |
-    # 역할 정의
-    당신은 사용자 질문의 처리 복잡도를 평가하는 분류기입니다.
-
-    # 작업 지시
-    주어진 [사용자 질문]을 분석하여, 답변 생성에 필요한 정보 검색, 추론, 맥락 이해의 정도를 고려하여 복잡도를 "easy", "medium", "hard" 중 하나로 분류하고, 그 결과를 아래 [출력 형식]에 맞춰 **반드시 JSON 객체 형식으로만** 응답해주세요.
-
-    # 복잡도 기준
-    * **easy**: 간단한 인사, 단순 정보 확인 (예: 운영 시간 문의), 이전 대화 참조 없는 단답형 질문. RAG 검색이나 깊은 맥락 이해가 거의 필요 없음.
-    * **medium**: 특정 조건(1~2개)을 포함하는 제품 추천 요청, 기능 문의, 간단한 비교 질문. RAG 검색 및 약간의 맥락 이해 필요. (예: "러닝화 추천해줘", "이 텐트 방수되나요?")
-    * **hard**: 여러 제약 조건(3개 이상)이 포함된 제품 추천, 복잡한 비교 분석 요청, 문제 해결/트러블슈팅, 이전 대화 맥락에 크게 의존하는 질문, 사이즈 추천(타 브랜드 비교 등), 비표준적이거나 창의적인 답변 요구. 심층적인 RAG 검색, 다단계 추론 (CoT), 긴 대화 맥락 이해 필요. (예: "비오는데 신을 발볼 넓은 런닝화 중에 재고 있는 거로 275 사이즈 추천해줘", "A 제품이랑 B 제품 장단점 비교해줘", "에어포스랑 가장 비슷한 데카트론 신발 알려줘")
-
-    # 출력 형식
-    * **오직 다음 형식의 유효한 JSON 객체만** 출력해야 합니다. 다른 설명은 절대 포함하지 마세요.
-    * JSON 객체는 "complexity_level" 이라는 키 하나만 포함해야 합니다.
-    * "complexity_level" 키의 값은 위 기준에 따라 분류된 "easy", "medium", "hard" 중 하나여야 합니다.
-    ```json
-    {{
-      "complexity_level": "분류결과"
-    }}
-    ```
-
-    # 예시 1
-    [사용자 질문]: "안녕"
-    [출력]:
-    ```json
-    {{
-      "complexity_level": "easy"
-    }}
-    ```
-
-    # 예시 2
-    [사용자 질문]: "축구공 있나요?"
-    [출력]:
-    ```json
-    {{
-      "complexity_level": "medium"
-    }}
-    ```
-
-    # 예시 3
-    [사용자 질문]: "지난번에 내가 물어봤던 방수 자켓이랑 오늘 추천해준 바지랑 세트로 입을 만한 장갑도 보여줘"
-    [출력]:
-    ```json
-    {{
-      "complexity_level": "hard"
-    }}
-    ```
-
-    # 예시 4
-    [사용자 질문]: "나이키 270 신는데, 데카트론 킵런 KS900 신발 사이즈는 뭘로 가야 할까요?"
-    [출력]:
-    ```json
-    {{
-      "complexity_level": "hard"
-    }}
-    ```
-
-    # 처리 대상 질문
-    [사용자 질문]:
-    {user_input}
-
-    # 복잡도 분류 결과 (JSON):
-
-  # --- [삭제됨] Medium CoT 생성 프롬프트 ---
-  # medium_cot_generation_prompt_template: | ...
-
-  # --- [삭제됨] Hard CoT 지침 생성 프롬프트 ---
-  # hard_cot_generation_prompt_template: | ...
-
-  # --- [신규 추가] 범용 CoT 생성 프롬프트 ---
-  general_cot_generation_prompt_template: |
-    # 역할 정의
-    당신은 사용자의 질문에 대해 가장 효과적이고 정확한 답변을 생성하기 위한 논리적이고 단계적인 사고 과정(Chain-of-Thought) 계획을 수립하는 AI 전략가입니다.
-
-    # 작업 지시
-    주어진 [현재 사용자 질문]과 [이전 대화 요약], [이전에 파악된 사용자 정보(슬롯)]를 종합적으로 분석하여, 최종 답변 생성을 위한 최적의 단계별 사고 과정 계획을 구체적으로 작성해주세요.
-
-    # 계획 수립 가이드라인
-    1.  **질문 분석:** 현재 사용자 질문의 핵심 의도, 명시적/암시적 요구사항 및 제약 조건을 정확히 파악합니다.
-    2.  **컨텍스트 활용:** 이전 대화 요약과 슬롯 정보를 참고하여, 질문의 맥락을 이해하고 답변 생성에 필요한 추가 정보를 식별합니다. (예: 이전 문의 제품, 사용자 선호도 등)
-    3.  **정보 요구사항 정의:** 답변 생성에 필요한 정보가 무엇인지 명확히 정의합니다. (예: 특정 제품의 스펙, 비교 정보, 재고 유무, 사이즈 변환 규칙 등)
-    4.  **실행 계획 수립:** 필요한 정보를 얻기 위한 방법(예: RAG 검색 키워드 제안, 내부 지식 활용)과 답변을 논리적으로 구성하기 위한 단계(예: 정보 비교, 장단점 분석, 추천 근거 제시, 주의사항 안내)를 구체적으로 기술합니다.
-    5.  **간결 명확:** 각 단계는 최종 답변 모델이 이해하고 따를 수 있도록 명확하고 간결하게 작성합니다.
-
-    # 입력 정보
-    [현재 사용자 질문]:
-    {user_input}
-
-    [이전 대화 요약]:
-    {previous_summary}
-
-    [이전에 파악된 사용자 정보(슬롯)]:
-    {previous_slots}
-
-    # 단계별 사고 과정 계획:
-
-  # 대화 요약 프롬프트 (변경 없음)
+  # 대화 요약 프롬프트 (기존 유지 - 백그라운드 실행용)
   summarization_prompt_template: |
     # 역할 정의
     당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입니다.
-
     # 작업 지시
     주어진 [이전 대화 요약]과 [대화 기록]을 바탕으로, 전체 대화의 흐름과 중요 정보(사용자 주요 문의, 언급된 제품, 확인된 선호도, 해결된 내용 등)가 잘 드러나도록 **업데이트된 통합 요약**을 작성해주세요.
-
     # 요약 가이드라인
-    * [이전 대화 요약]이 있다면, 그 내용을 바탕으로 [대화 기록]의 새로운 정보를 자연스럽게 통합하여 하나의 업데이트된 요약을 만드세요. (만약 대화 기록이 "새로운 내용만" 제공된다면, 이전 요약에 그 내용을 추가하여 업데이트 하세요.)
+    * [이전 대화 요약]이 있다면, 그 내용을 바탕으로 [대화 기록]의 새로운 정보를 자연스럽게 통합하여 하나의 업데이트된 요약을 만드세요.
     * [이전 대화 요약]이 없다면 (대화 초반), [대화 기록]만으로 첫 요약을 생성하세요.
     * 요약은 사용자와 AI의 상호작용을 객관적으로 기술하는 형태여야 합니다. (예: "사용자가 A 제품에 대해 문의함. AI는 B 기능을 설명하고 C 제품을 추천함.")
     * 핵심적인 내용 중심으로 간결하게 작성하며, 불필요한 미사여구나 반복은 피하세요.
     * 최종 요약문의 길이는 약 **{target_summary_tokens} 토큰** 내외가 되도록 노력해주세요. (정확히 맞출 필요는 없으나, 너무 길거나 짧지 않게 조절)
-
     # 입력 정보
     [이전 대화 요약]:
     {previous_summary}
-
     [대화 기록]:
     {conversation_history}
-
     # 업데이트된 통합 요약 ({target_summary_tokens} 토큰 내외):
 
-  # 프롬프트 구성 요소 텍스트 (recent_conversation_header 추가)
-  rag_context_header: "[참고 문서 정보]"
-  slot_context_header: "[파악된 사용자 정보]"
-  summary_context_header: "[요약된 이전 대화 맥락]"
-  cot_context_header: "[단계별 사고 가이드 (CoT)]"
-  recent_conversation_header: "[최근 대화 내용]" # <-- 신규 추가
-  grounding_instruction: "반드시 제공된 [참고 문서 정보] 내용만 바탕으로 대답하고, 모르면 모른다고 솔직하게 답변하세요."
-  tone_instruction: "고객 응대는 항상 공식적이고 정중한 말투를 사용하세요."
-  length_constraint_instruction: "2~3문장 이내로 간결하게 핵심만 요약해서 답변해주세요."
-  rag_fallback_message: "- 관련된 문서 정보를 찾지 못했습니다."
-  cot_follow_instruction: "(중요: 답변 생성 시, 반드시 위에 제시된 '[단계별 사고 가이드 (CoT)]'를 참고하여 그 논리적 흐름과 지침에 따라 단계적으로 생각하고 답변을 구성하세요.)"
+  # 기타 프롬프트 요소 (필요 시 사용)
+  rag_fallback_message: "- 관련된 문서 정보를 찾지 못했습니다." # Tool 결과 없을 때 LLM이 참고할 수 있음
 
-
-# --- 프롬프트 구성 옵션 (recent_history_turns_to_include 추가) ---
-prompt_options:
-  rag_results_count_limit: 3       # 프롬프트에 포함할 최대 RAG 결과(제품 블록) 수
-  include_summary_in_prompt: true  # 프롬프트에 대화 요약 포함 여부
-  include_slots_in_prompt: true    # 프롬프트에 Slot 정보 포함 여부
-  include_rag_context_in_prompt: true # 프롬프트에 RAG 컨텍스트 포함 여부
-  include_recent_history_in_prompt: true # <-- [신규 추가] 프롬프트에 최근 대화 기록 포함 여부
-  recent_history_turns_to_include: 2   # <-- [신규 추가] 포함할 최근 대화 턴 수 (user+assistant=1턴 기준)
-  use_rag_grounding_instruction: true # Grounding 지시문 사용 여부
-  use_tone_instruction: true       # 어조 지시문 사용 여부
-  use_length_constraint_instruction: true # 길이 제한 지시문 사용 여부
-
-# --- 로깅 설정 (기존 유지) ---
+# --- 로깅 설정 ---
 logging:
-  log_level: "DEBUG"               # 코드에서 DEBUG로 고정되므로 참고용
-  log_file_base_name: "api_history" # 로그 파일 기본 이름 (날짜/시간은 코드에서 추가)
-  log_timestamp_format: "%Y-%m-%d %H:%M:%S" # 로그 내 타임스탬프 형식
+  log_level: "DEBUG" # 코드에서 DEBUG 고정
+  log_file_base_name: "api_history"
+  log_timestamp_format: "%Y-%m-%d %H:%M:%S"
 
-# --- 테스트 설정 (기존 유지) ---
+# --- 테스트 설정 (수정 없음 - 나중에 수정 예정) ---
 testing:
-  chatbot_api_url: "http://127.0.0.1:8000/chat" # 테스트 대상 챗봇 API URL
-  api_timeout: 60                  # 테스트 API 호출 타임아웃 (초)
-  test_mode_header: "X-Test-Mode"      # 테스트 모드 식별용 HTTP 헤더 이름
-  default_baseline_model: "gpt-3.5-turbo" # Mode 1/2 비교 시 사용할 기본 모델
-  # 테스트 케이스 생성 관련 확률 값
+  # (기존 내용 유지)
+  chatbot_api_url: "http://127.0.0.1:8000/chat"
+  api_timeout: 60
+  test_mode_header: "X-Test-Mode"
+  default_baseline_model: "gpt-3.5-turbo"
   generation_probabilities:
-    decathlon_brand_focus_prob: 0.9 # 일반 제품 질문 생성 시 데카트론 브랜드 선택 확률
-    template_type_weights:       # 전체 테스트셋 생성 시 각 템플릿 유형별 가중치
+    decathlon_brand_focus_prob: 0.9
+    template_type_weights:
       decathlon_specific: 30
       generic_product: 30
       comparison: 20
       general_faq: 20
-  # 테스트 설정 파일 경로 (test_runner.py 로드용)
   function_test_set:
     filename_template: "functional_tests.jsonl"
-    # count는 test_generator.py 실행 시 사용
   overall_test_set:
     filename_template: "overall_tests_set{set_num}.jsonl"
-    num_sets: 3 # test_generator.py 생성 개수와 일치 필요
-    # count, complexity_ratio는 test_generator.py 실행 시 사용
+    num_sets: 3
