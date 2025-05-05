@@ -1,10 +1,10 @@
-# chatbot/slot_extractor.py (기존 코드 유지 - 변경 없음)
+# chatbot/slot_extractor.py (최종 수정 계획 확인 - 로직 변경 없음)
 
 import json
 import logging
 from typing import Dict, Any, Optional
 import aiohttp
-import re # JSON 파싱 개선 위해 re 임포트 (선택 사항)
+import re # JSON 파싱 개선 위해 re 임포트
 
 # --- 필요한 모듈 임포트 ---
 try:
@@ -14,7 +14,7 @@ try:
     logging.info("gpt_interface and config_loader imported successfully in slot_extractor.")
 except ImportError as ie:
     logging.error(f"ERROR (slot_extractor): Failed to import modules: {ie}. Check relative paths.", exc_info=True)
-    # 필수 모듈 실패 시 기능 사용 불가
+    # 필수 모듈 실패 시 기능 사용 불가 처리
     call_gpt_async = None
     get_config = None
 
@@ -66,6 +66,11 @@ async def extract_slots_with_gpt(
         logger.error(f"Error accessing slot extraction configuration: {e}", exc_info=True)
         return None
 
+    # 입력이 너무 짧으면 슬롯 추출 시도하지 않음 (선택적 최적화)
+    if not user_input or len(user_input.strip()) < 5:
+         logger.debug(f"Input too short ('{user_input}'), skipping slot extraction.")
+         return {} # 빈 딕셔너리 반환 (실패가 아니라 추출할 슬롯 없음)
+
     logger.info(f"Attempting to extract slots from input: '{user_input[:70]}...'")
 
     # 프롬프트 포맷팅
@@ -100,7 +105,16 @@ async def extract_slots_with_gpt(
 
             # 1차: 직접 JSON 파싱 시도
             try:
+                # 추가: 응답이 비어있는 경우 처리
+                if not response_content.strip():
+                     logger.info("Slot extractor GPT returned empty content. Assuming no slots extracted.")
+                     return {} # 빈 딕셔너리 반환
+
                 extracted_slots = json.loads(response_content)
+                # 반환값이 dict인지 확인
+                if not isinstance(extracted_slots, dict):
+                     logger.warning(f"Slot extractor returned non-dict JSON: {type(extracted_slots)}. Treating as empty.")
+                     return {}
                 logger.info(f"Successfully extracted slots (direct JSON parsing): {list(extracted_slots.keys())}")
                 logger.debug(f"Extracted slot values: {extracted_slots}")
                 return extracted_slots
@@ -111,42 +125,51 @@ async def extract_slots_with_gpt(
                 try:
                     # 코드 블록 제거 (```json ... ``` 또는 ``` ... ```)
                     clean_response_content = re.sub(r'^```(?:json)?\s*|\s*```$', '', response_content.strip(), flags=re.MULTILINE)
-                    # 가장 바깥쪽 중괄호 찾기
-                    json_match = re.search(r'\{.*\}', clean_response_content, re.DOTALL)
+                    # 가장 바깥쪽 중괄호 찾기 (정규식 개선)
+                    json_match = re.search(r'^\s*(\{.*?\})\s*$', clean_response_content, re.DOTALL)
                     if json_match:
-                        json_string = json_match.group(0)
-                    else: # 중괄호 없으면 그냥 시도
+                        json_string = json_match.group(1)
+                    else: # 중괄호 없거나 형식이 다르면 그냥 시도
                         json_string = clean_response_content
 
+                    # 파싱 전 빈 문자열 체크
+                    if not json_string.strip():
+                         logger.info("Fallback parsing: content became empty after cleaning. Assuming no slots.")
+                         return {}
+
                     extracted_slots = json.loads(json_string)
+                    if not isinstance(extracted_slots, dict):
+                         logger.warning(f"Slot extractor (fallback) returned non-dict JSON: {type(extracted_slots)}. Treating as empty.")
+                         return {}
                     logger.info(f"Successfully extracted slots (fallback parsing): {list(extracted_slots.keys())}")
                     logger.debug(f"Extracted slot values: {extracted_slots}")
                     return extracted_slots
                 except json.JSONDecodeError as fallback_e:
-                    logger.error(f"Fallback JSON parsing also failed: {fallback_e}. Giving up on slot extraction for this input. Cleaned content preview: '{clean_response_content[:200]}...'")
-                    return None
+                    logger.error(f"Fallback JSON parsing also failed: {fallback_e}. Giving up on slot extraction. Cleaned content preview: '{clean_response_content[:200]}...'")
+                    return None # 파싱 완전 실패 시 None 반환
                 except Exception as fallback_parse_e:
                     logger.error(f"Unexpected error during fallback JSON parsing: {fallback_parse_e}", exc_info=True)
                     return None
         else:
             logger.warning("Failed to get valid response/choices from GPT for slot extraction.")
-            return None
+            return None # API 호출 자체가 실패했거나 choices 없는 경우
 
     except Exception as e:
         logger.error(f"An unexpected error occurred during slot extraction API call: {e}", exc_info=True)
-        return None
+        return None # 예외 발생 시 None 반환
 
 # --- 예시 사용법 (기존 유지) ---
 if __name__ == "__main__":
     # 메인 스크립트로 실행 시 로깅 레벨 DEBUG 설정
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__) # logger 재정의 필요 없음
     logger.info("--- Running slot_extractor.py as main script for testing ---")
 
     # asyncio 및 aiohttp 임포트 (테스트 실행용)
     import asyncio
     import aiohttp
     import os # getenv 사용 위해
+    import time # time 임포트 추가
 
     async def test_slot_extraction():
         """Slot 추출 기능 테스트 실행"""
@@ -165,14 +188,15 @@ if __name__ == "__main__":
             "캠핑 가서 쓸 2인용 텐트 보고 있는데, 퀘차 제품 방수 잘 되나요?",
             "지난번에 산 킵런 운동화 왼쪽 발 뒤꿈치가 아픈데, 사이즈 문제일까요? 사이즈는 275mm 신어요.",
             "여자친구 선물로 러닝할 때 입을 M사이즈 기능성 티셔츠 보고 있어요.",
-            "그냥 구경왔어요." # Slot 없는 경우 테스트
+            "그냥 구경왔어요.", # Slot 없는 경우 테스트
+            "안녕" # 매우 짧은 입력 테스트
         ]
         async with aiohttp.ClientSession() as session:
             for i, test_input in enumerate(test_inputs):
                 print(f"\n--- Testing Slot Extraction for Input #{i+1} --- \n'{test_input}'")
                 logger.info(f"Running test extraction for: '{test_input}'")
                 try:
-                    start_t = time.time() # time 임포트 필요
+                    start_t = time.time()
                     slots = await extract_slots_with_gpt(test_input, session=session)
                     duration_t = time.time() - start_t
                     print(f"(Took {duration_t:.3f}s)")
