@@ -1,0 +1,222 @@
+[2025-05-06 15:22:09] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250506_1522.txt
+================================================================================
+[2025-05-06 15:22:19] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:22:19.452
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature    : 0.2
+  Max Tokens     : 1500
+  Tools Count    : 1
+  Tool Choice    : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 & 제품 정보 검색 전문가 (Vector Search 최적... User: 나이키 에어포스 신는데 데카트론에 비슷한 신발이 있을까?...
+================================================================================
+
+================================================================================
+[2025-05-06 15:22:21] [INFO] - ChatCompletion success from gpt-4o. Tokens: 5869. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:22:19.452
+Response TS: 2025-05-06T15:22:21.787
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU5z2r9OFaY3JAfDHEGgsGak1Tbsx
+  Choices Count    : 1
+  Usage (P/C/T)    : 5782 / 87 / 5869
+  Content Preview : N/A (Check tool_calls)
+  Tool Calls Count: 1
+  Tool Calls Summ : [{'id': 'call_6BzDGmC5O9Ut1q5aIkxT9lHc', 'function': 'product_search'}]
+================================================================================
+
+================================================================================
+[2025-05-06 15:22:21] [INFO] - Sending Embedding request to text-embedding-3-large (DEBUG: full input logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-06T15:22:21.807
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length   : 50
+================================================================================
+
+================================================================================
+[2025-05-06 15:22:22] [INFO] - Embedding success from text-embedding-3-large. Tokens: 62
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-06T15:22:21.807
+Response TS: 2025-05-06T15:22:22.344
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)    : 62 / ? / 62
+================================================================================
+
+================================================================================
+[2025-05-06 15:22:22] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:22:22.624
+
+--- Request Payload Info ---
+  Messages Count: 4
+  Temperature    : 0.7
+  Max Tokens     : 3000
+  Tools Count    : 1
+  Tool Choice    : Not Specified
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 & 제품 정보 검색 전문가 (Vector Search 최적... User: {"results_found": false}...
+================================================================================
+
+================================================================================
+[2025-05-06 15:22:24] [INFO] - ChatCompletion success from gpt-4o. Tokens: 5940
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:22:22.624
+Response TS: 2025-05-06T15:22:24.653
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU5z5tV8JrcCVINa9WsQtvaoY7ds7
+  Choices Count    : 1
+  Usage (P/C/T)    : 5882 / 58 / 5940
+  Content Preview : 죄송합니다. 나이키 에어포스와 비슷한 디자인의 데카트론 브랜드 스니커즈나 운동화를 현재 찾지 못했습니다. 혹시 다른 스타일이나 기능을 원하시면 ...
+================================================================================
+
+================================================================================
+[2025-05-06 15:22:24] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:22:24.735
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature    : 0.1
+  Max Tokens     : 1000
+  Tools Count    : 0
+  Tool Choice    : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 15:22:25] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1089
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:22:24.735
+Response TS: 2025-05-06T15:22:25.823
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU5z8t9MKvWFGh1IJFClrNywnKVg9
+  Choices Count    : 1
+  Usage (P/C/T)    : 1066 / 23 / 1089
+  Content Preview : {
+  "brand_mentioned": "나이키",
+  "product_category": "신발"
+}...
+================================================================================
+
+================================================================================
+[2025-05-06 15:41:41] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:41:41.134
+
+--- Request Payload Info ---
+  Messages Count: 4
+  Temperature    : 0.2
+  Max Tokens     : 1500
+  Tools Count    : 1
+  Tool Choice    : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 & 제품 정보 검색 전문가 (Vector Search 최적... User: 내가 무슨 신발을 신는다고 했지?...
+================================================================================
+
+================================================================================
+[2025-05-06 15:41:43] [INFO] - ChatCompletion success from gpt-4o. Tokens: 5910
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:41:41.134
+Response TS: 2025-05-06T15:41:43.819
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6HmMvb9v37UndFwwUxcuZO2Si6U
+  Choices Count    : 1
+  Usage (P/C/T)    : 5859 / 51 / 5910
+  Content Preview : 사용자님께서는 나이키 에어포스를 신는다고 하셨습니다. 데카트론에서 비슷한 신발을 찾고 계셨습니다. 추가로 궁금한 점이 있으시면 말씀해 주세요....
+================================================================================
+
+================================================================================
+[2025-05-06 15:41:43] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:41:43.825
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature    : 0.1
+  Max Tokens     : 1000
+  Tools Count    : 0
+  Tool Choice    : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 15:41:45] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1058
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:41:43.825
+Response TS: 2025-05-06T15:41:44.989
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6Hpz4ejK2Aa9SCf5YaFiN54lxhC
+  Choices Count    : 1
+  Usage (P/C/T)    : 1056 / 2 / 1058
+  Content Preview : {}...
+================================================================================
+

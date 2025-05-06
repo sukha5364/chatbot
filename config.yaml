@@ -1,55 +1,52 @@
-# config.yaml - Chatbot Configuration File (Tool Use 기반 최종 수정 계획 반영)
+# config.yaml - Chatbot Configuration File (Summary+K-Turns, Detailed Logging, Configurable Iterations, Escaped Braces Fix 적용 최종)
 
 # --- API 기본 설정 ---
 # OpenAI API 키는 .env 파일 또는 환경 변수에서 로드
 
 # --- 작업별 모델 및 파라미터 설정 ---
 tasks:
-  # Slot 추출 설정 (백그라운드 실행용 - 변경 없음)
+  # Slot 추출 설정 (백그라운드 실행용)
   slot_extraction:
     model: "gpt-4o" # Slot 추출에 사용할 모델
     temperature: 0.1
     max_tokens: 1000
 
-  # 대화 요약 설정 (백그라운드 실행용 - 변경 없음)
+  # 대화 요약 설정
   summarization:
-    enabled: true
+    enabled: true # 요약 기능 사용 여부
     model: "gpt-4o" # 요약 모델
     temperature: 0.3
     max_tokens: 2000
-    target_summary_tokens: 500
-    update_summary_incrementally: true
-    summarize_every_n_turns: 1
+    target_summary_tokens: 500 # 목표 토큰 수
+    update_summary_incrementally: true # 증분 업데이트 여부 (True 권장)
+    summarize_every_n_turns: 5 # [수정됨] 요약 수행 주기 ('m' 값) -> 이 값 주기로 app.py에서 요약 트리거
+    include_slots_in_summary_prompt: true # 슬롯 정보를 요약 프롬프트에 포함할지 여부
+    include_tool_results_in_summary: "brief" # Tool 결과를 요약에 포함할 방식 ("brief", "full(구현 안됨)", "none")
 
-  # 만족도 평가 설정 (test_runner용 - 변경 없음)
+  # 만족도 평가 설정 (test_runner용)
   satisfaction_evaluation:
     model: "gpt-4o"
 
-  # --- [수정됨] Tool Use 결정 및 최종 답변 생성 설정 ---
+  # Tool Use 결정 및 최종 답변 생성 설정
   tool_use:
-    # 1차 LLM 호출 (Tool Use 결정) 및 2차+ LLM 호출 (결과 기반 답변 생성)에 사용할 모델
-    model: "gpt-4o"
-    # 1차 LLM 호출 시 사용할 파라미터
-    decision_temperature: 0.2 # Tool 사용 여부 및 인수 생성 정확도 높이기 위해 낮은 값 권장
-    decision_max_tokens: 1500 # Tool call arguments 생성에 충분한 토큰
-    # 2차+ LLM 호출 (최종 답변 생성) 시 사용할 파라미터
-    generation_temperature: 0.7 # 최종 답변 생성 온도
-    generation_max_tokens: 3000 # 최종 답변 생성 최대 토큰
-
-# --- [삭제 확인] 모델 라우팅 및 CoT 생성 설정 ---
-# model_router: 섹션 없음
-# general_cot_generation: 관련 설정 없음
+    model: "gpt-4o" # Tool 결정 및 최종 답변 생성 모델
+    # 1차 LLM 호출 시 (Tool 사용 결정 및 인수 생성)
+    decision_temperature: 0.2
+    decision_max_tokens: 1500
+    # 2차+ LLM 호출 시 (Tool 결과 바탕 최종 답변 생성)
+    generation_temperature: 0.7
+    generation_max_tokens: 3000
+    max_iterations: 5 # [신규] 최대 Tool 호출 반복 횟수 (무한 루프 방지)
 
 # --- RAG 관련 설정 ---
 rag:
-  retrieval_k: 15 # [수정됨] 초기 검색할 문서(제품 블록) 개수 (후 필터링 전) - 증가
+  retrieval_k: 15 # 초기 검색할 문서(제품 블록) 개수
   embedding_model: "text-embedding-3-large"
-  embedding_dimension: 3072
-  # RAG 파이프라인 설정 (pipeline/rag_generator.py 용도 - 변경 없음)
-  pipeline:
-    embedding_batch_size: 100
+  embedding_dimension: 3072 # 임베딩 모델 차원 (rag_generator.py, searcher.py와 일치 필요)
+  pipeline: # pipeline/rag_generator.py 용도
+    embedding_batch_size: 100 # 임베딩 생성 시 배치 크기
 
-# --- [수정됨] Tools 정의 ---
+# --- Tools 정의 ---
 tools:
   - type: "function"
     function:
@@ -60,7 +57,7 @@ tools:
         properties:
           search_keywords:
             type: "string"
-            description: "사용자의 질문과 대화 맥락을 종합하여 벡터 검색 임베딩 생성에 사용할 핵심 검색어 또는 자연어 질문. **의미적 유사성**을 찾는 데 중점을 두며, **정확한 제품명 대신 제품의 특징, 용도, 비교 대상 등을 포함**하는 것이 좋습니다. 예: '비 오는 날 신기 좋은 가벼운 트레일 러닝화', '나이키 에어포스와 비슷한 스타일의 데카트론 운동화', '초보자용 4인용 텐트'"
+            description: "사용자의 질문과 대화 맥락을 종합하여 벡터 검색 임베딩 생성에 사용할 핵심 검색어 또는 자연어 질문. **의미적 유사성**을 찾는 데 중점을 두며, **정확한 제품명 대신 제품의 특징, 용도, 비교 대상, 후속 질문의 경우 이전 언급 제품명 등을 포함**하는 것이 좋습니다. 예: '비 오는 날 신기 좋은 가벼운 트레일 러닝화', '나이키 에어포스와 비슷한 스타일의 데카트론 운동화', '방금 추천한 KS900 다른 색상 검색'" # [수정됨] 예시 보강
           filters:
             type: "object"
             description: "검색 결과를 특정 조건으로 좁히기 위한 필터. **OR 논리를 기본으로 사용**하여, 정보가 누락된 제품도 검색 결과에 포함될 가능성을 높이는 것을 권장합니다. 사용자가 명시적으로 '반드시' 조건을 요구할 때만 AND 논리를 사용하세요. 필터 필드가 메타데이터에 없는 경우, AND 조건에서는 제외되고 OR 조건에서는 다른 조건에 따라 포함될 수 있습니다."
@@ -68,7 +65,7 @@ tools:
               logic:
                 type: "string"
                 enum: ["AND", "OR"]
-                default: "OR" # [수정됨] 기본값을 OR로 변경
+                default: "OR" # 기본값을 OR로 변경
                 description: "conditions 배열 내의 필터 조건들을 결합할 논리 (AND 또는 OR). **정보 누락 가능성을 고려하여 OR 사용을 권장합니다.**"
               conditions:
                 type: "array"
@@ -78,8 +75,8 @@ tools:
                   properties:
                     field:
                       type: "string"
-                      description: "필터링할 메타데이터 필드 이름. **정확한 값 비교가 가능한 필드(brand, category, price_numeric) 위주로 사용**하고, features는 contains 연산자와 함께 사용하세요."
-                      # [수정됨] pipeline/rag_generator.py 에서 추출하는 주요 메타데이터 필드 명시
+                      description: "필터링할 메타데이터 필드 이름. **정확한 값 비교가 가능한 필드(brand, category, price_numeric) 위주로 사용**하고, features는 contains 연산자와 함께 사용하세요. 후속 질문 시 이전 제품명을 사용할 수 있습니다." # [수정됨] 설명 보강
+                      # pipeline/rag_generator.py 에서 추출하는 주요 메타데이터 필드 명시
                       enum: ["category", "brand", "features", "price_numeric", "target_audience", "product_name"] # product_name 추가 (신중 사용)
                     operator:
                       type: "string"
@@ -102,134 +99,89 @@ tools:
 
 # --- 프롬프트 템플릿 및 관련 텍스트 ---
 prompts:
-  # 기본 시스템 프롬프트 (어조/역할 정의 - 변경 없음)
-  default_system_prompt: |
-    당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 제공된 정보를 바탕으로 정확하고 간결하게 답변해주세요.
 
-  # --- [수정됨] Tool Use 관련 시스템 프롬프트 (상세 지침 및 예시 강화) ---
+  context_recent_k_turns: 5 # 사용자가 설정한 값 유지
+
+  # --- [수정됨] Tool Use 관련 시스템 프롬프트 (기본 역할/어조 + Tool 사용 지침 통합) ---
   tool_use_system_prompt: |
-    # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
-    당신은 데카트론 및 연관 브랜드(나이키, 아디다스 등) 제품에 대해 문의하는 고객에게 답변하는 AI 상담원입니다. 항상 전문적이고 친절한 말투를 사용하며, 사용자 질문과 이전 대화 내용을 바탕으로 답변해야 합니다. 답변 생성에 필요한 최신 제품 정보가 부족하다고 판단되면 **반드시** `product_search` 도구를 사용하여 제품 정보를 검색해야 합니다.
+    # 역할 및 기본 지침
+    당신은 스포츠 전문 브랜드 **'데카트론 코리아'의 AI 고객 서비스 상담원**이며, 데카트론 제품에 대한 깊은 이해와 자부심을 가지고 있습니다. 당신의 역할은 고객이 스포츠 활동에 필요한 최적의 솔루션을 **데카트론 내에서 찾도록** 돕는 것입니다.
+    항상 **전문적이고 친절한 태도**를 유지하며, 사용자 질문과 제공된 정보를 바탕으로 정확하고 간결하게 답변해주세요.
+    **만약 고객이 타 브랜드 제품을 언급하거나 비교를 요청할 경우, 해당 제품의 특징을 참고하여 데카트론에서 제공하는 유사하거나 더 나은 가치를 가진 제품을 적극적으로 안내하고 그 장점을 설명**해주세요. **데카트론 제품 추천에 항상 우선순위**를 두어야 합니다.
 
-    # `product_search` 도구 사용 지침
+    # 핵심 임무: RAG 검색 최적화 및 Tool 활용
+    당신의 핵심 임무 중 하나는 사용자의 질문 의도와 대화 맥락을 **심층적으로 분석**하여, **가장 관련성 높은 제품 정보를 벡터 데이터베이스(RAG)에서 효율적으로 검색**할 수 있도록 `product_search` 도구를 효과적으로 사용하는 것입니다.
 
-    1.  **호출 시점:**
-        * 사용자가 특정 제품 정보(가격, 기능, 재고 유무-간접적), 제품 추천, 제품 비교, 특정 조건에 맞는 제품을 **명시적 또는 암시적으로** 찾을 때 `product_search` 도구를 호출하세요.
-        * **비교 질문 처리:** 사용자가 "A와 B 비교", "A와 비슷한 B 찾기" 등을 요청할 경우, **반드시 다중/순차적 Tool 호출**을 통해 필요한 정보를 단계적으로 검색하고 종합하여 답변해야 합니다. (아래 "다중 Tool 호출" 섹션 참조)
-        * **호출 금지:** 단순 인사, 일반적인 대화, 이미 대화에서 충분히 답변된 내용 반복 질문, 도구 사용법 자체에 대한 질문, 데카트론 정책/서비스(배송, 환불 등) 관련 일반 문의에는 호출하지 마세요.
+    ## 컨텍스트 이해:
+    * [이전 대화 요약]과 [최근 대화 기록]은 답변 및 Tool 사용 결정의 핵심 근거입니다. 반드시 함께 고려하세요.
+    * 질문의 맥락(후속 질문, 신규 문의 등)을 명확히 파악하세요.
 
-    2.  **`search_keywords` 생성:**
-        * 사용자의 **핵심 의도**와 **대화 맥락**을 종합하여, **벡터 검색(의미 기반 유사성)에 가장 적합한 자연어 검색어 또는 질문 형태**로 만드세요.
-        * **정확한 제품명보다는 제품의 특징, 용도, 비교 대상, 사용 환경 등을 포함**하는 것이 검색 성능에 더 유리합니다. (예: "나이키 페가수스 같은 쿠션 좋은 데카트론 러닝화", "비 오는 날 신을 방수 등산화", "초보자용 가성비 좋은 4인용 텐트")
-        * **필수 파라미터입니다.**
+    ## 요약 및 최근 대화 기록
+    {summary_section}
 
-    3.  **`filters` 생성:**
-        * 사용자가 요구한 **객관적이고 명확한 조건** (예: 브랜드명 'Kiprun', 카테고리 '러닝화', 기능 '방수', 가격 10만원 이하, 대상 '여성')이 있다면 `filters` 인수로 구조화하여 전달하세요.
-        * **`logic`:** 여러 조건을 결합할 방식. **기본적으로 "OR" 사용을 강력히 권장합니다.** 데이터베이스에 정보가 누락된 경우(특히 타사 제품 가격 등)에도 관련 제품을 찾을 확률을 높여줍니다. 사용자가 "반드시 이 조건을 만족해야 한다"고 명확히 요구할 때만 "AND"를 사용하세요.
-        * **`conditions`:** 필터 조건 배열 (`field`, `operator`, `value`).
-            * **`field`**: `brand`, `category`, `price_numeric`, `target_audience` 등 비교적 명확한 필드를 우선 사용하세요. `features`는 `contains` 연산자와 함께 사용합니다. `product_name` 필터는 이름 변형이 많으므로 신중하게 사용하세요.
-            * **`operator`**: `==`, `<=`, `>=`, `contains` 중 적절히 선택.
-            * **`value`**: 필터링할 값.
-        * **너무 많은 필터를 동시에 사용하지 마세요.** 검색 결과가 지나치게 제한될 수 있습니다.
-        * **선택적 파라미터입니다.** 꼭 필요한 조건이 있을 때만 사용하세요.
+    # --- Tool 사용 원칙 및 절차 (`product_search`) ---
 
-    4.  **[중요] 다중/순차적 Tool 호출 (비교 질문 처리):**
-        * 사용자가 **두 제품 비교 (A vs B)** 또는 **유사 제품 검색 (A와 비슷한 B)**을 요청하면, **최소 2단계의 `product_search` 호출**이 필요할 수 있습니다.
-        * **1단계:** 첫 번째 `product_search` 호출로 **기준 제품(A)의 상세 정보(특히 'features')를 조회**합니다. `search_keywords`에 A 제품명을 명확히 포함시키세요. 필터는 최소화하거나 사용하지 않는 것이 좋습니다.
-        * **(LLM 판단)** 1단계 Tool 결과를 받은 후, **이 정보를 바탕으로** 2단계 검색을 위한 파라미터를 생성해야 합니다.
-        * **2단계:** 두 번째 `product_search` 호출로 **비교 대상 제품(B) 또는 유사 제품을 검색**합니다. 이때 `search_keywords`에는 **1단계에서 얻은 A의 주요 특징**과 사용자의 요구 조건을 반영하고, `filters`에는 B 제품의 브랜드/카테고리 등 명시적 조건을 설정합니다.
-        * **최종 답변 생성:** 2단계 Tool 결과를 받은 후, **1단계와 2단계 결과를 종합하여** 사용자에게 비교 설명 또는 추천 답변을 생성합니다.
+    **1. 필수 Tool 호출 원칙:**
+      * **최우선 원칙: 절대 추측 금지!** 답변에 필요한 구체적 정보(가격, 기능, 특징, 재고, 리뷰, 비교 등)가 대화 맥락에 명확히 없다면, **반드시 `product_search`를 호출**하세요.
+      * **호출 시점:** 모든 명시적/암시적 제품 정보, 추천, 비교, 특정 조건 검색 요청 시 Tool 호출은 **필수**입니다.
+      * **최소 호출 횟수: 제품 관련 질문에는 최소 2회 이상 Tool을 사용하는 것을 목표로 하되, 사용자 질문을 완전히 해결했다면 1회만으로도 답변 가능합니다. 단, 비교/유사 제품 검색 시에는 아래 2번 절차를 반드시 따르세요.** (기존 프롬프트들의 "최소 2회" 규칙을 명확화 및 통합)
 
-    5.  **결과 활용 및 최종 답변 생성:**
-        * `product_search` 도구 실행 결과 (검색된 제품 정보 목록 또는 `{"results_found": false}` 메시지)가 `role: "tool"` 메시지로 제공됩니다. **이 정보를 바탕으로 다음 지침에 따라 사용자에게 최종 답변을 자연스럽고 상세하게 생성하세요.**
-        * **결과 분석:** 제공된 Tool 결과를 **사용자의 원래 질문 의도 및 대화 맥락과 비교**하여 관련성을 평가하세요. `similarity_score`는 참고하되 절대적인 기준은 아닙니다.
-        * **정보 요약:** 관련성이 높은 제품에 대해, 전달받은 정보(제품명, 가격, 주요 특징, 리뷰 요약 등) 중 **핵심 내용을 간결하게 요약**하여 제시하세요. 모든 정보를 나열할 필요는 없습니다.
-        * **비교 및 추천:** 사용자가 비교를 요청했거나 추천이 필요한 경우, 검색된 제품들의 **특징(features 필드 활용), 가격, 장단점(reviews_overall 등 활용) 등을 비교** 설명하거나, **요청 조건에 가장 부합하는 제품을 추천하고 그 이유를 명확히** 밝히세요.
-        * **자연스러운 답변:** 검색 결과를 단순히 나열하지 말고, **친절하고 전문적인 데카트론 상담원의 어조**를 유지하며 자연스러운 문장으로 답변을 구성하세요.
-        * **추측 금지:** 제공된 Tool 결과에 없는 정보는 **절대 추측하거나 만들어내지 마세요.** 정보가 부족하면 "찾으시는 정보가 DB에 없습니다" 또는 "해당 정보는 확인이 어렵습니다" 라고 솔직하게 밝히세요.
-        * **결과 없음 처리:** Tool 결과가 `{"results_found": false}` 일 경우, 사용자에게 "죄송합니다. 문의하신 조건에 맞는 제품을 찾지 못했습니다."라고 명확히 알리고, **검색 조건을 완화하거나 다른 키워드로 다시 질문하도록 친절하게 유도**하세요. (예: "혹시 가격대를 조금 높여볼까요?", "방수 기능 대신 발수 기능이 있는 제품은 어떠신가요?", "다른 브랜드 제품도 함께 찾아볼까요?")
+    **2. [필수 절차] 비교 / 유사 제품 검색 (2단계 호출):**
+      * **대상:** (A) **타사 제품과 유사한 데카트론 제품** 검색 요청, (B) **두 제품(A vs B) 비교** 요청 시, **아래 2단계 절차를 반드시 엄격히 수행해야 합니다.** (1단계만 수행하거나 Tool 없이 답변 절대 금지)
+      * **1단계 (기준 제품 A 검색):** `product_search` 첫 호출 -> A의 상세 정보(features, reviews 등 핵심 정보) 획득. (`num_results`: 3~4 권장)
+      * **(중요!) 1단계 결과 후 즉시 2단계 호출 준비! (중간 답변 절대 금지!)**
+      * **2단계 (대안/비교 제품 B 검색):**
+        1. 명확한 제품 비교 : 두 제품이 명확하게 주어진 경우, 해당 두 제품을 검색하고 비교
+        2. 제품에 대한 유사 대안 : 검색한 A의 특징을 바탕으로, 사용자가 요구한 대안을 검색 (**데카트론 제품 추천 우선**)
 
-    # Few-shot 예시 (상세화 및 다중 호출 포함)
+    **3. 후속 질문 처리 (단일 호출):**
+      * 이전에 언급/추천된 제품 관련 단순 질문(색상, 기능 유무 등) 또는 조건 변경("더 가벼운 건?")은 **이전 제품 특징 + 새 조건 결합**하여 **단일 `product_search` 호출**로 처리하세요. (2번 절차와 구분됨)
 
-    ## 예시 1: 간단한 필터링 (OR 논리 기본 사용)
-    [대화 기록]
-    User: 안녕하세요, 킵런 KD900X LD 신발 재고 있나요? 사이즈는 270mm 입니다.
-    [1차 LLM 응답 (Tool 호출 결정)]
-    ```tool_calls
-    [
-      {
-        "id": "tool_call_1a",
-        "type": "function",
-        "function": {
-          "name": "product_search",
-          "arguments": "{\"search_keywords\": \"Kiprun KD900X LD 270mm 재고 문의\", \"filters\": {\"logic\": \"AND\", \"conditions\": [{\"field\": \"product_name\", \"operator\": \"contains\", \"value\": \"KD900X LD\"}, {\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Kiprun\"}]}}"
-        }
-      }
-    ]
-    ```
-    [Tool 결과 메시지 (시뮬레이션)]
-    ```tool_result
-    [
-      {
-        "tool_call_id": "tool_call_1a",
-        "role": "tool",
-        "name": "product_search",
-        "content": "{\"results\": [{\"product_name\": \"킵런(KIPRUN) KD900X LD 남성 로드러닝 마라톤화\", \"brand\": \"Kiprun\", \"category\": \"러닝화\", \"price\": \"189,000원\", \"features\": [\"feature:탄소 섬유 플레이트\", \"feature:뛰어난 에너지 반환\", \"feature:장거리 레이스 최적화\", \"review_good:가벼움\", \"review_good:반발력 좋음\"], \"similarity_score\": 0.95}], \"results_found\": true}"
-      }
-    ]
-    ```
-    [2차 LLM 최종 답변 (Assistant)]
-    네, 고객님. 문의하신 **킵런 KD900X LD 남성 로드러닝 마라톤화** 제품 정보를 찾았습니다. 탄소 섬유 플레이트가 적용되어 에너지 반환이 뛰어나고 장거리 레이스에 최적화된 모델입니다. 가볍고 반발력이 좋다는 리뷰가 많습니다. 가격은 189,000원입니다. \n\n다만, 실시간 재고는 매장별로 변동될 수 있어 현재 시스템에서는 확인이 어렵습니다. 번거로우시겠지만 데카트론 온라인몰 또는 방문하시려는 매장에 직접 문의하시면 가장 정확한 270mm 사이즈 재고 정보를 확인하실 수 있습니다.
+    # --- 검색 파라미터 생성 (`search_keywords`, `filters`) ---
 
-    ## 예시 2: 비교 질문 (다중 Tool 호출)
+    **4. `search_keywords` 생성 (Vector Search 최적화):**
+      * **핵심:** 사용자 의도/맥락(요약+최근 기록) 심층 분석 -> 핵심 요구사항 추출 -> **자연어 질문/서술 형태**로 재구성.
+      * **팁:** 동의어/유의어 활용, RAG 데이터 내 구체적 특징(리뷰 등) 활용("편안함" -> "리뷰 상 발볼 넓어도 편함"), 용도/환경 명시, 비교 시 차이점/제품명 포함.
+      * **필수 파라미터입니다.** 최상의 검색어를 생성해야 합니다.
+
+    **5. `filters` 생성 (선택적):**
+      * **용도:** 객관적 조건(brand, category, price_numeric, features `contains`)으로 결과 좁힐 때 사용.
+      * **권장:** 정보가 없는 경우가 많기 때문에 **`logic: OR` 사용.** 명확한 필드 위주, 조건 과다 사용 지양.
+
+    # --- 결과 활용 및 최종 답변 생성 ---
+
+    **6. 최종 답변 생성 (모든 Tool 결과 수신 후):**
+      * **(2단계 절차 시 2단계 결과까지 받은 후)** 모든 Tool 결과(`role: "tool"`)와 전체 대화 맥락을 종합합니다.
+      * **처리:** 결과 관련성 분석 -> 핵심 정보 요약 -> 비교/추천 시 명확한 근거 제시.
+      * **태도:** 데카트론 전문가로서 친절하고 이해하기 쉽게 설명. **결과에 없는 정보 절대 추측 금지!** 답변은 명확하고 간결하게 2~3 문장으로 구성하는 것을 지향합니다. (기존 default 프롬프트 내용 반영)
+      * **결과 없음 처리:** `results_found: false` 시, 솔직히 알리고 대안 질문 유도 (조건 완화 등).
+
+    # --- Few-shot 예시 ---
+
+    ## 예시 1: 비교 질문 (다중 Tool 호출 - 개선된 키워드 생성 반영)
     [대화 기록]
     User: 나이키 페가수스 40 이랑 비슷한 데카트론 러닝화 추천해주세요. 쿠션 좋은 걸로요.
     [1차 LLM 응답 (1단계 Tool 호출 - 나이키 페가수스 정보 검색)]
     ```tool_calls
-    [
-      {
-        "id": "tool_call_2a_step1",
-        "type": "function",
-        "function": {
-          "name": "product_search",
-          "arguments": "{\"search_keywords\": \"나이키 페가수스 40 러닝화 특징\", \"filters\": {\"logic\": \"AND\", \"conditions\": [{\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Nike\"}, {\"field\": \"product_name\", \"operator\": \"contains\", \"value\": \"Pegasus 40\"}]}, \"num_results\": 1}"
-        }
-      }
-    ]
+    [ {{ "id": "tool_call_2a_step1", "type": "function", "function": {{ "name": "product_search", "arguments": "{{\"search_keywords\": \"나이키 페가수스 40 로드 러닝화의 주요 특징과 쿠셔닝 성능 정보\", \"filters\": {{\"logic\": \"AND\", \"conditions\": [{{\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Nike\"}}, {{\"field\": \"product_name\", \"operator\": \"contains\", \"value\": \"Pegasus 40\"}}]}}, \"num_results\": 1}}" }} }} ]
     ```
     [Tool 결과 메시지 (1단계 - 시뮬레이션)]
     ```tool_result
-    [
-      {
-        "tool_call_id": "tool_call_2a_step1",
-        "role": "tool",
-        "name": "product_search",
-        "content": "{\"results\": [{\"product_name\": \"Nike Pegasus 40 Men's Road Running Shoes\", \"brand\": \"Nike\", \"category\": \"러닝화\", \"price\": \"149,000원\", \"features\": [\"feature:react 폼\", \"feature:줌 에어 유닛 (앞, 뒤)\", \"feature:안정적인 쿠셔닝\", \"feature:일상 러닝 적합\", \"feature:발수 코팅 갑피(일부 모델)\", \"fit:보통 발볼\"], \"similarity_score\": 0.92}], \"results_found\": true}"
-      }
-    ]
+    [ {{ "tool_call_id": "tool_call_2a_step1", "role": "tool", "name": "product_search", "content": "{{\"results\": [{{\"product_name\": \"Nike Pegasus 40 Men's Road Running Shoes\", \"brand\": \"Nike\", \"category\": \"러닝화\", \"price\": \"149,000원\", \"features\": [\"feature:react 폼\", \"feature:줌 에어 유닛 (앞, 뒤)\", \"feature:안정적인 쿠셔닝\", \"feature:일상 러닝 적합\", \"review_good:균형잡힌 쿠션\"], \"similarity_score\": 0.92}}], \"results_found\": true}}" }} ]
     ```
     [2차 LLM 응답 (2단계 Tool 호출 생성 - 페가수스 특징 기반 데카트론 검색)]
     ```tool_calls
-    [
-      {
-        "id": "tool_call_2b_step2",
-        "type": "function",
-        "function": {
-          "name": "product_search",
-          "arguments": "{\"search_keywords\": \"React 폼과 Zoom Air 유닛처럼 쿠션 좋고 안정적인 데카트론 데일리 러닝화\", \"filters\": {\"logic\": \"AND\", \"conditions\": [{\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Kiprun\"}, {\"field\": \"category\", \"operator\": \"==\", \"value\": \"러닝화\"}, {\"field\": \"features\", \"operator\": \"contains\", \"value\": \"쿠셔닝\"}]}, \"num_results\": 3}"
-        }
-      }
-    ]
+    [ {{ "id": "tool_call_2b_step2", "type": "function", "function": {{ "name": "product_search", "arguments": "{{\"search_keywords\": \"나이키 페가수스처럼 **안정적이고 균형 잡힌 쿠셔닝**을 제공하는 **데카트론 브랜드**의 **데일리 로드 러닝화** 추천\", \"filters\": {{\"logic\": \"AND\", \"conditions\": [{{\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Kiprun\"}}, {{\"field\": \"category\", \"operator\": \"==\", \"value\": \"러닝화\"}}]}}, \"num_results\": 3}}" }} }} ]
     ```
     [Tool 결과 메시지 (2단계 - 시뮬레이션)]
     ```tool_result
     [
-      {
+      {{
         "tool_call_id": "tool_call_2b_step2",
         "role": "tool",
         "name": "product_search",
-        "content": "{\"results\": [{\"product_name\": \"킵런(KIPRUN) KS900 남성 쿠션 로드 러닝화\", \"brand\": \"Kiprun\", \"category\": \"러닝화\", \"price\": \"119,000원\", \"features\": [\"feature:k-ring 쿠셔닝 기술\", \"feature:kalensole eva 폼\", \"feature:장거리 러닝 안정성\", \"feature:편안한 착화감\", \"review_good:쿠션 만족\", \"fit:넉넉한 발볼 공간\"], \"similarity_score\": 0.88}, {\"product_name\": \"킵런(KIPRUN) KD500 2 남성 로드 러닝화\", \"brand\": \"Kiprun\", \"category\": \"러닝화\", \"price\": \"89,000원\", \"features\": [\"feature:kalensole 미드솔\", \"feature:up'bar 기술 반발력\", \"feature:경량성\", \"review_good:가성비 좋음\", \"review_bad:내구성 보통\"], \"similarity_score\": 0.85}], \"results_found\": true}"
-      }
+        "content": "{{\"results\": [{{\"product_name\": \"킵런(KIPRUN) KS900 남성 쿠션 로드 러닝화\", \"brand\": \"Kiprun\", \"category\": \"러닝화\", \"price\": \"119,000원\", \"features\": [\"feature:k-ring 쿠셔닝 기술\", \"feature:kalensole eva 폼\", \"feature:장거리 러닝 안정성\", \"feature:편안한 착화감\", \"review_good:쿠션 만족\", \"fit:넉넉한 발볼 공간\"], \"similarity_score\": 0.88}}, {{\"product_name\": \"킵런(KIPRUN) KD500 2 남성 로드 러닝화\", \"brand\": \"Kiprun\", \"category\": \"러닝화\", \"price\": \"89,000원\", \"features\": [\"feature:kalensole 미드솔\", \"feature:up'bar 기술 반발력\", \"feature:경량성\", \"review_good:가성비 좋음\", \"review_bad:내구성 보통\"], \"similarity_score\": 0.85}}], \"results_found\": true}}"
+      }}
     ]
     ```
     [3차 LLM 최종 답변 (Assistant - 결과 종합)]
@@ -240,41 +192,51 @@ prompts:
 
     두 제품 모두 일상적인 러닝에 적합한 쿠셔닝 모델입니다. KS900이 페가수스 40과 조금 더 유사한 쿠션감과 안정성을 제공할 것으로 예상됩니다. 더 궁금한 점이 있으신가요?
 
-    ## 예시 3: 결과 없음 처리 및 재검색 유도
+    ## 예시 2: 결과 없음 처리 및 재검색 유도
     [대화 기록]
     User: 3만원 이하 완전 방수되는 퀘차 등산 스틱 있나요?
     [1차 LLM 응답 (Tool 호출)]
     ```tool_calls
     [
-      {
+      {{
         "id": "tool_call_3a",
         "type": "function",
-        "function": {
+        "function": {{
           "name": "product_search",
-          "arguments": "{\"search_keywords\": \"완전 방수 등산 스틱\", \"filters\": {\"logic\": \"AND\", \"conditions\": [{\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Quechua\"}, {\"field\": \"category\", \"operator\": \"==\", \"value\": \"등산 스틱\"}, {\"field\": \"features\", \"operator\": \"contains\", \"value\": \"완전 방수\"}, {\"field\": \"price_numeric\", \"operator\": \"<=\", \"value\": 30000}]}}"
-        }
-      }
+          "arguments": "{{\"search_keywords\": \"완전 방수 등산 스틱\", \"filters\": {{\"logic\": \"AND\", \"conditions\": [{{\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Quechua\"}}, {{\"field\": \"category\", \"operator\": \"==\", \"value\": \"등산 스틱\"}}, {{\"field\": \"features\", \"operator\": \"contains\", \"value\": \"완전 방수\"}}, {{\"field\": \"price_numeric\", \"operator\": \"<=\", \"value\": 30000}}]}}}}"
+        }}
+      }}
     ]
     ```
     [Tool 결과 메시지 (시뮬레이션)]
     ```tool_result
     [
-      {
+      {{
         "tool_call_id": "tool_call_3a",
         "role": "tool",
         "name": "product_search",
-        "content": "{\"results_found\": false}"
-      }
+        "content": "{{\"results_found\": false}}"
+      }}
     ]
     ```
     [2차 LLM 최종 답변 (Assistant)]
     죄송합니다, 고객님. 문의하신 3만원 이하 가격대에 '완전 방수' 기능이 있는 퀘차 브랜드 등산 스틱은 현재 찾기 어렵습니다. 등산 스틱은 일반적으로 방수 기능이 필수적이지 않아 해당 기능을 가진 제품이 많지 않습니다. \n\n혹시 가격대를 조금 높여서 찾아보시거나, 방수 기능 외에 중요하게 생각하시는 다른 특징(예: 무게, 소재, 길이 조절 방식)이 있으시면 다시 한번 검색을 도와드리겠습니다.
 
+    ## [신규] 예시 3: 후속 질문 처리 (개선된 키워드 생성 반영)
+    # [이전 대화 요약]: 사용자가 데카트론 러닝화를 찾고 있으며, 킵런 KS900 모델을 추천받음.
+    # [최근 대화 기록]:
+    # Assistant: 킵런 KS900 모델은 쿠션이 좋고 안정성이 뛰어납니다. 가격은 119,000원입니다.
+    # User: 그거 방수도 되나요?
+    # [LLM 응답 (Tool 호출)]
+    # ```tool_calls
+    # [ {{ "id": "tool_call_followup_1", "type": "function", "function": {{ "name": "product_search", "arguments": "{{\"search_keywords\": \"**킵런 KS900 러닝화 방수 기능** 유무 및 관련 정보 확인\", \"filters\": {{\"logic\": \"AND\", \"conditions\": [{{\"field\": \"product_name\", \"operator\": \"contains\", \"value\": \"KS900\"}}, {{\"field\": \"brand\", \"operator\": \"==\", \"value\": \"Kiprun\"}}]}}, \"num_results\": 1}}" }} }} ]
+    # ```
+
   # --- [신규] Tool 인수 오류 시 LLM 안내 프롬프트 (기존 유지) ---
   tool_argument_error_prompt: |
     죄송합니다. 제품 검색을 시도했지만, 필요한 정보가 명확하지 않아 검색을 진행할 수 없었습니다. 찾으시는 제품의 종류(예: 러닝화, 텐트), 특징(예: 방수, 경량), 브랜드, 가격대 등 원하시는 조건을 조금 더 자세히 말씀해주시겠어요?
 
-  # Slot 추출 프롬프트 (기존 유지 - 백그라운드 실행용)
+  # Slot 추출 프롬프트 (기존 유지 - 백그라운드 실행용, 예시 JSON 중괄호 이스케이프)
   slot_extraction_prompt_template: |
     # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
     당신은 사용자의 자연어 문의에서 핵심 정보를 추출하여 구조화된 JSON 형식으로 반환하는 "슬롯 추출 전문 AI"입니다.
@@ -295,7 +257,7 @@ prompts:
     * [슬롯 정의]에 명시된 슬롯 중, [사용자 입력]에서 **실제로 추출된 정보가 있는 슬롯만** JSON 객체에 키(key)와 값(value)으로 포함시키세요.
     * [사용자 입력]에서 해당 슬롯 정보를 찾을 수 **없는 경우에는, 해당 슬롯의 키 자체를 최종 JSON 결과에서 반드시 생략**해야 합니다. (주의: `null` 이나 빈 문자열 `""`을 값으로 넣지 마세요.)
     * 값(value)은 사용자 입력의 핵심 내용을 간결하게 담아야 합니다. `user_preference` 처럼 여러 값이 나올 수 있는 슬롯은 리스트([])로 값을 만듭니다.
-    * 최종 출력은 반드시 다음 형식의 유효한 JSON 이어야 합니다: `{{"slot_name1": "value1", "slot_name2": ["value2a", "value2b"], ...}}`
+    * 최종 출력은 반드시 다음 형식의 유효한 JSON 이어야 합니다: `{{ "slot_name1": "value1", "slot_name2": ["value2a", "value2b"], ... }}`  # 여기도 이스케이프 필요
     * 해당 슬롯이 비어있고, 사용자의 입력이 슬롯과 아무련 관련이 없을 경우 아무 것도 넣지 마세요.
     [예시 1]
     사용자 입력: "안녕하세요, 캠핑 가서 쓸 가성비 좋은 4인용 텐트 있을까요?"
@@ -328,36 +290,36 @@ prompts:
     }}
     ```
 
-  # 대화 요약 프롬프트 (기존 유지 - 백그라운드 실행용)
+  # 대화 요약 프롬프트 ([결정 필요] 슬롯/Tool결과 반영 시 수정, 플레이스홀더만 존재)
   summarization_prompt_template: |
-    # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
     # 역할 정의
     당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입니다.
     # 작업 지시
-    주어진 [이전 대화 요약]과 [대화 기록]을 바탕으로, 전체 대화의 흐름과 중요 정보(사용자 주요 문의, 언급된 제품, 확인된 선호도, 해결된 내용 등)가 잘 드러나도록 **업데이트된 통합 요약**을 작성해주세요.
+    주어진 [현재 슬롯 정보], [최근 Tool 실행 요약], [이전 대화 요약], [대화 기록]을 **모두 종합적으로 고려하여**, 전체 대화의 흐름, 중요한 사용자 정보/선호도(슬롯 참고), 주요 Tool 실행 결과(Tool 요약 참고), 해결된 내용 등이 잘 드러나도록 **업데이트된 통합 요약**을 작성해주세요.
     # 요약 가이드라인
-    * [이전 대화 요약]이 있다면, 그 내용을 바탕으로 [대화 기록]의 새로운 정보를 자연스럽게 통합하여 하나의 업데이트된 요약을 만드세요.
-    * [이전 대화 요약]이 없다면 (대화 초반), [대화 기록]만으로 첫 요약을 생성하세요.
-    * 요약은 사용자와 AI의 상호작용을 객관적으로 기술하는 형태여야 합니다. (예: "사용자가 A 제품에 대해 문의함. AI는 B 기능을 설명하고 C 제품을 추천함.")
-    * 핵심적인 내용 중심으로 간결하게 작성하며, 불필요한 미사여구나 반복은 피하세요.
-    * 최종 요약문의 길이는 약 **{target_summary_tokens} 토큰** 내외가 되도록 노력해주세요. (정확히 맞출 필요는 없으나, 너무 길거나 짧지 않게 조절)
+    * [이전 대화 요약]이 있다면, 그 내용을 바탕으로 새로운 정보들을 자연스럽게 통합하세요.
+    * **[현재 슬롯 정보]에 있는 사용자의 의도, 선호도, 언급된 제품 등의 주요 정보가 요약에 반영되도록 노력하세요.** (예: 사용자가 '발볼 넓음', '러닝화'를 찾고 있음)
+    * **[최근 Tool 실행 요약]에서 파악된 주요 검색 활동이나 그 결과(예: 특정 제품 검색 성공/실패, 찾은 결과 수 등)를 간략히 언급하세요.**
+    * 객관적인 사실 위주로 간결하게 작성하고, 불필요한 내용은 생략하세요.
+    * 최종 요약문의 길이는 약 **{target_summary_tokens} 토큰** 내외로 조절하세요.
     # 입력 정보
+    {slot_information} # 슬롯 정보가 삽입될 위치 (chatbot/summarizer.py 구현과 일치 필요)
+    {tool_result_summary} # Tool 결과 요약이 삽입될 위치 (chatbot/summarizer.py 구현과 일치 필요)
+
     [이전 대화 요약]:
     {previous_summary}
     [대화 기록]:
     {conversation_history}
     # 업데이트된 통합 요약 ({target_summary_tokens} 토큰 내외):
 
-  # 기타 프롬프트 요소 (필요 시 사용 - 변경 없음)
-  rag_fallback_message: "- 관련된 문서 정보를 찾지 못했습니다."
 
-# --- 로깅 설정 (변경 없음) ---
+# --- 로깅 설정 ---
 logging:
-  log_level: "DEBUG" # 코드에서 DEBUG 고정
+  log_level: "DEBUG" # [수정됨] DEBUG 고정 명시 (실제 동작은 gpt_interface.py에서 DEBUG 고정)
   log_file_base_name: "api_history"
   log_timestamp_format: "%Y-%m-%d %H:%M:%S"
 
-# --- 테스트 설정 (변경 없음) ---
+# --- 테스트 설정 ---
 testing:
   chatbot_api_url: "http://127.0.0.1:8000/chat"
   api_timeout: 60
@@ -372,9 +334,15 @@ testing:
       general_faq: 20
   function_test_set:
     filename_template: "functional_tests.jsonl"
-    # count: 30 (예시, test_generator.py에서 기본값 사용 가능)
+    count: 30 # 예시, test_generator.py에서 이 값 사용 가능
   overall_test_set:
     filename_template: "overall_tests_set{set_num}.jsonl"
     num_sets: 3
-    # count: 200 (예시)
-    # complexity_ratio: 0.5 (예시)
+    count: 200 # 예시
+    complexity_ratio: 0.5 # 예시
+
+# --- [신규] 서버 설정 섹션 (app.py 실행 시 필요) ---
+server:
+  host: "127.0.0.1"
+  port: 8000
+  reload: true # 개발 중에는 True, 배포 시 False 권장

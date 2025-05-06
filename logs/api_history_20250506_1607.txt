@@ -1,0 +1,192 @@
+[2025-05-06 16:07:38] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250506_1607.txt
+================================================================================
+[2025-05-06 16:07:43] [INFO] - Sending ChatCompletion request to gpt-4o (Full details logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:07:43.898
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature    : 0.2
+  Max Tokens     : 1500
+  Tools Count    : 1
+  Tool Choice    : auto
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "system",
+    "content": "테스트 시작.\n[최근 대화 기록]:\n테스트 끝.\n"
+  },
+  {
+    "role": "user",
+    "content": "나는 바보"
+  }
+]
+
+--- Full Tools Definition ---
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "description": "데카트론 및 기타 브랜드 제품 데이터베이스에서 사용자의 질문과 맥락에 맞는 제품 정보를 검색합니다. 제품 추천, 비교, 특정 기능/가격/브랜드 제품 찾기 등에 사용합니다.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_keywords": {
+            "type": "string",
+            "description": "사용자의 질문과 대화 맥락을 종합하여 벡터 검색 임베딩 생성에 사용할 핵심 검색어 또는 자연어 질문. **의미적 유사성**을 찾는 데 중점을 두며, **정확한 제품명 대신 제품의 특징, 용도, 비교 대상, 후속 질문의 경우 이전 언급 제품명 등을 포함**하는 것이 좋습니다. 예: '비 오는 날 신기 좋은 가벼운 트레일 러닝화', '나이키 에어포스와 비슷한 스타일의 데카트론 운동화', '방금 추천한 KS900 다른 색상 검색'"
+          },
+          "filters": {
+            "type": "object",
+            "description": "검색 결과를 특정 조건으로 좁히기 위한 필터. **OR 논리를 기본으로 사용**하여, 정보가 누락된 제품도 검색 결과에 포함될 가능성을 높이는 것을 권장합니다. 사용자가 명시적으로 '반드시' 조건을 요구할 때만 AND 논리를 사용하세요. 필터 필드가 메타데이터에 없는 경우, AND 조건에서는 제외되고 OR 조건에서는 다른 조건에 따라 포함될 수 있습니다.",
+            "properties": {
+              "logic": {
+                "type": "string",
+                "enum": [
+                  "AND",
+                  "OR"
+                ],
+                "default": "OR",
+                "description": "conditions 배열 내의 필터 조건들을 결합할 논리 (AND 또는 OR). **정보 누락 가능성을 고려하여 OR 사용을 권장합니다.**"
+              },
+              "conditions": {
+                "type": "array",
+                "description": "적용할 필터 조건들의 리스트. 너무 많은 조건을 동시에 사용하지 않는 것이 좋습니다.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "description": "필터링할 메타데이터 필드 이름. **정확한 값 비교가 가능한 필드(brand, category, price_numeric) 위주로 사용**하고, features는 contains 연산자와 함께 사용하세요. 후속 질문 시 이전 제품명을 사용할 수 있습니다.",
+                      "enum": [
+                        "category",
+                        "brand",
+                        "features",
+                        "price_numeric",
+                        "target_audience",
+                        "product_name"
+                      ]
+                    },
+                    "operator": {
+                      "type": "string",
+                      "description": "필터링 연산자. '=='(정확히 일치), '<='(작거나 같음), '>='(크거나 같음), 'contains'(포함 여부 - 주로 features 필드에 사용).",
+                      "enum": [
+                        "==",
+                        "<=",
+                        ">=",
+                        "contains"
+                      ]
+                    },
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ],
+                      "description": "필터링할 값. field 타입에 따라 string, integer, 또는 array(features 필터 시) 사용."
+                    }
+                  },
+                  "required": [
+                    "field",
+                    "operator",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "num_results": {
+            "type": "integer",
+            "description": "후 필터링 후 최종적으로 반환받기를 원하는 결과의 최대 개수 (기본값: 3).",
+            "default": 3
+          }
+        },
+        "required": [
+          "search_keywords"
+        ]
+      }
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-06 16:07:46] [INFO] - ChatCompletion success from gpt-4o. Tokens: 678
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:07:43.898
+Response TS: 2025-05-06T16:07:46.397
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6gzLCFfpDbWB5o2gPIfFAwanurn
+  Choices Count    : 1
+  Usage (P/C/T)    : 632 / 46 / 678
+
+--- Full Response Content ---
+자신을 그렇게 낮추지 마세요. 우리는 모두 실수를 하고, 그로부터 배우는 과정에서 성장합니다. 도움이 필요하시거나 궁금한 점이 있으시면 언제든지 말씀해 주세요.
+================================================================================
+
+================================================================================
+[2025-05-06 16:07:46] [INFO] - Sending ChatCompletion request to gpt-4o (Full details logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:07:46.403
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature    : 0.1
+  Max Tokens     : 1000
+  Tools Count    : 0
+  Tool Choice    : Not Specified
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "user",
+    "content": "# ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...\n당신은 사용자의 자연어 문의에서 핵심 정보를 추출하여 구조화된 JSON 형식으로 반환하는 \"슬롯 추출 전문 AI\"입니다.\n# 작업 지시\n주어진 [사용자 입력]을 분석하여, 아래 [슬롯 정의]에 명시된 슬롯(Slot)들을 추출하고, 그 결과를 [출력 형식]에 맞는 JSON 객체로 만드세요.\n[사용자 입력]:\n나는 바보\n[슬롯 정의]\n* `sport_type`: 사용자가 관심을 보이는 스포츠 활동 (예: \"러닝\", \"축구\", \"등산\", \"캠핑\", \"수영\"). 문맥상 파악이 안되면 생략합니다.\n* `product_category`: 사용자가 찾거나 언급하는 제품의 분류 (예: \"러닝화\", \"텐트\", \"등산 스틱\", \"수영복\", \"축구공\", \"자전거 의류\"). 문맥상 파악이 안되면 생략합니다.\n* `user_preference`: 사용자가 명시적으로 표현한 선호 조건이나 요구 사항 (예: \"방수 기능\", \"가벼운 것\", \"초보자용\", \"발볼 넓은\", \"저렴한\", \"따뜻한\"). 여러 개일 경우 리스트 형태 [\"조건1\", \"조건2\"] 로 추출합니다. 문맥상 파악이 안되면 생략합니다.\n* `brand_mentioned`: 사용자가 언급한 특정 브랜드 이름 (예: \"나이키\", \"아디다스\", \"컬럼비아\"). 데카트론 자체 브랜드 외 타사 브랜드를 언급했을 때만 추출합니다. 문맥상 파악이 안되면 생략합니다.\n* `size_info`: 사용자가 언급한 사이즈 관련 정보 (예: \"270mm\", \"L\", \"100\", \"M 사이즈\"). 문맥상 파악이 안되면 생략합니다.\n* `feature_specific`: 사용자가 요구하는 구체적인 제품 기능이나 속성 (예: \"고어텍스 소재\", \"충전식 램프\", \"지퍼 달린 주머니\", \"이너 팬츠 없는\"). 문맥상 파악이 안되면 생략합니다.\n* `in_stock_requested`: 사용자가 재고 유무 확인을 요청했는지 여부 (Boolean 값: true). \"재고 있는\", \"구매 가능한\" 등의 표현이 있을 경우 true로 설정합니다. 문맥상 파악이 안되면 생략합니다.\n[출력 형식 및 규칙]\n* 오직 JSON 객체만을 출력해야 합니다. 다른 설명은 절대 포함하지 마세요.\n* [슬롯 정의]에 명시된 슬롯 중, [사용자 입력]에서 **실제로 추출된 정보가 있는 슬롯만** JSON 객체에 키(key)와 값(value)으로 포함시키세요.\n* [사용자 입력]에서 해당 슬롯 정보를 찾을 수 **없는 경우에는, 해당 슬롯의 키 자체를 최종 JSON 결과에서 반드시 생략**해야 합니다. (주의: `null` 이나 빈 문자열 `\"\"`을 값으로 넣지 마세요.)\n* 값(value)은 사용자 입력의 핵심 내용을 간결하게 담아야 합니다. `user_preference` 처럼 여러 값이 나올 수 있는 슬롯은 리스트([])로 값을 만듭니다.\n* 최종 출력은 반드시 다음 형식의 유효한 JSON 이어야 합니다: `{\"slot_name1\": \"value1\", \"slot_name2\": [\"value2a\", \"value2b\"], ...}`\n* 해당 슬롯이 비어있고, 사용자의 입력이 슬롯과 아무련 관련이 없을 경우 아무 것도 넣지 마세요.\n[예시 1]\n사용자 입력: \"안녕하세요, 캠핑 가서 쓸 가성비 좋은 4인용 텐트 있을까요?\"\nJSON 출력:\n```json\n{\n  \"sport_type\": \"캠핑\",\n  \"product_category\": \"텐트\",\n  \"user_preference\": [\"가성비 좋음\", \"4인용\"]\n}\n```\n[예시 2]\n사용자 입력: \"발볼 넓은 사람도 편하게 신을 수 있는 런닝화 M 사이즈 재고 있나요?\"\nJSON 출력:\n```json\n{\n  \"product_category\": \"런닝화\",\n  \"user_preference\": [\"발볼 넓음\"],\n  \"size_info\": \"M 사이즈\",\n  \"in_stock_requested\": true\n}\n```\n[예시 3]\n사용자 입력: \"나이키 에어포스랑 비슷한 데카트론 신발은 뭔가요?\"\nJSON 출력:\n```json\n{\n  \"brand_mentioned\": \"나이키\",\n  \"product_category\": \"신발\"\n}\n```\n"
+  }
+]
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:07:47] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1049
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:07:46.403
+Response TS: 2025-05-06T16:07:47.342
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6h1nLlu0S169LCzfkOsLOd59Sti
+  Choices Count    : 1
+  Usage (P/C/T)    : 1047 / 2 / 1049
+
+--- Full Response Content ---
+{}
+================================================================================
+

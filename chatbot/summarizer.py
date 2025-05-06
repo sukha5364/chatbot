@@ -1,4 +1,4 @@
-# chatbot/summarizer.py (최종 수정 계획 확인 - 로직 변경 없음)
+# chatbot/summarizer.py (**수정됨**: "brief" 모드에서 첫 제품명 포함 로직 추가)
 
 import json
 import logging
@@ -21,26 +21,54 @@ except ImportError as ie:
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG) # 필요 시 명시적 설정
 
-# --- 대화 요약 함수 ---
+# --- [기존] 히스토리 포맷팅 함수 (변경 없음) ---
+def format_history_for_prompt(history_list: List[Dict[str, Any]]) -> str:
+    """주어진 대화 기록 리스트를 LLM 프롬프트에 적합한 문자열로 포맷합니다."""
+    lines = []
+    for turn in history_list:
+        role = turn.get("role", "unknown").capitalize()
+        content = turn.get("content")
+        # Tool 관련 정보는 요약 프롬프트에서 제외 (별도 처리 예정)
+        if role == 'Tool': continue # Tool 결과는 여기서 제외
+        if role == 'Assistant' and turn.get('tool_calls'):
+            # Tool 호출한 Assistant 메시지는 간단히 표시하거나 내용만 표시
+            content_str = "(Tool call requested)" if not content else str(content)
+        else:
+            content_str = str(content) if content is not None else ""
+
+        # 너무 길거나 불필요한 content 필터링 가능 (선택 사항)
+        if content_str: # 내용이 있을 때만 추가
+             lines.append(f"{role}: {content_str}")
+    return "\n".join(lines).strip()
+
+# --- [수정됨] 대화 요약 함수 (슬롯/Tool 결과 처리 추가, "brief" 모드 강화) ---
 async def summarize_conversation_async(
-    history: List[Dict[str, Any]], # history 타입 Any 허용 (tool_calls 등 포함 가능성)
+    history: List[Dict[str, Any]], # history 타입 Any 허용
     previous_summary: Optional[str] = None, # 이전 요약본
-    session: Optional[aiohttp.ClientSession] = None
+    session: Optional[aiohttp.ClientSession] = None,
+    # --- 추가된 파라미터 ---
+    current_slots: Optional[Dict[str, Any]] = None,
+    include_slots: bool = False, # config에서 읽은 값 전달받음
+    include_tool_results: str = "none" # config에서 읽은 값 전달받음 ("none", "brief", "full")
+    # ----------------------
 ) -> Optional[str]:
     """
-    주어진 대화 기록과 이전 요약(선택 사항)을 바탕으로 업데이트된 요약을 생성합니다.
+    주어진 대화 기록, 이전 요약, 현재 슬롯, Tool 결과를 바탕으로 업데이트된 요약을 생성합니다.
     config.yaml 설정을 참조하여 모델, 파라미터, 프롬프트, 증분 업데이트 여부 등을 결정합니다.
-    증분 업데이트 시에는 이전 요약과 최근 N턴의 대화 기록만 사용합니다.
+    "brief" 모드 시 Tool 결과 요약에 첫 번째 제품명을 포함하도록 수정되었습니다.
 
     Args:
         history (List[Dict[str, Any]]): 요약 대상이 될 전체 대화 기록 리스트.
         previous_summary (Optional[str], optional): 이전 턴에서 생성된 요약.
         session (Optional[aiohttp.ClientSession], optional): API 호출에 사용할 aiohttp 세션.
+        current_slots (Optional[Dict[str, Any]], optional): 현재 추출된 슬롯 정보.
+        include_slots (bool): 요약 프롬프트에 슬롯 정보를 포함할지 여부.
+        include_tool_results (str): Tool 결과를 요약 프롬프트에 포함할 방식 ("none", "brief", "full").
 
     Returns:
         Optional[str]: 생성된 요약 텍스트. 오류 발생 시 None.
     """
-    # 필수 모듈 및 설정 로드 확인
+    # --- 필수 모듈 및 설정 로드 확인 (기존과 동일) ---
     if not call_gpt_async or not get_config:
         logger.error("Required modules (gpt_interface, config_loader) not available in summarize_conversation_async.")
         return None
@@ -51,16 +79,16 @@ async def summarize_conversation_async(
         logger.error(f"Failed to get configuration in summarizer: {conf_e}", exc_info=True)
         return None
 
-    # 요약 설정 로드 및 확인
+    # --- 요약 설정 로드 및 확인 (기존과 동일, enabled 체크 추가) ---
     try:
         summarization_config = config.get('tasks', {}).get('summarization', {})
         prompt_template = config.get('prompts', {}).get('summarization_prompt_template')
 
-        # 요약 기능 활성화 여부 확인 (app.py에서도 체크하지만 여기서도 확인 가능)
+        # 요약 기능 활성화 여부 확인
         enabled = summarization_config.get('enabled', False)
         if not enabled:
-             logger.debug("Summarization is disabled in config. Skipping summarization.")
-             return None # 이전 요약 유지 또는 None 반환 (호출 측에서 처리)
+            logger.debug("Summarization is disabled in config. Skipping summarization.")
+            return None # 기능 비활성화 시 None 반환
 
         model = summarization_config.get('model')
         temperature = summarization_config.get('temperature')
@@ -84,54 +112,117 @@ async def summarize_conversation_async(
         logger.error(f"Error accessing summarization configuration: {e}", exc_info=True)
         return None
 
-    logger.info(f"Attempting to summarize conversation (Incremental: {update_incrementally})...")
+    # --- [수정됨] 입력 데이터 준비 (슬롯, Tool 결과 포함) ---
+    logger.info(f"Attempting to summarize conversation (Include Slots: {include_slots}, Include Tools: {include_tool_results})...")
 
-    # --- 히스토리 및 이전 요약 준비 ---
     history_for_prompt_str = ""
     summary_for_prompt = previous_summary if previous_summary else "N/A" # 이전 요약 없으면 "N/A"
+    history_to_process_for_tools = history # Tool 정보 추출 대상 히스토리
 
-    # 히스토리 포맷팅 함수 (가독성 위해 분리)
-    def format_history_for_prompt(history_list: List[Dict[str, Any]]) -> str:
-        lines = []
-        for turn in history_list:
-            role = turn.get("role", "unknown").capitalize()
-            content = turn.get("content")
-            # Tool 관련 정보는 요약 프롬프트에서 제외 (필요시 포함 가능)
-            if role == 'Tool': continue # Tool 결과는 제외
-            if role == 'Assistant' and turn.get('tool_calls'):
-                 # Tool 호출한 Assistant 메시지는 간단히 표시하거나 내용만 표시
-                 content_str = "(Tool call requested)" if not content else str(content)
-            else:
-                 content_str = str(content) if content is not None else ""
+    # 슬롯 정보 포맷팅 (변경 없음)
+    slot_info_str = ""
+    if include_slots and current_slots:
+        try:
+            filtered_slots = {k: v for k, v in current_slots.items() if v is not None} # None 값 제외
+            if filtered_slots: # 유효한 슬롯이 있을 때만
+                slot_info_str = f"[현재 슬롯 정보]:\n{json.dumps(filtered_slots, indent=2, ensure_ascii=False)}\n"
+                logger.debug("Formatted slot information for summary prompt.")
+        except Exception as e:
+            logger.warning(f"Failed to format slots for summary prompt: {e}")
 
-            lines.append(f"{role}: {content_str}")
-        return "\n".join(lines).strip()
-
+    # 대화 기록 포맷팅 (변경 없음)
     if update_incrementally and previous_summary:
-        logger.debug("Incremental update mode: Using previous summary and recent history.")
-        # 최근 N 턴(user+assistant = 2*N 메시지) 추출
+        logger.debug("Incremental update mode: Using previous summary and recent history for context.")
         num_recent_messages = summarize_every_n * 2
         recent_history = history[-num_recent_messages:]
         history_for_prompt_str = format_history_for_prompt(recent_history)
+        history_to_process_for_tools = recent_history
         logger.debug(f"Using last {len(recent_history)} messages ({summarize_every_n} turns) for incremental summary.")
-    else: # 증분 업데이트 아니거나 이전 요약 없음
-        logger.debug("Full history mode (or no previous summary): Using entire history.")
+    else:
+        logger.debug("Full history mode (or no previous summary): Using entire history for context.")
         history_for_prompt_str = format_history_for_prompt(history)
 
-    if not history_for_prompt_str.strip():
-        logger.warning("Formatted conversation history for prompt is empty. Cannot summarize.")
-        return None
+    # --- [수정됨] Tool 결과 정보 포맷팅 ("brief" 모드 강화) ---
+    tool_info_str = ""
+    if include_tool_results in ["brief", "full"] and history_to_process_for_tools:
+        tool_summaries = []
+        processed_tool_call_ids = set()
+        max_tool_summaries = 3
+        logger.debug(f"Extracting up to {max_tool_summaries} recent tool results (Mode: {include_tool_results})...")
 
-    # --- 프롬프트 생성 ---
+        for msg in reversed(history_to_process_for_tools):
+            if len(tool_summaries) >= max_tool_summaries: break
+
+            if msg.get("role") == "tool":
+                tool_call_id = msg.get("tool_call_id")
+                if not tool_call_id or tool_call_id in processed_tool_call_ids: continue
+
+                tool_name = msg.get("name", "?")
+                tool_content_str = msg.get("content", "{}")
+                summary_line = ""
+                try:
+                    tool_content_obj = json.loads(tool_content_str)
+                    results_found = tool_content_obj.get("results_found", False)
+                    error_msg = tool_content_obj.get("error")
+                    results = tool_content_obj.get("results", [])
+                    results_count = len(results)
+
+                    if error_msg:
+                        summary_line = f"- Tool '{tool_name}' 실패: {error_msg}"
+                    # --- "brief" 모드 수정 시작 ---
+                    elif include_tool_results == "brief":
+                        if results_found and results_count > 0:
+                            # 첫 번째 결과의 제품명 추출 시도
+                            first_result_name = results[0].get('product_name', '알 수 없음')
+                            # 필요시 브랜드 등 추가 정보 결합 가능
+                            # first_result_brand = results[0].get('brand', '')
+                            # name_to_show = f"{first_result_brand} {first_result_name}" if first_result_brand else first_result_name
+                            summary_line = f"- Tool '{tool_name}' 실행: {results_count}개 찾음 (예: {first_result_name})"
+                        elif results_found and results_count == 0:
+                             summary_line = f"- Tool '{tool_name}' 실행: 결과 없음 (성공: True)"
+                        else: # results_found가 False인 경우
+                            summary_line = f"- Tool '{tool_name}' 실행: 결과 없음 (성공: False)"
+                    # --- "brief" 모드 수정 끝 ---
+                    elif include_tool_results == "full":
+                        # "full" 모드 로직 (예시: 상위 2개 제품명 포함)
+                        if results_found and results_count > 0:
+                            names = [r.get('product_name', '?') for r in results[:2]] # 상위 2개 이름
+                            summary_line = f"- Tool '{tool_name}' 실행: {results_count}개 찾음 (결과: {', '.join(names)}{'...' if results_count > 2 else ''})"
+                        else:
+                            summary_line = f"- Tool '{tool_name}' 실행: 결과 없음 (성공: {results_found})"
+                    else: # "none" 또는 미지원 모드
+                        continue # 요약 라인 생성 안 함
+
+                    if summary_line:
+                         tool_summaries.append(summary_line)
+                         processed_tool_call_ids.add(tool_call_id)
+
+                except json.JSONDecodeError:
+                    logger.warning(f"Could not parse tool content for {tool_call_id} in summary: {tool_content_str[:100]}...")
+                except Exception as e:
+                     logger.warning(f"Error processing tool message for summary (ID: {tool_call_id}): {e}")
+
+        if tool_summaries:
+            tool_info_str = "[최근 Tool 실행 요약]:\n" + "\n".join(reversed(tool_summaries)) + "\n"
+            logger.debug("Formatted tool result summary for prompt (names included in brief).")
+
+
+    if not history_for_prompt_str.strip() and not slot_info_str and not tool_info_str:
+         logger.warning("Formatted conversation history and additional context (slots/tools) are empty. Cannot summarize.")
+         return None
+
+    # --- 프롬프트 생성 (기존과 동일) ---
     try:
         prompt = prompt_template.format(
+            slot_information=slot_info_str, # 슬롯 정보 전달
+            tool_result_summary=tool_info_str, # Tool 결과 요약 전달
             conversation_history=history_for_prompt_str,
             previous_summary=summary_for_prompt,
             target_summary_tokens=target_summary_tokens
         )
-        logger.debug(f"Summarization prompt created. Length: {len(prompt)} chars.")
+        logger.debug(f"Summarization prompt created (Context Enhanced). Length: {len(prompt)} chars.")
     except KeyError as e:
-        logger.error(f"Error formatting summarization prompt template. Missing key: {e}. Template: {prompt_template[:200]}...")
+        logger.error(f"Error formatting summarization prompt template. Missing key: {e}. Check placeholders in config.yaml and code (e.g., slot_information, tool_result_summary). Template: {prompt_template[:200]}...")
         return None
     except Exception as e:
         logger.error(f"Unexpected error during prompt formatting: {e}", exc_info=True)
@@ -139,7 +230,7 @@ async def summarize_conversation_async(
 
     messages = [{"role": "user", "content": prompt}]
 
-    # --- GPT 호출하여 요약 생성 ---
+    # --- GPT 호출하여 요약 생성 (기존과 동일) ---
     logger.debug(f"Calling GPT for summarization (model: {model}, temp: {temperature}, max_tokens: {max_tokens})")
     try:
         response_data = await call_gpt_async(
@@ -148,7 +239,6 @@ async def summarize_conversation_async(
             temperature=temperature,
             max_tokens=max_tokens,
             session=session
-            # 요약 시에는 JSON 모드 불필요
         )
 
         if response_data and response_data.get("choices"):
@@ -170,76 +260,77 @@ async def summarize_conversation_async(
         logger.error(f"An unexpected error occurred during summarization API call: {e}", exc_info=True)
         return None
 
-# --- 예시 사용법 (변경 없음) ---
+# --- 예시 사용법 (테스트 코드 변경 없음 - 이미 수정된 시그니처 사용) ---
 if __name__ == "__main__":
     import asyncio
-    import os # os 임포트 추가
-    import time # time 임포트 추가
+    import os
+    import time
 
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logger.info("--- Running summarizer.py as main script for testing ---")
+    logger.info("--- Running summarizer.py as main script for testing (Updated for brief with names) ---")
 
-    async def test_summarization():
-        """테스트 요약 실행 함수"""
+    async def test_summarization_enhanced():
+        """테스트 요약 실행 함수 (수정된 시그니처 반영)"""
         try:
             config = get_config(); assert config
             assert os.getenv("OPENAI_API_KEY")
-            logger.info("Config and API Key ready for summarizer test.")
+            logger.info("Config and API Key ready for enhanced summarizer test.")
         except Exception as e:
             logger.error(f"Prerequisites missing for test: {e}"); return
 
-        test_history_short = [ # 이전 예시 사용
-             {"role": "user", "content": "러닝화 추천해주세요."},
-             {"role": "assistant", "content": "네, 어떤 종류의 러닝을 주로 하시나요?"},
-             {"role": "user", "content": "주로 공원에서 가볍게 뛰어요."},
-             {"role": "assistant", "content": "공원에서 가볍게 뛰신다면 쿠션이 좋은 데일리 러닝화를 추천드립니다. 킵런 KD500 모델은 어떠신가요?"},
-         ]
-        test_history_long = [ # 이전 예시 사용
-             {"role": "user", "content": "안녕하세요, 데카트론 킵런 KS900 신발 사이즈 문의합니다."},
-             {"role": "assistant", "content": "네, 고객님. 어떤 사이즈를 찾으시나요? 평소 신으시는 운동화 사이즈를 알려주시겠어요?"},
-             {"role": "user", "content": "나이키 270mm 신는데, 발볼이 좀 넓은 편이에요."},
-             {"role": "assistant", "content": "나이키 270mm 신으시고 발볼이 넓으시다면, 킵런 KS900은 270mm 또는 275mm를 고려해보실 수 있습니다."},
-             # Tool 호출/결과 추가 (예시)
-             {"role": "assistant", "content": None, "tool_calls": [{"id": "t1", "type":"function", "function": {"name": "product_search", "arguments": "{...}"}}]},
-             {"role": "tool", "tool_call_id": "t1", "name": "product_search", "content": json.dumps({"results_found": False})},
-             {"role": "assistant", "content": "죄송하지만 현재 KS900 관련 상세 정보 조회가 어렵습니다. 온라인몰 확인 부탁드립니다."},
-             {"role": "user", "content": "알겠습니다."}
-         ]
+        # 테스트 데이터 정의 (히스토리, 이전 요약, 슬롯)
+        test_history = [
+             {"role": "user", "content": "발볼 넓은 남성용 런닝화 추천해주세요. 가격은 10만원대로요."},
+             {"role": "assistant", "content": None, "tool_calls": [{"id": "call_abc", "type": "function", "function": {"name": "product_search", "arguments": "{\"search_keywords\": \"발볼 넓은 남성용 런닝화 10만원대\", \"filters\": {\"logic\": \"AND\", \"conditions\": [{\"field\": \"target_audience\", \"operator\": \"==\", \"value\": \"남성\"}, {\"field\": \"price_numeric\", \"operator\": \"<=\", \"value\": 199999}]}}"}}]},
+             # *** 수정된 Tool 결과 예시 (product_name 포함) ***
+             {"role": "tool", "tool_call_id": "call_abc", "name": "product_search", "content": json.dumps({"results": [{"product_name": "킵런 KS500 2", "brand": "Kiprun", "price": "99000원", "features": ["fit:넓은 발볼", "review_good:편안함"]}], "results_found": True})},
+             {"role": "assistant", "content": "발볼이 넓으시다면 킵런 KS500 2 모델을 추천합니다. 99,000원이고 사용자 리뷰에서도 편안하다는 평이 많습니다."},
+             {"role": "user", "content": "그거 말고 다른 건 없나요? 킵런 브랜드 말고 다른 걸로요."},
+             {"role": "assistant", "content": None, "tool_calls": [{"id": "call_def", "type": "function", "function": {"name": "product_search", "arguments": "{\"search_keywords\": \"발볼 넓은 남성용 런닝화 10만원대 (킵런 제외)\", \"filters\": {\"logic\": \"AND\", \"conditions\": [{\"field\": \"target_audience\", \"operator\": \"==\", \"value\": \"남성\"}, {\"field\": \"price_numeric\", \"operator\": \"<=\", \"value\": 199999}, {\"field\": \"brand\", \"operator\": \"!=\", \"value\": \"Kiprun\"}]}}"}}]},
+             {"role": "tool", "tool_call_id": "call_def", "name": "product_search", "content": json.dumps({"results_found": False})} # 결과 없음 시뮬레이션
+        ]
+        test_previous_summary = "사용자가 런닝화를 찾기 시작함."
+        test_slots = {"product_category": "런닝화", "user_preference": ["발볼 넓음", "10만원대"], "target_audience": "남성"}
 
-        summarize_n = config.get('tasks', {}).get('summarization', {}).get('summarize_every_n_turns', 1)
-        update_inc = config.get('tasks', {}).get('summarization', {}).get('update_summary_incrementally', True)
+        # 설정값 읽기 (app.py 와 유사하게)
+        summarization_cfg = config.get('tasks', {}).get('summarization', {})
+        inc_slots = summarization_cfg.get('include_slots_in_summary_prompt', False)
+        inc_tools = summarization_cfg.get('include_tool_results_in_summary', 'none') # 테스트 시 'brief' 또는 'full' 로 변경 가능
+        # inc_tools = "brief" # 테스트 위해 강제 설정
 
         async with aiohttp.ClientSession() as session:
-             print(f"\n--- Testing Summarization (Short History, Incremental={update_inc}, N={summarize_n}) ---")
-             prev_summary1 = "사용자가 러닝화 추천을 요청함."
-             start_t1 = time.time()
-             summary1 = await summarize_conversation_async(test_history_short, previous_summary=prev_summary1, session=session)
-             dur_t1 = time.time() - start_t1
-             print(f"(Took {dur_t1:.3f}s)")
-             if summary1: print(f"Generated Summary 1:\n{summary1}")
-             else: print("Summarization 1 failed.")
-             print("-" * 30)
+            print(f"\n--- Testing Summarization (Slots: {inc_slots}, Tools: {inc_tools}) ---")
+            start_t = time.time()
+            summary = await summarize_conversation_async(
+                history=test_history,
+                previous_summary=test_previous_summary,
+                session=session,
+                current_slots=test_slots, # 슬롯 전달
+                include_slots=inc_slots, # 설정 전달
+                include_tool_results=inc_tools # 설정 전달
+            )
+            dur_t = time.time() - start_t
+            print(f"(Took {dur_t:.3f}s)")
+            if summary:
+                print(f"Generated Summary:\n{summary}")
+            else:
+                print("Summarization failed.")
+            print("-" * 30)
 
-             print(f"\n--- Testing Summarization (Long History, Incremental={update_inc}, N={summarize_n}) ---")
-             prev_summary2 = "고객은 킵런 KS900 사이즈(나이키 270mm, 발볼 넓음)를 문의했고, 270/275mm 추천받음."
-             start_t2 = time.time()
-             summary2 = await summarize_conversation_async(test_history_long, previous_summary=prev_summary2, session=session)
-             dur_t2 = time.time() - start_t2
-             print(f"(Took {dur_t2:.3f}s)")
-             if summary2: print(f"Generated Summary 2 (Incremental):\n{summary2}")
-             else: print("Summarization 2 failed.")
-             print("-" * 30)
-
-             print(f"\n--- Testing Summarization (Long History, From Scratch) ---")
-             start_t3 = time.time()
-             summary3 = await summarize_conversation_async(test_history_long, previous_summary=None, session=session)
-             dur_t3 = time.time() - start_t3
-             print(f"(Took {dur_t3:.3f}s)")
-             if summary3: print(f"Generated Summary 3 (From Scratch):\n{summary3}")
-             else: print("Summarization 3 failed.")
-             print("-" * 30)
+            # "full" 모드 테스트 (inc_tools = "full" 로 설정하고 실행)
+            print(f"\n--- Testing Summarization (Slots: {inc_slots}, Tools: full) ---")
+            start_t_full = time.time()
+            summary_full = await summarize_conversation_async(
+                history=test_history, previous_summary=test_previous_summary, session=session,
+                current_slots=test_slots, include_slots=inc_slots, include_tool_results="full"
+            )
+            dur_t_full = time.time() - start_t_full
+            print(f"(Took {dur_t_full:.3f}s)")
+            if summary_full: print(f"Generated Summary (Full):\n{summary_full}")
+            else: print("Summarization (Full) failed.")
+            print("-" * 30)
 
     try:
-        asyncio.run(test_summarization())
+        asyncio.run(test_summarization_enhanced())
     except Exception as e:
         logging.error(f"\nSummarizer test error: {e}", exc_info=True)

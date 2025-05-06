@@ -1,0 +1,267 @@
+[2025-05-06 15:43:23] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250506_1543.txt
+[2025-05-06 15:43:47] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250506_1543.txt
+================================================================================
+[2025-05-06 15:43:54] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:43:54.013
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature    : 0.2
+  Max Tokens     : 1500
+  Tools Count    : 1
+  Tool Choice    : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 & 제품 정보 검색 전문가 (Vector Search 최적... User: 안녕 난 바보야...
+================================================================================
+
+================================================================================
+[2025-05-06 15:43:55] [INFO] - ChatCompletion success from gpt-4o. Tokens: 5796
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:43:54.013
+Response TS: 2025-05-06T15:43:55.919
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6Jv1coFouR7yEFgXQxAaqKkqGku
+  Choices Count    : 1
+  Usage (P/C/T)    : 5765 / 31 / 5796
+  Content Preview : 안녕하세요! 어떤 도움이 필요하신가요? 제품에 대한 정보나 추천이 필요하시면 언제든지 말씀해 주세요. 😊...
+================================================================================
+
+================================================================================
+[2025-05-06 15:43:55] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:43:55.920
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature    : 0.1
+  Max Tokens     : 1000
+  Tools Count    : 0
+  Tool Choice    : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 15:43:56] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1052
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:43:55.920
+Response TS: 2025-05-06T15:43:56.923
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6JxlhgAXig52Om8QdIfSgktzywc
+  Choices Count    : 1
+  Usage (P/C/T)    : 1050 / 2 / 1052
+  Content Preview : {}...
+================================================================================
+
+================================================================================
+[2025-05-06 15:43:57] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:43:57.783
+
+--- Request Payload Info ---
+  Messages Count: 4
+  Temperature    : 0.2
+  Max Tokens     : 1500
+  Tools Count    : 1
+  Tool Choice    : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 & 제품 정보 검색 전문가 (Vector Search 최적... User: 난 나이키 신발이 좋아...
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:00] [INFO] - ChatCompletion success from gpt-4o. Tokens: 5874
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:43:57.783
+Response TS: 2025-05-06T15:44:00.015
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6JzGZITAYd8YSeKNvxUAqmI58qI
+  Choices Count    : 1
+  Usage (P/C/T)    : 5810 / 64 / 5874
+  Content Preview : 나이키 신발은 정말 인기가 많죠! 나이키 신발 중에서 특정 모델이나 스타일을 찾고 계신가요? 아니면 어떤 용도로 신을 신발을 찾고 계신지 말씀해...
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:00] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:00.038
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature    : 0.1
+  Max Tokens     : 1000
+  Tools Count    : 0
+  Tool Choice    : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:02] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1066
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:00.038
+Response TS: 2025-05-06T15:44:02.127
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6K2JDckzg8SRl91ODk0Qql2IfSn
+  Choices Count    : 1
+  Usage (P/C/T)    : 1052 / 14 / 1066
+  Content Preview : {
+  "brand_mentioned": "나이키"
+}...
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:16] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:16.203
+
+--- Request Payload Info ---
+  Messages Count: 6
+  Temperature    : 0.2
+  Max Tokens     : 1500
+  Tools Count    : 1
+  Tool Choice    : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 & 제품 정보 검색 전문가 (Vector Search 최적... User: 내가 좋아하는 신발은 뭐~게...
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:19] [INFO] - ChatCompletion success from gpt-4o. Tokens: 5980
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:16.203
+Response TS: 2025-05-06T15:44:19.094
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6KHsq2PnfMluAODztnwUMQqqwtP
+  Choices Count    : 1
+  Usage (P/C/T)    : 5890 / 90 / 5980
+  Content Preview : 아, 재미있는 질문이네요! 나이키 신발을 좋아하신다고 하셨으니, 아마도 나이키의 인기 있는 모델 중 하나일 것 같아요. 예를 들어, 나이키 에어...
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:19] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:19.130
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature    : 0.1
+  Max Tokens     : 1000
+  Tools Count    : 0
+  Tool Choice    : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:19] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:19.131
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature    : 0.3
+  Max Tokens     : 2000
+  Tools Count    : 0
+  Tool Choice    : Not Specified
+  Messages Preview: System: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입... User: # 역할 정의
+당신은 고객과의 상담 대화 내용을 핵심만 간추려 요약하는 AI 요약 전문가입...
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:20] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1056
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:19.130
+Response TS: 2025-05-06T15:44:20.185
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6KKaU9oJm0F06qSa8Twle8t7HZp
+  Choices Count    : 1
+  Usage (P/C/T)    : 1054 / 2 / 1056
+  Content Preview : {}...
+================================================================================
+
+================================================================================
+[2025-05-06 15:44:22] [INFO] - ChatCompletion success from gpt-4o. Tokens: 735
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T15:44:19.131
+Response TS: 2025-05-06T15:44:22.708
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU6KKFw4YcKHPBHZ5BwmhocSiD3sd
+  Choices Count    : 1
+  Usage (P/C/T)    : 586 / 149 / 735
+  Content Preview : 사용자는 나이키 신발을 선호한다고 언급하며, 특히 어떤 모델을 좋아하는지에 대해 AI와 대화를 나누었습니다. AI는 나이키 신발의 인기를 인정하...
+================================================================================
+

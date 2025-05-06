@@ -1,8 +1,9 @@
-# chatbot/conversation_state.py (백그라운드 업데이트 완료 Event 최종 적용 버전)
+# chatbot/conversation_state.py (Summary+K-Turns, Detailed Logging, Periodic Summary 적용 최종 버전)
 
 import logging
-import asyncio # asyncio 임포트 추가
+import asyncio
 from typing import Dict, Any, Optional, List
+import json # [신규] 타입 검사 위해 추가
 
 # 로거 설정 (기본 설정 상속)
 logger = logging.getLogger(__name__)
@@ -11,26 +12,34 @@ logger = logging.getLogger(__name__)
 class ConversationState:
     """
     단일 사용자 세션의 대화 상태를 인메모리에서 관리하는 클래스.
-    추출된 Slot 정보, 대화 요약, 전체 대화 기록을 저장합니다.
-    [신규] 백그라운드 슬롯/요약 업데이트 완료를 위한 Event 객체를 포함합니다.
+    추출된 Slot 정보, 대화 요약, 전체 대화 기록, [신규] 턴 카운터를 저장합니다.
+    백그라운드 슬롯/요약 업데이트 완료를 위한 Event 객체를 포함합니다.
 
     Attributes:
         slots (Dict[str, Any]): 추출된 Slot 정보를 저장하는 딕셔너리.
         summary (Optional[str]): 현재까지의 대화 요약 문자열.
-        history (List[Dict[str, str]]): 전체 대화 기록 리스트 (user, assistant, tool 역할 포함).
+        history (List[Dict[str, Any]]): 전체 대화 기록 리스트 (user, assistant, tool 역할 포함). 타입 Any 허용.
         update_complete_event (asyncio.Event): 백그라운드 업데이트 작업 완료 시그널 이벤트.
+        turn_counter (int): [신규] 현재 대화의 턴 수를 추적 (주기적 요약 등).
     """
     def __init__(self):
         """ConversationState 인스턴스를 초기화합니다."""
         self.slots: Dict[str, Any] = {}
         self.summary: Optional[str] = None
-        # history는 role과 content 키를 가진 딕셔너리 리스트
-        # role은 'user', 'assistant', 'tool'이 될 수 있음
-        self.history: List[Dict[str, str]] = []
-        # 업데이트 완료 이벤트 객체 생성 및 초기 상태 '완료(set)'로 설정
+        self.history: List[Dict[str, Any]] = [] # [수정됨] 타입 힌트 Any 허용 (tool_calls 등 고려)
         self.update_complete_event = asyncio.Event()
-        self.update_complete_event.set() # 초기에는 업데이트가 완료된 상태
-        logger.debug("ConversationState initialized with update_complete_event set.")
+        self.update_complete_event.set() # 초기에는 완료 상태
+        self.turn_counter: int = 0 # [신규] 턴 카운터 초기화
+        logger.debug("ConversationState initialized with update_complete_event set and turn_counter 0.")
+
+    def increment_turn_counter(self):
+        """[신규] 턴 카운터를 1 증가시킵니다."""
+        self.turn_counter += 1
+        logger.debug(f"Turn counter incremented to: {self.turn_counter}")
+
+    def get_turn_counter(self) -> int:
+        """[신규] 현재 턴 카운터를 반환합니다."""
+        return self.turn_counter
 
     def update_slots(self, new_slots: Dict[str, Any]):
         """
@@ -43,7 +52,7 @@ class ConversationState:
         if not isinstance(new_slots, dict):
             # None 이거나 dict 아닌 경우 경고. Background task 이므로 에러 발생시키지 않음.
             if new_slots is not None:
-                 logger.warning(f"Invalid type for new_slots: {type(new_slots)}. Expected dict. Skipping slot update.")
+                logger.warning(f"Invalid type for new_slots: {type(new_slots)}. Expected dict. Skipping slot update.")
             # else: logger.debug("Received None for new_slots. Skipping slot update.") # None은 정상일 수 있음
             return
 
@@ -98,6 +107,7 @@ class ConversationState:
         """
         return self.summary
 
+    # [수정됨] 타입 힌트 Any 허용 및 안정성 강화
     def add_to_history(self, role: str, content: Any, **kwargs):
         """
         대화 내용을 기록(history)에 추가합니다.
@@ -107,7 +117,7 @@ class ConversationState:
 
         Args:
             role (str): 메시지 발화자 역할 ('user', 'assistant', 'tool').
-            content (Any): 메시지 내용 (주로 str). tool 역할 시 JSON 결과 문자열.
+            content (Any): 메시지 내용 (주로 str). tool 역할 시 JSON 결과 문자열 또는 객체.
             **kwargs: 추가 정보 (예: tool_calls, tool_call_id).
         """
         if role not in ["user", "assistant", "tool"]:
@@ -116,61 +126,79 @@ class ConversationState:
 
         message: Dict[str, Any] = {"role": role}
 
-        # Content 처리
-        if not isinstance(content, str):
-             logger.warning(f"History content type is not str ({type(content)}). Converting to string.")
-             message["content"] = str(content)
+        # Content 처리 (JSON 객체 등 다양한 타입 고려)
+        if content is not None:
+            # JSON 문자열 또는 객체를 일관되게 문자열로 저장 (API 요구사항에 따라 조정 가능)
+            if isinstance(content, (dict, list)):
+                try:
+                    message["content"] = json.dumps(content, ensure_ascii=False)
+                except TypeError:
+                    logger.warning(f"Could not JSON serialize content for role '{role}'. Storing as string.")
+                    message["content"] = str(content)
+            elif not isinstance(content, str):
+                 # 숫자가 content로 들어오는 경우 등을 대비해 문자열로 변환
+                message["content"] = str(content)
+            else:
+                message["content"] = content
         else:
-             message["content"] = content
+             # content가 None일 수 있음 (예: tool_calls만 있는 assistant 메시지)
+             message["content"] = None # OpenAI API는 content=None을 허용함
 
         # 역할별 추가 정보 처리
         if role == "assistant":
             tool_calls = kwargs.get('tool_calls')
             if tool_calls:
-                message["tool_calls"] = tool_calls # OpenAI 형식 그대로 저장
-                # content가 None이고 tool_calls가 있을 수 있음
-                if message["content"] is None: message["content"] = "" # content는 필수 필드 가정
+                # tool_calls 형식이 OpenAI API 요구사항(list of tool call objects)을 따르는지 확인 필요
+                if isinstance(tool_calls, list):
+                    message["tool_calls"] = tool_calls
+                else:
+                    logger.warning(f"Invalid type for tool_calls: {type(tool_calls)}. Expected list.")
+            # content가 None이고 tool_calls가 있을 때 content 필드 처리는 OpenAI 스키마에 따름 (현재는 None 유지)
         elif role == "tool":
             tool_call_id = kwargs.get('tool_call_id')
-            if not tool_call_id:
-                 logger.error("Missing 'tool_call_id' for role 'tool' in history. This might break context.")
-                 # return # 또는 ID 없이 추가? API 요구사항 확인 필요
+            if not tool_call_id or not isinstance(tool_call_id, str):
+                logger.error("Missing or invalid 'tool_call_id' (string) for role 'tool'.")
+                # return # 또는 ID 없이 추가? API 요구사항 확인 필요
             else:
-                 message["tool_call_id"] = tool_call_id
-            # tool 역할 메시지의 content는 일반적으로 tool 실행 결과 (JSON 문자열)
+                message["tool_call_id"] = tool_call_id
+            # tool 역할 메시지의 content는 일반적으로 tool 실행 결과 문자열
 
         self.history.append(message)
         logger.debug(f"Added '{role}' message to history. History length: {len(self.history)}")
         # logger.debug(f"Last message added: {message}") # 디버깅 필요 시
 
-    def get_history(self) -> List[Dict[str, Any]]:
+    def get_history(self, copy: bool = True) -> List[Dict[str, Any]]:
         """
-        전체 대화 기록 리스트를 반환합니다.
-        호출자에게 원본 리스트 대신 복사본을 제공하여 외부 변경 방지.
+        전체 대화 기록 리스트를 반환합니다. 기본적으로 복사본을 반환합니다.
+
+        Args:
+            copy (bool, optional): True이면 리스트의 복사본을 반환합니다. Defaults to True.
 
         Returns:
-            List[Dict[str, Any]]: 전체 대화 기록 리스트 (복사본).
+            List[Dict[str, Any]]: 전체 대화 기록 리스트.
         """
         # 중요: 상태 객체 내부 리스트를 직접 반환하지 않고 복사본 반환
-        return self.history[:]
+        return self.history[:] if copy else self.history
 
     def clear(self):
-        """모든 대화 상태(slots, summary, history)를 초기화하고 업데이트 완료 상태로 설정합니다."""
+        """모든 대화 상태(slots, summary, history, turn_counter)를 초기화하고 업데이트 완료 상태로 설정합니다."""
         self.slots = {}
         self.summary = None
         self.history = []
-        self.update_complete_event.set() # 초기화 시에도 완료 상태로 설정
-        logger.info("Conversation state (slots, summary, history) cleared and update_complete_event is set.")
+        self.update_complete_event.set()
+        self.turn_counter = 0 # [신규] 턴 카운터 초기화
+        logger.info("Conversation state cleared (slots, summary, history, turn_counter) and update_complete_event is set.")
 
-# --- 예시 사용법 (변경 없음) ---
+# --- 예시 사용법 (turn_counter 테스트 추가) ---
 if __name__ == "__main__":
     # 메인 스크립트로 실행 시 로깅 레벨 DEBUG 설정
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(__name__) # logger 재정의 필요 없음
+    logger = logging.getLogger(__name__)
     logger.info("--- Running ConversationState Example ---")
 
     state = ConversationState()
     print(f"Initial event state (should be set): {state.update_complete_event.is_set()}")
+    print(f"Initial Turn Counter: {state.get_turn_counter()}") # [신규] 초기 턴 카운터 확인
 
     # Slot 업데이트
     initial_slots = {"brand": "나이키", "size": "270mm", "foot_width": None}
@@ -189,6 +217,9 @@ if __name__ == "__main__":
     state.update_summary(None) # None 테스트
     print(f"Summary after None update (should be unchanged): {state.get_summary()}")
 
+    # 턴 카운터 증가 테스트
+    state.increment_turn_counter() # [신규] 턴 증가
+    print(f"\nTurn Counter after increment: {state.get_turn_counter()}")
 
     # 대화 기록 추가 (user, assistant, tool)
     state.add_to_history("user", "나이키 페가수스랑 비슷한 데카트론 신발 찾아줘.")
@@ -209,11 +240,12 @@ if __name__ == "__main__":
 
     print(f"\nCurrent History (Copy): {state.get_history()}")
 
-    # 상태 초기화 및 이벤트 상태 확인
+    # 상태 초기화 및 턴 카운터 확인
     state.clear()
     print(f"\nSlots after clear: {state.get_slots()}")
     print(f"Summary after clear: {state.get_summary()}")
     print(f"History after clear: {state.get_history()}")
+    print(f"Turn Counter after clear: {state.get_turn_counter()}") # [신규] 초기화 확인
     print(f"Event state after clear (should be set): {state.update_complete_event.is_set()}")
 
     # 이벤트 상태 변경 시뮬레이션

@@ -1,4 +1,4 @@
-# chatbot/scheduler.py (Tool Use 워크플로우 및 후 필터링 적용 최종 버전)
+# chatbot/scheduler.py (Summary+K-Turns, Detailed Logging, Periodic Summary, Configurable Iterations 적용 최종 버전)
 
 import asyncio
 import time
@@ -30,7 +30,7 @@ except ImportError as ie:
 # --- 로거 설정 ---
 logger = logging.getLogger(__name__)
 
-# --- RAG 검색 비동기 실행 함수 (변경 없음) ---
+# --- RAG 검색 비동기 실행 함수 ---
 async def run_rag_search_async(
     query_embedding: Union[List[float], np.ndarray, None],
     k: int,
@@ -51,6 +51,7 @@ async def run_rag_search_async(
         return []
 
     try:
+        # 입력 임베딩 타입 처리 (리스트 또는 NumPy 배열)
         if isinstance(query_embedding, list):
             query_embedding_np = np.array(query_embedding, dtype=np.float32).reshape(1, -1)
         elif isinstance(query_embedding, np.ndarray):
@@ -58,6 +59,8 @@ async def run_rag_search_async(
         else:
             raise TypeError(f"Invalid query embedding type: {type(query_embedding)}")
 
+        # FAISS 인덱스 차원과 쿼리 임베딩 차원 일치 확인
+        # RagSearcher 생성 시점에 이미 확인하지만, 방어적으로 한 번 더 체크
         index_dim = getattr(rag_searcher.index, 'd', None)
         if index_dim is None or index_dim != query_embedding_np.shape[1]:
             raise ValueError(f"Query embedding dim ({query_embedding_np.shape[1]}) mismatch with index dim ({index_dim}).")
@@ -71,18 +74,18 @@ async def run_rag_search_async(
 
     try:
         start_t = time.time()
-        # RagSearcher.search는 동기 함수
+        # RagSearcher.search는 동기 함수이므로 run_in_executor 사용
         results = await loop.run_in_executor(
             None, rag_searcher.search, query_embedding_np, k
         )
         duration_t = time.time() - start_t
         logger.debug(f"Async RAG search finished in {duration_t:.4f}s. Found {len(results)} initial results.")
-        return results
+        return results # 검색 결과 (메타데이터 리스트) 반환
     except Exception as e:
         logger.error(f"Error during async RAG search execution: {e}", exc_info=True)
         return []
 
-# --- [개선됨] 메타데이터 후 필터링 함수 (OR 논리 기본, 필드 부재 처리 강화) ---
+# --- 메타데이터 후 필터링 함수 ---
 def apply_metadata_filters(
     rag_results: List[Dict],
     filters: Optional[Dict] = None
@@ -93,16 +96,16 @@ def apply_metadata_filters(
 
     Args:
         rag_results (List[Dict]): RAG 검색으로 얻은 초기 메타데이터 딕셔너리 리스트.
-        filters (Optional[Dict]): LLM이 생성한 필터 조건 객체.
+        filters (Optional[Dict]): LLM이 생성한 필터 조건 객체 (logic, conditions 포함).
 
     Returns:
         List[Dict]: 필터 조건에 맞는 메타데이터 딕셔너리 리스트.
     """
     if not filters or not isinstance(filters, dict) or 'conditions' not in filters or not filters['conditions']:
         logger.debug("No valid filters provided or filters empty, returning all initial RAG results.")
-        return rag_results
+        return rag_results # 필터 없으면 원본 반환
 
-    logic = filters.get('logic', 'OR').upper() # [수정됨] 기본값 OR
+    logic = filters.get('logic', 'OR').upper() # [수정됨] 기본값 OR 사용 및 대문자 변환
     conditions = filters['conditions']
     filtered_results = []
 
@@ -112,7 +115,7 @@ def apply_metadata_filters(
         logic = 'OR'
 
     for item in rag_results:
-        item_metadata = item # 메타데이터는 item 자체
+        item_metadata = item # searcher 결과가 바로 메타데이터 딕셔너리 리스트
         item_id = item.get('id', 'Unknown') # 로깅용 ID
 
         conditions_met = [] # 각 조건 충족 여부 저장 (OR/AND 로직 적용 위해)
@@ -129,7 +132,7 @@ def apply_metadata_filters(
 
             condition_match = False # 현재 조건 매칭 여부
 
-            # [수정됨] 필드 값 존재 여부 확인
+            # 필드 값 존재 여부 확인
             if item_value is None:
                 logger.debug(f"Filter field '{field}' not found in metadata for item '{item_id}'.")
                 # OR 논리에서는 이 조건은 False지만, 다른 조건으로 통과 가능
@@ -142,15 +145,15 @@ def apply_metadata_filters(
                         # 대소문자 구분 없이 비교 (브랜드, 카테고리 등)
                         condition_match = str(item_value).lower() == str(filter_value).lower()
                     elif operator == '<=':
-                        # 숫자 필드(price_numeric)만 지원
+                        # 숫자 필드(price_numeric)만 지원 가정
                         if field == 'price_numeric':
-                             # 타입 변환 시도
+                            # 타입 변환 시도 및 비교
                             condition_match = int(item_value) <= int(filter_value)
                         else: logger.warning(f"Operator '<=' not applicable to field '{field}'. Condition fails.")
                     elif operator == '>=':
-                         if field == 'price_numeric':
-                             condition_match = int(item_value) >= int(filter_value)
-                         else: logger.warning(f"Operator '>=' not applicable to field '{field}'. Condition fails.")
+                        if field == 'price_numeric':
+                            condition_match = int(item_value) >= int(filter_value)
+                        else: logger.warning(f"Operator '>=' not applicable to field '{field}'. Condition fails.")
                     elif operator == 'contains':
                         # features 필드 (list) 또는 문자열 필드 지원
                         if isinstance(item_value, list): # features 필드
@@ -188,20 +191,20 @@ def apply_metadata_filters(
     return filtered_results
 
 
-# --- [수정됨] 메인 오케스트레이션 함수 (Tool Use 워크플로우, 다중 호출 지원) ---
+# --- [수정됨] 메인 오케스트레이션 함수 (Summary + K Turns, Configurable Max Iterations 적용) ---
 async def orchestrate_chatbot_turn(
     user_input: str,
     conversation_state: ConversationState,
     session: aiohttp.ClientSession,
-    rag_searcher: Optional[RagSearcher] # RAG 검색기 인스턴스
+    rag_searcher: Optional[RagSearcher]
 ) -> Dict[str, Any]:
     """
-    Tool Use 기반 챗봇 응답 생성 오케스트레이션 함수 (다중/순차 호출 지원).
+    'Summary + K Turns' 컨텍스트와 Tool Use 기반 챗봇 응답 생성 오케스트레이션 함수
+    (다중/순차 호출 지원, 최대 반복 횟수 설정 가능).
     """
     # --- 필수 모듈 및 설정 로드 ---
     if not all([call_gpt_async, get_openai_embedding_async, get_config, api_logger]):
         logger.critical("CRITICAL: Required scheduler dependencies missing.")
-        # 사용자에게 표시될 수 있는 안전한 오류 메시지 반환
         return {"error_message_for_user": "죄송합니다, 시스템 설정 오류로 답변을 드릴 수 없습니다."}
 
     try:
@@ -216,14 +219,26 @@ async def orchestrate_chatbot_turn(
         tool_use_model = tool_use_config.get('model', 'gpt-4o')
         decision_temp = tool_use_config.get('decision_temperature', 0.2)
         decision_max_tokens = tool_use_config.get('decision_max_tokens', 1500)
+        # [수정됨] generation 파라미터는 Tool 결과 후 최종 답변 생성 시 사용하도록 분리
         generation_temp = tool_use_config.get('generation_temperature', 0.7)
         generation_max_tokens = tool_use_config.get('generation_max_tokens', 3000)
-        rag_k = rag_config.get('retrieval_k', 15) # 수정된 기본값
-        tool_use_prompt = prompts_config.get('tool_use_system_prompt')
+        rag_k = rag_config.get('retrieval_k', 15)
+        tool_use_prompt_template = prompts_config.get('tool_use_system_prompt')
         tool_arg_error_prompt = prompts_config.get('tool_argument_error_prompt')
+        context_k = prompts_config.get('context_recent_k_turns', 3) # [신규] K 값 읽기
+        # [신규] 최대 Tool 반복 횟수 읽기 (기본값 3)
+        max_tool_iterations = tool_use_config.get('max_iterations', 3)
+        logger.debug(f"Max Tool Iterations set to: {max_tool_iterations}")
 
-        if not all([tool_use_model, tool_use_prompt, tool_arg_error_prompt, tools_definition, isinstance(rag_k, int)]):
-            raise ValueError("Essential configurations for Tool Use or RAG are missing.")
+        # 필수 설정값 존재 및 타입 검증
+        if not all([tool_use_model, tool_use_prompt_template, tool_arg_error_prompt, tools_definition, isinstance(rag_k, int), isinstance(context_k, int), isinstance(max_tool_iterations, int)]):
+            raise ValueError("Essential configurations for Tool Use, RAG, or Context Management are missing or invalid.")
+        if context_k < 0: # K=0 허용 (요약만 사용)
+            logger.warning(f"Invalid context_recent_k_turns ({context_k}). Using 0.")
+            context_k = 0
+        if max_tool_iterations <= 0:
+            logger.warning(f"Invalid max_iterations ({max_tool_iterations}). Using default 1.")
+            max_tool_iterations = 1
 
     except Exception as conf_e:
         logger.critical(f"Critical configuration error in scheduler: {conf_e}", exc_info=True)
@@ -231,55 +246,107 @@ async def orchestrate_chatbot_turn(
 
     # --- 오케스트레이션 시작 ---
     start_time_scheduler = time.time()
-    logger.info("--- Starting Tool Use Orchestration Cycle ---")
+    logger.info("--- Starting Tool Use Orchestration Cycle (Summary + K Turns) ---")
     debug_info = {"orchestration_start_time": start_time_scheduler, "steps": []}
 
-    # 대화 히스토리 준비 (현재 사용자 입력 포함)
-    messages = [{"role": "system", "content": tool_use_prompt}]
-    # TODO: 이전 요약/슬롯을 프롬프트에 포함시킬지 여부 결정 및 구현
-    # 예: current_summary = conversation_state.get_summary() or "없음"
-    #    system_prompt_formatted = tool_use_prompt.format(summary=current_summary, ...)
-    #    messages = [{"role": "system", "content": system_prompt_formatted}]
-    messages.extend(conversation_state.get_history()) # 이전 기록
-    messages.append({"role": "user", "content": user_input}) # 현재 입력
+    # --- [수정됨] 컨텍스트 구성 (Summary + K Turns) ---
+    messages = []
+    # 1. 시스템 프롬프트 준비 (요약 포함)
+    current_summary = conversation_state.get_summary()
+    # 요약본이 있으면 프롬프트에 섹션 추가, 없으면 최근 대화만 표시
+    summary_section_text = f"[이전 대화 요약]:\n{current_summary}\n\n[최근 대화 기록]:" if current_summary else "[최근 대화 기록]:"
+    try:
+        # 프롬프트 템플릿에 summary_section 플레이스홀더가 있다고 가정
+        system_prompt_content = tool_use_prompt_template.format(summary_section=summary_section_text)
+    except KeyError:
+        logger.warning("'{summary_section}' placeholder not found in 'tool_use_system_prompt'. Appending summary separately.")
+        # Fallback: 요약 정보를 별도 메시지로 추가하거나, 시스템 프롬프트에 단순히 덧붙임
+        system_prompt_content = tool_use_prompt_template + "\n\n" + summary_section_text # 간단하게 뒤에 붙이는 방식
+    except Exception as fmt_e:
+        logger.error(f"Error formatting tool_use_system_prompt: {fmt_e}. Using base prompt.")
+        system_prompt_content = tool_use_prompt_template # 포맷팅 실패 시 원본 사용
+
+    messages.append({"role": "system", "content": system_prompt_content})
+
+    # 2. 최근 K턴 기록 추가
+    full_history = conversation_state.get_history(copy=True) # 원본 보호 위해 복사본 사용
+    if context_k > 0:
+        # K턴에 해당하는 메시지 수 추정 (User + Assistant + Tool Calls + Tool Results 등 고려)
+        # 더 정확한 로직은 턴 단위로 그룹화하는 것이지만, 여기서는 메시지 개수로 근사
+        # 각 턴은 최소 user+assistant(tool_call) 이므로 2개, tool 결과까지 하면 3개 이상 가능
+        approx_messages_per_turn = 3 # 평균 턴당 메시지 수 (조정 가능)
+        num_messages_to_get = context_k * approx_messages_per_turn
+        last_k_messages = full_history[-num_messages_to_get:] # 뒤에서부터 N개 메시지 추출
+        messages.extend(last_k_messages)
+        logger.debug(f"Added last {len(last_k_messages)} messages (approximating K={context_k} turns) to context.")
+        # 디버깅 위해 K턴 내용 로깅 (길이 제한)
+        k_turn_preview = json.dumps([{"role": m.get("role"), "content": str(m.get("content"))[:50] + "..."} for m in last_k_messages], ensure_ascii=False, indent=2)
+        logger.debug(f"Last K turns preview:\n{k_turn_preview}")
+    else:
+        logger.debug("context_recent_k_turns is 0, not adding recent history.")
+
+    # 3. 현재 사용자 입력 추가
+    messages.append({"role": "user", "content": user_input})
 
     # --- LLM 호출 및 Tool 실행 반복 루프 ---
-    MAX_TOOL_ITERATIONS = 3 # 최대 Tool 호출 횟수 (무한 루프 방지)
     current_iteration = 0
     final_response_content = None
 
-    while current_iteration < MAX_TOOL_ITERATIONS:
+    while current_iteration < max_tool_iterations: # [수정됨] 설정값 사용
         current_iteration += 1
         step_debug = {"iteration": current_iteration, "start_time": time.time()}
-        logger.info(f"--- Iteration {current_iteration}/{MAX_TOOL_ITERATIONS} ---")
+        logger.info(f"--- Iteration {current_iteration}/{max_tool_iterations} ---")
 
         # 1. LLM 호출 (Tool 결정 또는 답변 생성)
         logger.info(f"Executing LLM call #{current_iteration}...")
         step_debug["llm_call_start"] = time.time()
+
+        # --- 수정된 부분 시작 ---
+        # 마지막 메시지가 tool 역할인지 확인하여 파라미터 결정
+        use_generation_params = False
+        if messages and messages[-1].get("role") == "tool":
+            logger.debug("Previous message was from a tool. Using 'generation' parameters.")
+            current_temp = generation_temp
+            current_max_tokens = generation_max_tokens
+            use_generation_params = True # 최종 답변 생성 단계임을 표시
+        else:
+            logger.debug("Previous message not from a tool (or first call). Using 'decision' parameters.")
+            current_temp = decision_temp
+            current_max_tokens = decision_max_tokens
+        # --- 수정된 부분 끝 ---
+
+        # [!중요!] 도구 사용 후 답변 생성 시에는 도구 사용을 강제하지 않도록 tool_choice 조정 필요
+        current_tool_choice = "auto" if not use_generation_params else None # Tool 결과 받은 후엔 강제 도구 호출 방지
+        if use_generation_params:
+            logger.debug("Setting tool_choice to None for final response generation.")
+
         llm_response = await call_gpt_async(
-            messages=messages,
+            messages=messages, # 현재까지 누적된 메시지 전달
             model=tool_use_model,
-            temperature=decision_temp, # Tool 결정 단계는 낮은 온도
-            max_tokens=decision_max_tokens,
+            temperature=current_temp, # 결정된 파라미터 사용
+            max_tokens=current_max_tokens, # 결정된 파라미터 사용
             session=session,
             tools=tools_definition,
-            tool_choice="auto" # LLM이 Tool 사용 여부 결정
+            tool_choice=current_tool_choice # 수정된 tool_choice 적용
         )
         step_debug["llm_call_end"] = time.time()
         step_debug["llm_call_duration_ms"] = int((step_debug["llm_call_end"] - step_debug["llm_call_start"]) * 1000)
         step_debug["llm_model_used"] = tool_use_model
+        step_debug["llm_params_used"] = {"temperature": current_temp, "max_tokens": current_max_tokens, "tool_choice": current_tool_choice} # 수정된 파라미터 로깅
+
 
         if not llm_response or not llm_response.get("choices"):
             logger.error(f"LLM call #{current_iteration} failed or returned no choices.")
             step_debug["status"] = "failed_llm_call"
             step_debug["error"] = "LLM API call failed"
             debug_info["steps"].append(step_debug)
+            # 사용자에게 표시될 수 있는 안전한 오류 메시지 반환
             return {"error_message_for_user": "죄송합니다, 답변 생성 중 오류가 발생했습니다 (LLM 호출 실패).", "debug_info": debug_info}
 
         # LLM 응답 메시지 추출
         assistant_message = llm_response["choices"][0].get("message", {})
-        messages.append(assistant_message) # 다음 호출을 위해 어시스턴트 응답 추가
-        step_debug["llm_response_raw"] = assistant_message # 디버깅용
+        messages.append(assistant_message) # 다음 호출 또는 최종 히스토리 저장을 위해 어시스턴트 응답 추가
+        step_debug["llm_response_raw"] = assistant_message # 디버깅용 (전체 저장)
 
         tool_calls = assistant_message.get("tool_calls")
         response_content = assistant_message.get("content")
@@ -292,14 +359,21 @@ async def orchestrate_chatbot_turn(
 
             for tool_call in tool_calls:
                 tool_call_id = tool_call.get("id")
-                function_name = tool_call.get("function", {}).get("name")
+                function_call = tool_call.get("function")
+                if not tool_call_id or not function_call:
+                    logger.warning(f"Skipping invalid tool call object: {tool_call}")
+                    continue
+
+                function_name = function_call.get("name")
                 logger.info(f"Processing tool call ID: {tool_call_id}, Function: {function_name}")
+                # 각 Tool 호출별 디버그 정보 저장용
                 tool_step_debug = {"tool_call_id": tool_call_id, "function_name": function_name}
 
                 if function_name == "product_search":
                     # 인수 파싱
+                    arguments = {}
                     try:
-                        arguments_str = tool_call.get("function", {}).get("arguments", "{}")
+                        arguments_str = function_call.get("arguments", "{}")
                         arguments = json.loads(arguments_str)
                         search_keywords = arguments.get("search_keywords")
                         filters = arguments.get("filters") # Optional
@@ -307,7 +381,7 @@ async def orchestrate_chatbot_turn(
                         tool_step_debug["arguments"] = arguments
 
                         if not search_keywords: raise ValueError("Missing 'search_keywords'")
-                    except (json.JSONDecodeError, ValueError) as e:
+                    except (json.JSONDecodeError, ValueError, TypeError) as e:
                         logger.error(f"Failed to parse args for tool {tool_call_id}: {e}")
                         tool_step_debug["status"] = "failed_arg_parsing"
                         tool_step_debug["error"] = str(e)
@@ -318,7 +392,7 @@ async def orchestrate_chatbot_turn(
                             "name": function_name,
                             "content": json.dumps({"error": f"Argument parsing error: {e}", "results_found": False})
                         })
-                        debug_info["steps"].append(tool_step_debug)
+                        step_debug.setdefault("tool_executions", []).append(tool_step_debug) # 스텝 디버그에 추가
                         continue # 다음 Tool 호출 처리
 
                     # 임베딩 생성
@@ -334,7 +408,7 @@ async def orchestrate_chatbot_turn(
                             "role": "tool", "tool_call_id": tool_call_id, "name": function_name,
                             "content": json.dumps({"error": "Embedding generation failed", "results_found": False})
                         })
-                        debug_info["steps"].append(tool_step_debug)
+                        step_debug.setdefault("tool_executions", []).append(tool_step_debug)
                         continue
 
                     # RAG 검색
@@ -353,28 +427,32 @@ async def orchestrate_chatbot_turn(
                     tool_step_debug["filters_applied"] = filters # 적용된 필터 기록
 
                     # Tool 결과 포맷팅
-                    tool_result_content = ""
+                    tool_result_content_obj = {} # [수정됨] JSON 객체로 생성 후 마지막에 dump
                     if filtered_rag_results:
                         results_to_include = filtered_rag_results[:num_results_req]
                         # 필요한 정보만 선택적으로 포함 (간결화)
                         formatted_results = [{
                                 "product_name": r.get("product_name"), "brand": r.get("brand"),
                                 "category": r.get("category"), "price": r.get("price"),
-                                "features": r.get("features", [])[:5], # 특징 상위 5개
+                                # [결정필요] features 를 얼마나 포함할지? 여기서는 예시로 5개
+                                "features": r.get("features", [])[:5],
                                 "similarity_score": round(r.get("similarity_score", 0.0), 4)
                             } for r in results_to_include]
-                        tool_result_content = json.dumps({"results": formatted_results, "results_found": True}, ensure_ascii=False)
+                        tool_result_content_obj = {"results": formatted_results, "results_found": True}
                     else:
-                        tool_result_content = json.dumps({"results_found": False})
+                        tool_result_content_obj = {"results_found": False}
+
+                    # 최종 Tool 결과 문자열 생성
+                    tool_result_content = json.dumps(tool_result_content_obj, ensure_ascii=False)
 
                     tool_results_for_next_call.append({
                         "role": "tool", "tool_call_id": tool_call_id, "name": function_name,
-                        "content": tool_result_content
+                        "content": tool_result_content # JSON 문자열 전달
                     })
                     tool_step_debug["status"] = "success"
-                    tool_step_debug["result_preview"] = tool_result_content[:100] + "..."
+                    tool_step_debug["result_summary"] = tool_result_content_obj # 디버깅용 객체 저장
 
-                else:
+                else: # 정의되지 않은 함수 호출 시
                     logger.warning(f"Received unhandled tool function name: {function_name}")
                     tool_step_debug["status"] = "unhandled_function"
                     tool_results_for_next_call.append({
@@ -382,7 +460,7 @@ async def orchestrate_chatbot_turn(
                         "content": json.dumps({"error": f"Unknown function: {function_name}"})
                     })
 
-                debug_info["steps"].append(tool_step_debug) # 각 tool_call 디버그 정보 추가
+                step_debug.setdefault("tool_executions", []).append(tool_step_debug) # 각 tool_call 디버그 정보 추가
 
             # 다음 LLM 호출을 위해 Tool 결과 메시지 추가
             messages.extend(tool_results_for_next_call)
@@ -391,7 +469,7 @@ async def orchestrate_chatbot_turn(
         elif response_content:
             # 3. LLM이 Tool 호출 없이 직접 답변 생성
             logger.info(f"LLM generated final response directly in iteration {current_iteration}.")
-            final_response_content = response_content
+            final_response_content = response_content # 최종 응답 저장
             step_debug["status"] = "completed_direct_response"
             debug_info["steps"].append(step_debug)
             break # 루프 종료
@@ -404,12 +482,24 @@ async def orchestrate_chatbot_turn(
             # 사용자에게 표시될 수 있는 안전한 오류 메시지 반환
             return {"error_message_for_user": "죄송합니다, 응답 생성 중 예상치 못한 오류가 발생했습니다.", "debug_info": debug_info}
 
+        # 루프 계속 전 현재 스텝 정보 저장
+        debug_info["steps"].append(step_debug)
+
     # --- 루프 종료 후 처리 ---
     if final_response_content is None:
         # 최대 반복 도달 또는 다른 이유로 답변 생성 실패
-        logger.warning(f"Failed to get final response content after {current_iteration} iterations.")
-        if not debug_info["steps"][-1].get("status", "").startswith("failed"): # 마지막 단계가 명시적 실패가 아니면
-             debug_info["steps"].append({"status": "failed_max_iterations"})
+        logger.warning(f"Failed to get final response content after {current_iteration} iterations (max: {max_tool_iterations}).")
+        # 마지막 스텝 상태 업데이트 (실패 명시)
+        if debug_info["steps"]:
+            # 마지막 스텝이 이미 실패 상태가 아니면 max_iterations 실패로 기록
+            if not debug_info["steps"][-1].get("status", "").startswith("failed"):
+                debug_info["steps"][-1]["status"] = "failed_max_iterations"
+        else: # 스텝 정보가 아예 없는 경우 (루프 진입 실패 등)
+            debug_info["steps"].append({"status": "failed_unknown_before_loop"})
+
+        # 사용자 오류 메시지 반환
+        # 만약 마지막 Tool 실행 결과가 있다면 그걸 보여주는게 나을 수도? (여기서는 일단 일반 오류 메시지)
+        # last_tool_result = messages[-1]['content'] if messages and messages[-1].get('role') == 'tool' else None
         return {"error_message_for_user": "죄송합니다, 요청을 처리하는 데 시간이 너무 오래 걸리거나 오류가 발생했습니다.", "debug_info": debug_info}
 
     # --- 최종 결과 반환 ---
@@ -417,15 +507,24 @@ async def orchestrate_chatbot_turn(
     total_duration = end_time_scheduler - start_time_scheduler
     debug_info['total_orchestration_time_ms'] = int(total_duration * 1000)
     debug_info['final_status'] = 'success'
-    logger.info(f"--- Scheduler Orchestration Cycle Finished in {total_duration:.3f} seconds ---")
+    debug_info['total_iterations'] = current_iteration # 총 반복 횟수 추가
+    logger.info(f"--- Scheduler Orchestration Cycle Finished in {total_duration:.3f} seconds ({current_iteration} iterations) ---")
+
+    # 최종 히스토리에는 assistant 응답이 이미 messages 리스트 마지막에 추가되어 있음
+    # app.py에서 이 assistant_message를 conversation_state에 저장할 때 tool_calls 정보도 함께 저장해야 함
+    # scheduler 결과에 tool_calls 정보를 포함시켜 전달하는 방안 고려
+    # orchestration_debug_info['llm_response_raw'] 안에 이미 포함되어 있음
 
     return {"response": final_response_content, "debug_info": debug_info}
 
 
 # --- 예시 사용법 (직접 실행 어려움) ---
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    # 메인 스크립트로 실행 시 기본 로깅 설정
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logger.info("--- Running scheduler.py as main script (placeholder) ---")
     print("Scheduler module contains the core Tool Use orchestration logic.")
     print("Direct execution requires setting up dependencies (ConversationState, RagSearcher, etc.).")
     print("Please test via app.py or test_runner.py.")
+    # 테스트 코드 추가 시, ConversationState, RagSearcher 목(Mock) 객체 및
+    # aiohttp.ClientSession 설정 필요
