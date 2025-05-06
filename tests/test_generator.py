@@ -300,7 +300,7 @@ if __name__ == "__main__":
 
     # 2. 전체 테스트셋 생성 (여러 세트)
     num_sets = overall_test_config.get('num_sets', 1)
-    count_per_set = overall_test_config.get('count', 100)
+    count_per_set = overall_test_config.get('count', 20)
     ratio = overall_test_config.get('complexity_ratio', 0.5)
     filename_tpl = overall_test_config.get('filename_template')
 

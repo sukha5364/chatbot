@@ -1,4 +1,4 @@
-# chatbot/scheduler.py (Tool Use 워크플로우 및 후 필터링 적용 최종 버전)
+# chatbot/scheduler.py (Tool Use 워크플로우, 토큰 집계 및 후 필터링 적용 최종 버전)
 
 import asyncio
 import time
@@ -6,11 +6,11 @@ import logging
 import json
 from typing import Dict, Any, Optional, List, Union
 import aiohttp
-import numpy as np
+import numpy as np # RAG 검색 시 사용
 
 # --- 필요한 모듈 임포트 ---
 try:
-    # gpt_interface 모듈에서 api_logger 임포트 유지 (로깅용)
+    # gpt_interface 모듈에서 함수 및 로거 임포트
     from .gpt_interface import call_gpt_async, get_openai_embedding_async, api_logger
     from .searcher import RagSearcher
     from .conversation_state import ConversationState
@@ -19,18 +19,18 @@ try:
     logging.info("Required modules imported successfully in scheduler.")
 except ImportError as ie:
     logging.error(f"ERROR (scheduler): Failed to import modules: {ie}. Check relative paths.", exc_info=True)
-    # 필수 모듈 실패 시 스케줄러 기능 사용 불가 처리
+    # 필수 모듈 실패 시 스케줄러 기능 사용 불가 처리 (실제 서비스에서는 더 강력한 처리 필요)
     call_gpt_async = None
     get_openai_embedding_async = None
     RagSearcher = None
     ConversationState = None
     get_config = None
-    api_logger = None
+    api_logger = None # api_logger가 없으면 로깅 불가
 
 # --- 로거 설정 ---
 logger = logging.getLogger(__name__)
 
-# --- RAG 검색 비동기 실행 함수 (변경 없음) ---
+# --- RAG 검색 비동기 실행 함수 (이전과 동일) ---
 async def run_rag_search_async(
     query_embedding: Union[List[float], np.ndarray, None],
     k: int,
@@ -82,7 +82,7 @@ async def run_rag_search_async(
         logger.error(f"Error during async RAG search execution: {e}", exc_info=True)
         return []
 
-# --- [개선됨] 메타데이터 후 필터링 함수 (OR 논리 기본, 필드 부재 처리 강화) ---
+# --- 메타데이터 후 필터링 함수 (이전과 동일) ---
 def apply_metadata_filters(
     rag_results: List[Dict],
     filters: Optional[Dict] = None
@@ -90,19 +90,12 @@ def apply_metadata_filters(
     """
     RAG 검색 결과(메타데이터 리스트)에 대해 LLM이 생성한 필터 조건을 적용하여 결과를 필터링합니다.
     기본적으로 OR 논리를 사용하고, 필드 부재 시 처리 로직을 명확히 합니다.
-
-    Args:
-        rag_results (List[Dict]): RAG 검색으로 얻은 초기 메타데이터 딕셔너리 리스트.
-        filters (Optional[Dict]): LLM이 생성한 필터 조건 객체.
-
-    Returns:
-        List[Dict]: 필터 조건에 맞는 메타데이터 딕셔너리 리스트.
     """
     if not filters or not isinstance(filters, dict) or 'conditions' not in filters or not filters['conditions']:
         logger.debug("No valid filters provided or filters empty, returning all initial RAG results.")
         return rag_results
 
-    logic = filters.get('logic', 'OR').upper() # [수정됨] 기본값 OR
+    logic = filters.get('logic', 'OR').upper() # 기본값 OR
     conditions = filters['conditions']
     filtered_results = []
 
@@ -115,55 +108,44 @@ def apply_metadata_filters(
         item_metadata = item # 메타데이터는 item 자체
         item_id = item.get('id', 'Unknown') # 로깅용 ID
 
-        conditions_met = [] # 각 조건 충족 여부 저장 (OR/AND 로직 적용 위해)
+        conditions_met = [] # 각 조건 충족 여부 저장
         for condition in conditions:
             if not isinstance(condition, dict) or not all(k in condition for k in ['field', 'operator', 'value']):
                 logger.warning(f"Skipping invalid filter condition format: {condition}")
-                conditions_met.append(False) # 잘못된 조건은 False 처리
+                conditions_met.append(False)
                 continue
 
             field = condition['field']
             operator = condition['operator']
             filter_value = condition['value']
-            item_value = item_metadata.get(field) # 메타데이터에서 값 가져오기
+            item_value = item_metadata.get(field)
 
-            condition_match = False # 현재 조건 매칭 여부
+            condition_match = False
 
-            # [수정됨] 필드 값 존재 여부 확인
             if item_value is None:
                 logger.debug(f"Filter field '{field}' not found in metadata for item '{item_id}'.")
-                # OR 논리에서는 이 조건은 False지만, 다른 조건으로 통과 가능
-                # AND 논리에서는 이 조건 때문에 전체 아이템이 탈락
-                condition_match = False
+                condition_match = False # AND 로직에서는 탈락, OR에서는 다른 조건으로 통과 가능
             else:
                 # 필드 값 존재 시 조건 검사
                 try:
                     if operator == '==':
-                        # 대소문자 구분 없이 비교 (브랜드, 카테고리 등)
                         condition_match = str(item_value).lower() == str(filter_value).lower()
                     elif operator == '<=':
-                        # 숫자 필드(price_numeric)만 지원
-                        if field == 'price_numeric':
-                             # 타입 변환 시도
-                            condition_match = int(item_value) <= int(filter_value)
+                        if field == 'price_numeric': condition_match = int(item_value) <= int(filter_value)
                         else: logger.warning(f"Operator '<=' not applicable to field '{field}'. Condition fails.")
                     elif operator == '>=':
-                         if field == 'price_numeric':
-                             condition_match = int(item_value) >= int(filter_value)
+                         if field == 'price_numeric': condition_match = int(item_value) >= int(filter_value)
                          else: logger.warning(f"Operator '>=' not applicable to field '{field}'. Condition fails.")
                     elif operator == 'contains':
-                        # features 필드 (list) 또는 문자열 필드 지원
-                        if isinstance(item_value, list): # features 필드
-                            if isinstance(filter_value, list): # 필터 값이 리스트면 모든 값 포함 (AND)
-                                condition_match = all(str(fv).lower() in [str(iv).lower() for iv in item_value] for fv in filter_value)
-                            else: # 필터 값이 문자열이면 하나라도 포함 (OR)
-                                condition_match = any(str(filter_value).lower() in str(iv).lower() for iv in item_value)
+                        if isinstance(item_value, list): # features 등 리스트 필드
+                            # 필터 값이 리스트면 모든 값 포함(AND), 문자열이면 하나라도 포함(OR)
+                            check_val = filter_value if isinstance(filter_value, list) else [filter_value]
+                            condition_match = all(str(fv).lower() in [str(iv).lower() for iv in item_value] for fv in check_val)
                         elif isinstance(item_value, str): # 일반 문자열 필드
                             condition_match = str(filter_value).lower() in item_value.lower()
                         else: logger.warning(f"Operator 'contains' not supported for item_value type {type(item_value)} in field '{field}'.")
                     else:
                         logger.warning(f"Unsupported operator '{operator}' for field '{field}'.")
-
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Error comparing field '{field}' (value: {item_value}, type: {type(item_value)}) with filter value '{filter_value}': {e}")
                     condition_match = False
@@ -173,11 +155,8 @@ def apply_metadata_filters(
 
         # 최종 매치 여부 판단 (OR / AND)
         final_match = False
-        if logic == 'OR':
-            final_match = any(conditions_met) # 하나라도 True면 통과
-        elif logic == 'AND':
-            # 모든 조건이 True여야 하고, 조건 리스트가 비어있지 않아야 함
-            final_match = all(conditions_met) and bool(conditions_met)
+        if logic == 'OR': final_match = any(conditions_met)
+        elif logic == 'AND': final_match = all(conditions_met) and bool(conditions_met)
 
         if final_match:
             filtered_results.append(item)
@@ -188,21 +167,21 @@ def apply_metadata_filters(
     return filtered_results
 
 
-# --- [수정됨] 메인 오케스트레이션 함수 (Tool Use 워크플로우, 다중 호출 지원) ---
+# --- [수정됨] 메인 오케스트레이션 함수 (토큰 집계 포함) ---
 async def orchestrate_chatbot_turn(
     user_input: str,
     conversation_state: ConversationState,
     session: aiohttp.ClientSession,
-    rag_searcher: Optional[RagSearcher] # RAG 검색기 인스턴스
+    rag_searcher: Optional[RagSearcher]
 ) -> Dict[str, Any]:
     """
     Tool Use 기반 챗봇 응답 생성 오케스트레이션 함수 (다중/순차 호출 지원).
+    모든 ChatCompletion 호출의 토큰 사용량을 집계하여 debug_info에 포함.
     """
     # --- 필수 모듈 및 설정 로드 ---
     if not all([call_gpt_async, get_openai_embedding_async, get_config, api_logger]):
         logger.critical("CRITICAL: Required scheduler dependencies missing.")
-        # 사용자에게 표시될 수 있는 안전한 오류 메시지 반환
-        return {"error_message_for_user": "죄송합니다, 시스템 설정 오류로 답변을 드릴 수 없습니다."}
+        return {"error_message_for_user": "죄송합니다, 시스템 설정 오류로 답변을 드릴 수 없습니다.", "debug_info": {"final_status": "error_dependency_missing"}}
 
     try:
         config = get_config()
@@ -216,175 +195,204 @@ async def orchestrate_chatbot_turn(
         tool_use_model = tool_use_config.get('model', 'gpt-4o')
         decision_temp = tool_use_config.get('decision_temperature', 0.2)
         decision_max_tokens = tool_use_config.get('decision_max_tokens', 1500)
-        generation_temp = tool_use_config.get('generation_temperature', 0.7)
-        generation_max_tokens = tool_use_config.get('generation_max_tokens', 3000)
-        rag_k = rag_config.get('retrieval_k', 15) # 수정된 기본값
+        generation_temp = tool_use_config.get('generation_temperature', 0.7) # Tool 결과 후 답변 생성 시 사용될 수 있음
+        generation_max_tokens = tool_use_config.get('generation_max_tokens', 3000) # Tool 결과 후 답변 생성 시 사용될 수 있음
+        rag_k = rag_config.get('retrieval_k', 15)
+        embedding_model_name = rag_config.get('embedding_model', 'text-embedding-3-large') # 임베딩 모델 이름
         tool_use_prompt = prompts_config.get('tool_use_system_prompt')
-        tool_arg_error_prompt = prompts_config.get('tool_argument_error_prompt')
+        tool_arg_error_prompt = prompts_config.get('tool_argument_error_prompt') # Tool 인수 오류 시 사용자 안내
 
         if not all([tool_use_model, tool_use_prompt, tool_arg_error_prompt, tools_definition, isinstance(rag_k, int)]):
             raise ValueError("Essential configurations for Tool Use or RAG are missing.")
 
     except Exception as conf_e:
         logger.critical(f"Critical configuration error in scheduler: {conf_e}", exc_info=True)
-        return {"error_message_for_user": "죄송합니다, 시스템 설정 오류로 답변을 드릴 수 없습니다."}
+        return {"error_message_for_user": "죄송합니다, 시스템 설정 오류로 답변을 드릴 수 없습니다.", "debug_info": {"final_status": "error_config_load"}}
 
     # --- 오케스트레이션 시작 ---
     start_time_scheduler = time.time()
-    logger.info("--- Starting Tool Use Orchestration Cycle ---")
-    debug_info = {"orchestration_start_time": start_time_scheduler, "steps": []}
+    logger.info(f"--- Starting Tool Use Orchestration Cycle for user input: '{user_input[:50]}...' ---")
+    # 토큰 사용량 집계 변수 초기화
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    all_llm_calls_usage = [] # 상세 디버깅용
 
-    # 대화 히스토리 준비 (현재 사용자 입력 포함)
+    debug_info = {
+        "orchestration_start_time": start_time_scheduler,
+        "steps": [],
+        # 최종 토큰 정보는 마지막에 추가
+    }
+
+    # 대화 히스토리 준비
     messages = [{"role": "system", "content": tool_use_prompt}]
-    # TODO: 이전 요약/슬롯을 프롬프트에 포함시킬지 여부 결정 및 구현
-    # 예: current_summary = conversation_state.get_summary() or "없음"
-    #    system_prompt_formatted = tool_use_prompt.format(summary=current_summary, ...)
-    #    messages = [{"role": "system", "content": system_prompt_formatted}]
+    # TODO: 이전 요약/슬롯 정보 활용 로직 추가 필요 시 여기에 구현
+    # 예: current_summary = conversation_state.get_summary() ... messages[0]['content'] += f"\n[Previous Summary]\n{current_summary}"
     messages.extend(conversation_state.get_history()) # 이전 기록
     messages.append({"role": "user", "content": user_input}) # 현재 입력
 
     # --- LLM 호출 및 Tool 실행 반복 루프 ---
-    MAX_TOOL_ITERATIONS = 3 # 최대 Tool 호출 횟수 (무한 루프 방지)
+    MAX_TOOL_ITERATIONS = 3 # 최대 Tool 호출 반복 횟수
     current_iteration = 0
     final_response_content = None
 
     while current_iteration < MAX_TOOL_ITERATIONS:
         current_iteration += 1
-        step_debug = {"iteration": current_iteration, "start_time": time.time()}
+        step_start_time = time.time()
+        step_debug = {"iteration": current_iteration, "start_time": step_start_time}
         logger.info(f"--- Iteration {current_iteration}/{MAX_TOOL_ITERATIONS} ---")
 
         # 1. LLM 호출 (Tool 결정 또는 답변 생성)
-        logger.info(f"Executing LLM call #{current_iteration}...")
+        # 현재 messages 리스트를 사용하여 API 호출
+        logger.info(f"Executing LLM call #{current_iteration} with {len(messages)} messages...")
         step_debug["llm_call_start"] = time.time()
+        # 첫 호출은 decision temp 사용, Tool 결과 후 호출은 generation temp 사용 고려 가능
+        current_temp = decision_temp # 기본값
+        current_max_tokens = decision_max_tokens # 기본값
+        # 만약 이전 턴이 Tool 실행 결과였다면, 이번 호출은 답변 생성이므로 다른 파라미터 적용 가능
+        if messages[-1].get("role") == "tool":
+             logger.debug("Previous message was tool result, using generation parameters for LLM call.")
+             current_temp = generation_temp
+             current_max_tokens = generation_max_tokens
+
         llm_response = await call_gpt_async(
             messages=messages,
             model=tool_use_model,
-            temperature=decision_temp, # Tool 결정 단계는 낮은 온도
-            max_tokens=decision_max_tokens,
+            temperature=current_temp,
+            max_tokens=current_max_tokens,
             session=session,
             tools=tools_definition,
-            tool_choice="auto" # LLM이 Tool 사용 여부 결정
+            tool_choice="auto"
         )
         step_debug["llm_call_end"] = time.time()
         step_debug["llm_call_duration_ms"] = int((step_debug["llm_call_end"] - step_debug["llm_call_start"]) * 1000)
         step_debug["llm_model_used"] = tool_use_model
+        step_debug["llm_params_used"] = {"temperature": current_temp, "max_tokens": current_max_tokens} # 사용된 파라미터 기록
+
+        # LLM 호출 후 토큰 사용량 집계
+        if llm_response and llm_response.get("choices"):
+            usage_info = llm_response.get("usage")
+            if usage_info and isinstance(usage_info, dict):
+                prompt_tokens = usage_info.get('prompt_tokens', 0)
+                completion_tokens = usage_info.get('completion_tokens', 0)
+                total_prompt_tokens += prompt_tokens
+                total_completion_tokens += completion_tokens
+                all_llm_calls_usage.append(usage_info) # 상세 로그용
+                step_debug['llm_call_usage'] = usage_info # 현재 스텝 사용량
+                logger.debug(f"Iteration {current_iteration} LLM call usage: {usage_info}")
+            else:
+                logger.warning(f"Could not find valid 'usage' object in LLM response for iteration {current_iteration}.")
+                step_debug['llm_call_usage'] = None
+        # --- 토큰 집계 끝 ---
 
         if not llm_response or not llm_response.get("choices"):
             logger.error(f"LLM call #{current_iteration} failed or returned no choices.")
             step_debug["status"] = "failed_llm_call"
             step_debug["error"] = "LLM API call failed"
             debug_info["steps"].append(step_debug)
+            # 실패 시에도 집계된 토큰 정보 포함하여 반환
+            debug_info['total_token_usage'] = {
+                'prompt_tokens': total_prompt_tokens, 'completion_tokens': total_completion_tokens,
+                'total_tokens': total_prompt_tokens + total_completion_tokens
+            }
+            debug_info['all_llm_calls_usage_details'] = all_llm_calls_usage
             return {"error_message_for_user": "죄송합니다, 답변 생성 중 오류가 발생했습니다 (LLM 호출 실패).", "debug_info": debug_info}
 
-        # LLM 응답 메시지 추출
+        # LLM 응답 메시지 추출 및 다음 API 호출을 위해 messages 리스트에 추가
         assistant_message = llm_response["choices"][0].get("message", {})
-        messages.append(assistant_message) # 다음 호출을 위해 어시스턴트 응답 추가
+        messages.append(assistant_message)
         step_debug["llm_response_raw"] = assistant_message # 디버깅용
 
         tool_calls = assistant_message.get("tool_calls")
         response_content = assistant_message.get("content")
 
         if tool_calls:
-            # 2. Tool 실행 (product_search)
-            logger.info(f"LLM requested {len(tool_calls)} tool call(s).")
+            # 2. Tool 실행 요청됨
+            logger.info(f"LLM requested {len(tool_calls)} tool call(s) in iteration {current_iteration}.")
+            step_debug["action"] = "tool_call_requested"
             step_debug["tool_calls_requested"] = tool_calls
             tool_results_for_next_call = [] # 이번 이터레이션의 Tool 결과 저장
 
             for tool_call in tool_calls:
                 tool_call_id = tool_call.get("id")
-                function_name = tool_call.get("function", {}).get("name")
+                function_to_call = tool_call.get("function", {})
+                function_name = function_to_call.get("name")
                 logger.info(f"Processing tool call ID: {tool_call_id}, Function: {function_name}")
-                tool_step_debug = {"tool_call_id": tool_call_id, "function_name": function_name}
+                tool_step_debug = {"tool_call_id": tool_call_id, "function_name": function_name, "start_time": time.time()}
+
+                tool_result_content_str = "" # Tool 실행 결과를 JSON 문자열로
 
                 if function_name == "product_search":
                     # 인수 파싱
                     try:
-                        arguments_str = tool_call.get("function", {}).get("arguments", "{}")
+                        arguments_str = function_to_call.get("arguments", "{}")
                         arguments = json.loads(arguments_str)
                         search_keywords = arguments.get("search_keywords")
-                        filters = arguments.get("filters") # Optional
+                        filters = arguments.get("filters")
                         num_results_req = arguments.get("num_results", 3)
-                        tool_step_debug["arguments"] = arguments
+                        tool_step_debug["arguments_parsed"] = arguments
 
                         if not search_keywords: raise ValueError("Missing 'search_keywords'")
-                    except (json.JSONDecodeError, ValueError) as e:
-                        logger.error(f"Failed to parse args for tool {tool_call_id}: {e}")
-                        tool_step_debug["status"] = "failed_arg_parsing"
-                        tool_step_debug["error"] = str(e)
-                        # 파싱 실패 시 Tool 결과 메시지에 에러 포함
-                        tool_results_for_next_call.append({
-                            "role": "tool",
-                            "tool_call_id": tool_call_id,
-                            "name": function_name,
-                            "content": json.dumps({"error": f"Argument parsing error: {e}", "results_found": False})
-                        })
-                        debug_info["steps"].append(tool_step_debug)
-                        continue # 다음 Tool 호출 처리
 
-                    # 임베딩 생성
-                    tool_step_debug["embedding_start"] = time.time()
-                    query_embedding = await get_openai_embedding_async(search_keywords, session)
-                    tool_step_debug["embedding_end"] = time.time()
-                    tool_step_debug["embedding_duration_ms"] = int((tool_step_debug["embedding_end"] - tool_step_debug["embedding_start"]) * 1000)
+                        # 임베딩 생성
+                        tool_step_debug["embedding_start"] = time.time()
+                        query_embedding = await get_openai_embedding_async(search_keywords, session, model=embedding_model_name)
+                        tool_step_debug["embedding_end"] = time.time()
+                        # [참고] 임베딩 토큰 사용량은 여기서 별도 집계 가능 (call_gpt_async 와는 별개)
 
-                    if query_embedding is None:
-                        logger.error(f"Failed to get embedding for tool {tool_call_id}")
-                        tool_step_debug["status"] = "failed_embedding"
-                        tool_results_for_next_call.append({
-                            "role": "tool", "tool_call_id": tool_call_id, "name": function_name,
-                            "content": json.dumps({"error": "Embedding generation failed", "results_found": False})
-                        })
-                        debug_info["steps"].append(tool_step_debug)
-                        continue
+                        if query_embedding is None: raise ValueError("Embedding generation failed")
 
-                    # RAG 검색
-                    tool_step_debug["rag_search_start"] = time.time()
-                    initial_rag_results = await run_rag_search_async(query_embedding, rag_k, rag_searcher)
-                    tool_step_debug["rag_search_end"] = time.time()
-                    tool_step_debug["rag_search_duration_ms"] = int((tool_step_debug["rag_search_end"] - tool_step_debug["rag_search_start"]) * 1000)
-                    tool_step_debug["rag_initial_count"] = len(initial_rag_results)
+                        # RAG 검색
+                        tool_step_debug["rag_search_start"] = time.time()
+                        initial_rag_results = await run_rag_search_async(query_embedding, rag_k, rag_searcher)
+                        tool_step_debug["rag_search_end"] = time.time()
+                        tool_step_debug["rag_initial_count"] = len(initial_rag_results)
 
-                    # 후 필터링
-                    tool_step_debug["filtering_start"] = time.time()
-                    filtered_rag_results = apply_metadata_filters(initial_rag_results, filters)
-                    tool_step_debug["filtering_end"] = time.time()
-                    tool_step_debug["filtering_duration_ms"] = int((tool_step_debug["filtering_end"] - tool_step_debug["filtering_start"]) * 1000)
-                    tool_step_debug["rag_filtered_count"] = len(filtered_rag_results)
-                    tool_step_debug["filters_applied"] = filters # 적용된 필터 기록
+                        # 후 필터링
+                        tool_step_debug["filtering_start"] = time.time()
+                        filtered_rag_results = apply_metadata_filters(initial_rag_results, filters)
+                        tool_step_debug["filtering_end"] = time.time()
+                        tool_step_debug["rag_filtered_count"] = len(filtered_rag_results)
+                        tool_step_debug["filters_applied"] = filters
 
-                    # Tool 결과 포맷팅
-                    tool_result_content = ""
-                    if filtered_rag_results:
-                        results_to_include = filtered_rag_results[:num_results_req]
-                        # 필요한 정보만 선택적으로 포함 (간결화)
-                        formatted_results = [{
+                        # Tool 결과 포맷팅
+                        if filtered_rag_results:
+                            results_to_include = filtered_rag_results[:num_results_req]
+                            formatted_results = [{
                                 "product_name": r.get("product_name"), "brand": r.get("brand"),
                                 "category": r.get("category"), "price": r.get("price"),
-                                "features": r.get("features", [])[:5], # 특징 상위 5개
+                                "features": r.get("features", [])[:5], # 특징 일부
                                 "similarity_score": round(r.get("similarity_score", 0.0), 4)
                             } for r in results_to_include]
-                        tool_result_content = json.dumps({"results": formatted_results, "results_found": True}, ensure_ascii=False)
-                    else:
-                        tool_result_content = json.dumps({"results_found": False})
+                            tool_result_content_str = json.dumps({"results": formatted_results, "results_found": True}, ensure_ascii=False)
+                        else:
+                            tool_result_content_str = json.dumps({"results_found": False})
 
-                    tool_results_for_next_call.append({
-                        "role": "tool", "tool_call_id": tool_call_id, "name": function_name,
-                        "content": tool_result_content
-                    })
-                    tool_step_debug["status"] = "success"
-                    tool_step_debug["result_preview"] = tool_result_content[:100] + "..."
+                        tool_step_debug["status"] = "tool_execution_success"
 
-                else:
+                    except (json.JSONDecodeError, ValueError, Exception) as e:
+                        logger.error(f"Failed processing tool call {tool_call_id} ('{function_name}'): {e}", exc_info=True)
+                        tool_step_debug["status"] = "tool_execution_failed"
+                        tool_step_debug["error"] = str(e)
+                        # 실패 시 에러 정보를 content로 전달
+                        tool_result_content_str = json.dumps({"error": f"Tool execution failed: {e}", "results_found": False})
+
+                else: # 정의되지 않은 함수 호출 시
                     logger.warning(f"Received unhandled tool function name: {function_name}")
                     tool_step_debug["status"] = "unhandled_function"
-                    tool_results_for_next_call.append({
-                        "role": "tool", "tool_call_id": tool_call_id, "name": function_name,
-                        "content": json.dumps({"error": f"Unknown function: {function_name}"})
-                    })
+                    tool_result_content_str = json.dumps({"error": f"Unknown function: {function_name}", "results_found": False})
 
-                debug_info["steps"].append(tool_step_debug) # 각 tool_call 디버그 정보 추가
+                # Tool 결과 메시지 생성 및 추가
+                tool_results_for_next_call.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call_id,
+                    "name": function_name,
+                    "content": tool_result_content_str
+                })
+                tool_step_debug["end_time"] = time.time()
+                tool_step_debug["duration_ms"] = int((tool_step_debug["end_time"] - tool_step_debug["start_time"]) * 1000)
+                step_debug.setdefault("tool_executions", []).append(tool_step_debug) # 각 Tool 실행 결과 저장
 
-            # 다음 LLM 호출을 위해 Tool 결과 메시지 추가
+            # 다음 LLM 호출을 위해 생성된 모든 Tool 결과 메시지를 messages 리스트에 추가
             messages.extend(tool_results_for_next_call)
             # 루프 계속 (다음 LLM 호출로)
 
@@ -392,33 +400,59 @@ async def orchestrate_chatbot_turn(
             # 3. LLM이 Tool 호출 없이 직접 답변 생성
             logger.info(f"LLM generated final response directly in iteration {current_iteration}.")
             final_response_content = response_content
-            step_debug["status"] = "completed_direct_response"
-            debug_info["steps"].append(step_debug)
-            break # 루프 종료
+            step_debug["action"] = "direct_response"
+            step_debug["status"] = "completed"
+            debug_info["steps"].append(step_debug) # 마지막 단계 정보 추가
+            break # 최종 응답 얻었으므로 루프 종료
 
         else:
             # 4. LLM 응답에 content도 tool_calls도 없는 경우 (오류)
             logger.error(f"LLM response in iteration {current_iteration} had neither content nor tool_calls.")
+            step_debug["action"] = "empty_response"
             step_debug["status"] = "failed_llm_empty_response"
             debug_info["steps"].append(step_debug)
-            # 사용자에게 표시될 수 있는 안전한 오류 메시지 반환
+            # 실패 시에도 집계된 토큰 정보 포함하여 반환
+            debug_info['total_token_usage'] = {
+                'prompt_tokens': total_prompt_tokens, 'completion_tokens': total_completion_tokens,
+                'total_tokens': total_prompt_tokens + total_completion_tokens
+            }
+            debug_info['all_llm_calls_usage_details'] = all_llm_calls_usage
             return {"error_message_for_user": "죄송합니다, 응답 생성 중 예상치 못한 오류가 발생했습니다.", "debug_info": debug_info}
 
-    # --- 루프 종료 후 처리 ---
-    if final_response_content is None:
-        # 최대 반복 도달 또는 다른 이유로 답변 생성 실패
-        logger.warning(f"Failed to get final response content after {current_iteration} iterations.")
-        if not debug_info["steps"][-1].get("status", "").startswith("failed"): # 마지막 단계가 명시적 실패가 아니면
-             debug_info["steps"].append({"status": "failed_max_iterations"})
-        return {"error_message_for_user": "죄송합니다, 요청을 처리하는 데 시간이 너무 오래 걸리거나 오류가 발생했습니다.", "debug_info": debug_info}
+        # 현 이터레이션 정보 저장 (Tool 실행 후)
+        step_debug["end_time"] = time.time()
+        step_debug["duration_ms"] = int((step_debug["end_time"] - step_start_time) * 1000)
+        debug_info["steps"].append(step_debug)
 
-    # --- 최종 결과 반환 ---
+
+    # --- 루프 종료 후 처리 ---
     end_time_scheduler = time.time()
     total_duration = end_time_scheduler - start_time_scheduler
     debug_info['total_orchestration_time_ms'] = int(total_duration * 1000)
-    debug_info['final_status'] = 'success'
-    logger.info(f"--- Scheduler Orchestration Cycle Finished in {total_duration:.3f} seconds ---")
 
+    # 최종 집계된 토큰 사용량 정보를 debug_info에 추가
+    debug_info['total_token_usage'] = {
+        'prompt_tokens': total_prompt_tokens,
+        'completion_tokens': total_completion_tokens,
+        'total_tokens': total_prompt_tokens + total_completion_tokens
+    }
+    debug_info['all_llm_calls_usage_details'] = all_llm_calls_usage # 상세 정보 추가
+    logger.info(f"Total aggregated token usage for the cycle: {debug_info['total_token_usage']}")
+
+
+    if final_response_content is None:
+        # 최대 반복 도달 또는 다른 이유로 답변 생성 실패
+        logger.warning(f"Failed to get final response content after {current_iteration} iterations.")
+        # 마지막 단계 상태 업데이트 (이미 실패 상태가 아니면)
+        if not debug_info["steps"][-1].get("status", "").startswith("failed"):
+             debug_info["steps"].append({"iteration": current_iteration, "status": "failed_max_iterations", "timestamp": time.time()})
+        debug_info['final_status'] = 'error_max_iterations_or_failed'
+        return {"error_message_for_user": "죄송합니다, 요청을 처리하는 데 시간이 너무 오래 걸리거나 오류가 발생했습니다.", "debug_info": debug_info}
+
+
+    # --- 최종 성공 결과 반환 ---
+    debug_info['final_status'] = 'success'
+    logger.info(f"--- Scheduler Orchestration Cycle Finished Successfully in {total_duration:.3f} seconds ---")
     return {"response": final_response_content, "debug_info": debug_info}
 
 
@@ -428,4 +462,4 @@ if __name__ == "__main__":
     logger.info("--- Running scheduler.py as main script (placeholder) ---")
     print("Scheduler module contains the core Tool Use orchestration logic.")
     print("Direct execution requires setting up dependencies (ConversationState, RagSearcher, etc.).")
-    print("Please test via app.py or test_runner.py.")
+    print("Please test via app.py or test_runner.py / interactive_tester.py.")

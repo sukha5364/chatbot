@@ -348,6 +348,37 @@ prompts:
     {conversation_history}
     # 업데이트된 통합 요약 ({target_summary_tokens} 토큰 내외):
 
+  # 만족도 평가 프롬프트 (신규 추가)
+  satisfaction_evaluation_prompt_template: |
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 1점에서 5점 사이로 평가하고, 각 항목별 점수와 간결한 평가 이유를 JSON 형식으로 제공해주세요.
+
+    [평가 기준]
+    - 관련성(Relevance): 질문의 의도에 얼마나 부합하는 답변인가? (1-5)
+    - 정확성(Accuracy): 제공된 정보나 사실에 기반하여 얼마나 정확한가? 환각은 없는가? (1-5)
+    - 완결성(Completeness): 질문에 대해 충분하고 만족스러운 정보를 제공하는가? (1-5)
+    - 간결성(Conciseness): 불필요하게 길거나 장황하지 않고 핵심 정보를 잘 전달하는가? (1-5)
+    - 어조(Tone): 데카트론 상담원으로서 전문적이고 친절한 어조인가? (1-5)
+    - 종합 만족도(Overall): 위 항목들을 고려한 전반적인 만족도는? (1-5)
+
+    [사용자 질문]
+    {question}
+
+    [챗봇 답변]
+    {response}
+
+    [평가 결과 (JSON 형식)]
+    ```json
+    {{
+      "relevance_score": <점수>,
+      "accuracy_score": <점수>,
+      "completeness_score": <점수>,
+      "conciseness_score": <점수>,
+      "tone_score": <점수>,
+      "overall_satisfaction_score": <점수>,
+      "evaluation_reason": "<간결한 총평>"
+    }}
+    ```
+
   # 기타 프롬프트 요소 (필요 시 사용 - 변경 없음)
   rag_fallback_message: "- 관련된 문서 정보를 찾지 못했습니다."
 

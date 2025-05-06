@@ -1,8 +1,8 @@
-# tests/visualize_results.py (요구사항 반영 최종본: DEBUG 로깅 고정, 주석/Docstring 보강, 안정성 강화)
+# tests/visualize_results.py (Mode 3 토큰 보고 기능 추가 최종본)
 
 """
 Chatbot 테스트 실행 결과(.jsonl 파일)를 로드하고,
-주요 성능 지표(Latency, 응답 길이, 만족도, 모델 분포 등)를
+주요 성능 지표(Latency, 응답 길이, 만족도, 모델 분포, 토큰 사용량 등)를
 시각화(그래프 생성)하고 요약 리포트(텍스트 파일)를 생성하는 스크립트입니다.
 """
 
@@ -14,8 +14,9 @@ import os
 import argparse
 import glob # 파일 패턴 매칭을 위해 추가
 import logging
-import numpy as np
+import numpy as np # 요약 계산 위해 추가
 from typing import List, Dict, Any, Optional
+import platform # 한글 폰트 설정 위해 추가
 
 
 # --- 로깅 설정 (DEBUG 레벨 고정) ---
@@ -26,24 +27,22 @@ logger.info("Visualize Results logger initialized with DEBUG level.")
 # --- Matplotlib 한글 폰트 설정 ---
 # 시스템 환경에 따라 적절한 한글 폰트 설정 시도
 try:
-    import platform
     system_os = platform.system()
     logger.debug(f"Operating System detected: {system_os}")
 
     if system_os == 'Linux':
         # Linux 환경: 나눔고딕 또는 다른 설치된 한글 폰트 시도
-        # (폰트 설치 필요: 예: sudo apt-get update && sudo apt-get install fonts-nanum*)
         try:
             plt.rcParams['font.family'] = 'NanumGothic'
             logger.info("Set Korean font to NanumGothic for Linux.")
         except Exception:
             logger.warning("NanumGothic not found on Linux. Trying Malgun Gothic (may fail).")
             try: # WSL 등에서 Windows 폰트 접근 가능할 수 있음
-                 plt.rcParams['font.family'] = 'Malgun Gothic'
-                 logger.info("Set Korean font to Malgun Gothic (fallback).")
+                plt.rcParams['font.family'] = 'Malgun Gothic'
+                logger.info("Set Korean font to Malgun Gothic (fallback).")
             except Exception:
-                 logger.warning("Could not set Korean font on Linux. Using default sans-serif.")
-                 plt.rcParams['font.family'] = 'sans-serif'
+                logger.warning("Could not set Korean font on Linux. Using default sans-serif.")
+                plt.rcParams['font.family'] = 'sans-serif'
 
     elif system_os == 'Windows':
         # Windows 환경: 맑은 고딕 사용
@@ -110,8 +109,8 @@ def load_results(filepath_pattern: str) -> Optional[pd.DataFrame]:
                     except json.JSONDecodeError:
                         logger.warning(f"Skipping invalid JSON line {i+1} in {filepath}: {line[:100]}...")
                     except Exception as parse_e: # 기타 파싱 오류
-                         logger.warning(f"Error parsing line {i+1} in {filepath}: {parse_e}", exc_info=False)
-            logger.info(f"Loaded {loaded_count_file} results from {filepath}")
+                        logger.warning(f"Error parsing line {i+1} in {filepath}: {parse_e}", exc_info=False)
+                logger.info(f"Loaded {loaded_count_file} results from {filepath}")
         except FileNotFoundError:
              logger.error(f"Result file not found during loading (was present during glob?): {filepath}")
              continue # 다음 파일로 진행
@@ -169,10 +168,10 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     for mode in ['mode1', 'mode2', 'mode3']:
         col = f'results_{mode}_success'
         if col in df_processed.columns:
-             original_na = df_processed[col].isna().sum()
-             # fillna(False) 로 결측치를 False로 처리 후 bool 타입 변환
-             df_processed[col] = df_processed[col].fillna(False).astype(bool)
-             if original_na > 0: logger.debug(f"Filled {original_na} NaN values in '{col}' with False.")
+            original_na = df_processed[col].isna().sum()
+            # fillna(False) 로 결측치를 False로 처리 후 bool 타입 변환
+            df_processed[col] = df_processed[col].fillna(False).astype(bool)
+            if original_na > 0: logger.debug(f"Filled {original_na} NaN values in '{col}' with False.")
         else: logger.debug(f"Success column '{col}' not found, skipping conversion.")
 
     # 3. Response 길이 컬럼 생성 (성공한 경우만, 문자열 아닌 경우 0)
@@ -209,28 +208,54 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # 5. Mode 3 Debug Info에서 필요한 정보 추출 (존재할 경우 안전하게)
     logger.debug("Extracting relevant info from Mode 3 debug data...")
+    # 모델 라우팅 정보 (존재한다면)
     if 'results_mode3_debug_info_model_chosen' in df_processed.columns:
-        # 결측치는 'Unknown' 등으로 채우기
         df_processed['mode3_model_chosen'] = df_processed['results_mode3_debug_info_model_chosen'].fillna('Unknown')
         logger.debug("Extracted 'mode3_model_chosen' column.")
     else: logger.debug("Column 'results_mode3_debug_info_model_chosen' not found.")
 
+    # 복잡도 정보 (존재한다면)
     if 'results_mode3_debug_info_complexity_level' in df_processed.columns:
         df_processed['mode3_complexity_level'] = df_processed['results_mode3_debug_info_complexity_level'].fillna('Unknown')
         logger.debug("Extracted 'mode3_complexity_level' column.")
     else: logger.debug("Column 'results_mode3_debug_info_complexity_level' not found.")
 
+    # CoT 사용 여부 (존재한다면)
     if 'results_mode3_debug_info_cot_data_present' in df_processed.columns:
-        # 결측치는 False로 처리 후 bool 타입 변환
         df_processed['mode3_cot_present'] = df_processed['results_mode3_debug_info_cot_data_present'].fillna(False).astype(bool)
         logger.debug("Extracted 'mode3_cot_present' column.")
     else: logger.debug("Column 'results_mode3_debug_info_cot_data_present' not found.")
 
+    # RAG 결과 수 (존재한다면)
     if 'results_mode3_debug_info_rag_results_count' in df_processed.columns:
-        # 숫자 변환 오류 시 NaN -> 0으로 채우고 정수 타입 변환
         df_processed['mode3_rag_count'] = pd.to_numeric(df_processed['results_mode3_debug_info_rag_results_count'], errors='coerce').fillna(0).astype(int)
         logger.debug("Extracted 'mode3_rag_count' column.")
     else: logger.debug("Column 'results_mode3_debug_info_rag_results_count' not found.")
+
+    # 6. Mode 3 Token Usage 데이터 타입 변환 (추가됨)
+    logger.debug("Converting Mode 3 token usage columns to numeric...")
+    # --- [주의] 아래 컬럼명들은 test_runner.py에서 저장한 실제 키 이름과 일치해야 합니다 ---
+    # --- json_normalize가 생성하는 이름을 기준으로 합니다 ---
+    token_cols_mode3 = {
+        'prompt': 'results_mode3_token_usage_prompt_tokens',
+        'completion': 'results_mode3_token_usage_completion_tokens',
+        'total': 'results_mode3_token_usage_total_tokens'
+    }
+    for token_type, col in token_cols_mode3.items():
+        if col in df_processed.columns:
+            original_dtype = df_processed[col].dtype
+            # 숫자 변환 시도 (오류 시 NaN) 후, NaN은 0으로 채우고 정수 타입으로 변환
+            df_processed[col] = pd.to_numeric(df_processed[col], errors='coerce').fillna(0).astype(int)
+            # 원본 데이터에서 변환 오류가 발생한 NaN 개수 확인
+            original_numeric = pd.to_numeric(df[col], errors='coerce')
+            nan_count = original_numeric.isna().sum()
+            if nan_count > 0:
+                logger.warning(f"Column '{col}' (original dtype: {original_dtype}) converted to int, filling {nan_count} NaN/error values with 0.")
+            logger.debug(f"Processed Mode 3 token column: {col}")
+        else:
+            logger.debug(f"Mode 3 token column '{col}' not found, skipping conversion. Will report N/A.")
+            # 분석 시 해당 컬럼이 없어도 오류가 나지 않도록 빈 컬럼 생성 (선택적)
+            # df_processed[col] = 0 # 필요 시 주석 해제
 
     logger.info("DataFrame preprocessing finished.")
     return df_processed
@@ -240,53 +265,39 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 def plot_latency_comparison(df: pd.DataFrame, output_dir: str):
     """
     Mode 1, Mode 2, Mode 3 간의 응답 속도(Latency)를 비교하는 박스 플롯을 생성하고 저장합니다.
-
-    Args:
-        df (pd.DataFrame): 전처리된 데이터프레임.
-        output_dir (str): 생성된 플롯 이미지를 저장할 디렉토리 경로.
     """
     latency_cols = [col for col in ['results_mode1_latency_seconds', 'results_mode2_latency_seconds', 'results_mode3_latency_seconds'] if col in df.columns]
     if not latency_cols:
         logger.warning("No latency columns found in DataFrame. Skipping latency comparison plot.")
         return
-
-    # 데이터가 없는 경우 처리
     if df[latency_cols].isnull().all().all():
-         logger.warning("All latency data is missing. Skipping latency comparison plot.")
-         return
+        logger.warning("All latency data is missing. Skipping latency comparison plot.")
+        return
 
     logger.info("Generating latency comparison plot...")
     try:
-        # Wide-form 데이터를 Long-form으로 변환 (Seaborn 시각화에 용이)
         df_melted = df.melt(value_vars=latency_cols, var_name='Mode', value_name='Latency (s)')
-        # Mode 이름 정리 (예: 'results_mode1_latency_seconds' -> 'Mode 1')
         df_melted['Mode'] = df_melted['Mode'].str.replace('results_', '').str.replace('_latency_seconds', '').str.upper()
 
         plt.figure(figsize=(10, 6))
-        # boxplot 생성 (x축 순서 지정)
         sns.boxplot(x='Mode', y='Latency (s)', data=df_melted, order=['MODE 1', 'MODE 2', 'MODE 3'], palette="viridis")
         plt.title('응답 속도 비교 (Mode 1 vs Mode 2 vs Mode 3)', fontsize=14)
         plt.ylabel('Latency (Seconds)', fontsize=12)
         plt.xlabel('Test Mode', fontsize=12)
-        plt.grid(axis='y', linestyle='--', alpha=0.7) # 가로 그리드 추가
-        plt.tight_layout() # 레이아웃 자동 조정
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
 
-        # 파일 저장
         save_path = os.path.join(output_dir, 'latency_comparison_boxplot.png')
-        plt.savefig(save_path, dpi=150) # 해상도 지정 가능
+        plt.savefig(save_path, dpi=150)
         logger.info(f"Saved latency comparison plot to: {save_path}")
     except Exception as e:
         logger.error(f"Failed to generate or save latency plot: {e}", exc_info=True)
     finally:
-        plt.close() # 플롯 리소스 해제
+        plt.close()
 
 def plot_response_length_comparison(df: pd.DataFrame, output_dir: str):
     """
     Mode 1, Mode 2, Mode 3 간의 응답 길이(문자 수)를 비교하는 박스 플롯을 생성하고 저장합니다.
-
-    Args:
-        df (pd.DataFrame): 전처리된 데이터프레임.
-        output_dir (str): 생성된 플롯 이미지를 저장할 디렉토리 경로.
     """
     length_cols = [col for col in ['results_mode1_response_length', 'results_mode2_response_length', 'results_mode3_response_length'] if col in df.columns]
     if not length_cols:
@@ -307,12 +318,8 @@ def plot_response_length_comparison(df: pd.DataFrame, output_dir: str):
         plt.ylabel('Response Length (Characters)', fontsize=12)
         plt.xlabel('Test Mode', fontsize=12)
         plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-        # Y축 범위 자동 조정 (너무 큰 outlier 때문에 보기 어려울 경우 고려)
-        # upper_quantile = df_melted['Response Length'].quantile(0.98) # 예: 상위 2% 제외
-        # if upper_quantile > 0: plt.ylim(0, upper_quantile * 1.1) # 약간의 여유 추가
-
         plt.tight_layout()
+
         save_path = os.path.join(output_dir, 'response_length_comparison_boxplot.png')
         plt.savefig(save_path, dpi=150)
         logger.info(f"Saved response length comparison plot to: {save_path}")
@@ -323,19 +330,13 @@ def plot_response_length_comparison(df: pd.DataFrame, output_dir: str):
 
 def plot_satisfaction_distribution(df: pd.DataFrame, output_dir: str):
     """
-    Mode 3 (풀 파이프라인) 응답에 대한 종합 만족도 점수(1-5점)의 분포를
-    히스토그램으로 생성하고 저장합니다.
-
-    Args:
-        df (pd.DataFrame): 전처리된 데이터프레임.
-        output_dir (str): 생성된 플롯 이미지를 저장할 디렉토리 경로.
+    Mode 3 응답 만족도 점수 분포를 히스토그램으로 생성하고 저장합니다.
     """
     score_col = 'satisfaction_evaluation_overall_satisfaction_score'
     if score_col not in df.columns:
         logger.warning(f"Satisfaction score column '{score_col}' not found. Skipping satisfaction distribution plot.")
         return
 
-    # 유효한 점수 데이터만 필터링 (NaN 제외)
     valid_scores = df[score_col].dropna()
     if valid_scores.empty:
         logger.warning("No valid satisfaction scores found after dropping NaN. Skipping satisfaction distribution plot.")
@@ -344,14 +345,11 @@ def plot_satisfaction_distribution(df: pd.DataFrame, output_dir: str):
     logger.info(f"Generating satisfaction score distribution plot (found {len(valid_scores)} valid scores)...")
     try:
         plt.figure(figsize=(8, 5))
-        # 히스토그램 생성 (이산형 데이터임을 고려)
         sns.histplot(valid_scores, bins=np.arange(0.5, 6.5, 1), kde=False, stat="count", color="skyblue", edgecolor="black")
-        # sns.countplot(x=valid_scores.astype(int), palette="viridis") # 카운트 플롯도 가능
-
         plt.title('Mode 3 응답 만족도 점수 분포', fontsize=14)
         plt.xlabel('Overall Satisfaction Score (1-5)', fontsize=12)
         plt.ylabel('Frequency (Count)', fontsize=12)
-        plt.xticks(ticks=range(1, 6), labels=[str(i) for i in range(1, 6)]) # X축 눈금 1, 2, 3, 4, 5 명시
+        plt.xticks(ticks=range(1, 6), labels=[str(i) for i in range(1, 6)])
         plt.grid(axis='y', linestyle='--', alpha=0.7)
         plt.tight_layout()
 
@@ -365,21 +363,15 @@ def plot_satisfaction_distribution(df: pd.DataFrame, output_dir: str):
 
 def plot_model_routing_distribution(df: pd.DataFrame, output_dir: str):
     """
-    Mode 3 실행 시 모델 라우터를 통해 선택된 최종 응답 모델들의 분포를
-    파이 차트로 생성하고 저장합니다.
-
-    Args:
-        df (pd.DataFrame): 전처리된 데이터프레임 (mode3_model_chosen 컬럼 필요).
-        output_dir (str): 생성된 플롯 이미지를 저장할 디렉토리 경로.
+    Mode 3 실행 시 선택된 최종 응답 모델 분포를 파이 차트로 생성하고 저장합니다.
     """
-    model_col = 'mode3_model_chosen'
+    model_col = 'mode3_model_chosen' # preprocess_data에서 생성
     if model_col not in df.columns:
         logger.warning(f"Model chosen column '{model_col}' not found. Skipping model routing distribution plot.")
         return
 
-    # 모델별 사용 횟수 계산
     model_counts = df[model_col].value_counts()
-    if model_counts.empty or model_counts.sum() == 0: # 모든 값이 NaN이거나 비어있는 경우
+    if model_counts.empty or model_counts.sum() == 0:
         logger.warning("No valid model routing data found to plot.")
         return
 
@@ -388,18 +380,14 @@ def plot_model_routing_distribution(df: pd.DataFrame, output_dir: str):
 
     try:
         plt.figure(figsize=(8, 8))
-        # 파이 차트 생성 (autopct로 비율 표시, startangle로 시작 위치 조정)
         wedges, texts, autotexts = plt.pie(
             model_counts,
             labels=model_counts.index,
             autopct='%1.1f%%',
-            startangle=140, # 시작 각도 조정
-            pctdistance=0.85, # 비율 텍스트 위치 조정
-            colors=sns.color_palette("pastel") # 색상 팔레트 지정
+            startangle=140,
+            pctdistance=0.85,
+            colors=sns.color_palette("pastel")
         )
-        # 텍스트 스타일 조정 (선택 사항)
-        # plt.setp(autotexts, size=10, weight="bold", color="white")
-        # plt.setp(texts, size=12)
         plt.title('Mode 3 사용 모델 분포 (Model Routing)', fontsize=14)
         plt.tight_layout()
 
@@ -413,14 +401,9 @@ def plot_model_routing_distribution(df: pd.DataFrame, output_dir: str):
 
 def plot_performance_by_difficulty(df: pd.DataFrame, output_dir: str):
     """
-    사전 정의된 질문 난이도('test_difficulty' 컬럼 기준)별로
-    Mode 3의 응답 속도(Latency) 및 만족도 점수를 비교하는 박스 플롯을 생성합니다.
-
-    Args:
-        df (pd.DataFrame): 전처리된 데이터프레임 (test_difficulty 컬럼 필요).
-        output_dir (str): 생성된 플롯 이미지를 저장할 디렉토리 경로.
+    질문 난이도별 Mode 3 응답 속도 및 만족도 점수를 비교하는 박스 플롯 생성.
     """
-    difficulty_col = 'test_difficulty' # test_generator.py 에서 추가한 컬럼
+    difficulty_col = 'test_difficulty'
     latency_col = 'results_mode3_latency_seconds'
     score_col = 'satisfaction_evaluation_overall_satisfaction_score'
 
@@ -433,26 +416,24 @@ def plot_performance_by_difficulty(df: pd.DataFrame, output_dir: str):
 
     # --- Latency by Difficulty ---
     if latency_col in df.columns:
-        plot_df_latency = df[[difficulty_col, latency_col]].dropna() # 결측치 제거
+        plot_df_latency = df[[difficulty_col, latency_col]].dropna()
         if not plot_df_latency.empty:
             logger.debug(f"Plotting latency by difficulty using {len(plot_df_latency)} data points.")
             try:
                 plt.figure(figsize=(8, 6))
-                # boxplot 생성 (x축 순서 지정: basic -> advanced)
                 sns.boxplot(x=difficulty_col, y=latency_col, data=plot_df_latency, order=['basic', 'advanced'], palette="coolwarm")
                 plt.title('질문 난이도별 Mode 3 응답 속도', fontsize=14)
                 plt.xlabel('Predefined Test Difficulty', fontsize=12)
                 plt.ylabel('Latency (Seconds)', fontsize=12)
                 plt.grid(axis='y', linestyle='--', alpha=0.7)
                 plt.tight_layout()
-
                 save_path_latency = os.path.join(output_dir, 'mode3_latency_by_difficulty.png')
                 plt.savefig(save_path_latency, dpi=150)
                 logger.info(f"Saved latency by difficulty plot to: {save_path_latency}")
             except Exception as e:
-                 logger.error(f"Failed to generate or save latency by difficulty plot: {e}", exc_info=True)
+                logger.error(f"Failed to generate or save latency by difficulty plot: {e}", exc_info=True)
             finally:
-                 plt.close()
+                plt.close()
         else:
             logger.warning(f"No valid latency data found for difficulty comparison ({latency_col}).")
     else:
@@ -461,28 +442,26 @@ def plot_performance_by_difficulty(df: pd.DataFrame, output_dir: str):
 
     # --- Satisfaction by Difficulty ---
     if score_col in df.columns:
-        plot_df_score = df[[difficulty_col, score_col]].dropna() # 결측치 제거
+        plot_df_score = df[[difficulty_col, score_col]].dropna()
         if not plot_df_score.empty:
-             logger.debug(f"Plotting satisfaction by difficulty using {len(plot_df_score)} data points.")
-             try:
-                 plt.figure(figsize=(8, 6))
-                 # boxplot 생성 (x축 순서 지정)
-                 sns.boxplot(x=difficulty_col, y=score_col, data=plot_df_score, order=['basic', 'advanced'], palette="YlGnBu")
-                 plt.title('질문 난이도별 Mode 3 응답 만족도', fontsize=14)
-                 plt.xlabel('Predefined Test Difficulty', fontsize=12)
-                 plt.ylabel('Overall Satisfaction Score (1-5)', fontsize=12)
-                 plt.ylim(0.5, 5.5) # Y축 범위 1~5점으로 고정 (0.5 여유)
-                 plt.yticks(ticks=range(1, 6), labels=[str(i) for i in range(1, 6)]) # Y축 눈금 명시
-                 plt.grid(axis='y', linestyle='--', alpha=0.7)
-                 plt.tight_layout()
-
-                 save_path_score = os.path.join(output_dir, 'mode3_satisfaction_by_difficulty.png')
-                 plt.savefig(save_path_score, dpi=150)
-                 logger.info(f"Saved satisfaction by difficulty plot to: {save_path_score}")
-             except Exception as e:
-                  logger.error(f"Failed to generate or save satisfaction by difficulty plot: {e}", exc_info=True)
-             finally:
-                  plt.close()
+            logger.debug(f"Plotting satisfaction by difficulty using {len(plot_df_score)} data points.")
+            try:
+                plt.figure(figsize=(8, 6))
+                sns.boxplot(x=difficulty_col, y=score_col, data=plot_df_score, order=['basic', 'advanced'], palette="YlGnBu")
+                plt.title('질문 난이도별 Mode 3 응답 만족도', fontsize=14)
+                plt.xlabel('Predefined Test Difficulty', fontsize=12)
+                plt.ylabel('Overall Satisfaction Score (1-5)', fontsize=12)
+                plt.ylim(0.5, 5.5)
+                plt.yticks(ticks=range(1, 6), labels=[str(i) for i in range(1, 6)])
+                plt.grid(axis='y', linestyle='--', alpha=0.7)
+                plt.tight_layout()
+                save_path_score = os.path.join(output_dir, 'mode3_satisfaction_by_difficulty.png')
+                plt.savefig(save_path_score, dpi=150)
+                logger.info(f"Saved satisfaction by difficulty plot to: {save_path_score}")
+            except Exception as e:
+                 logger.error(f"Failed to generate or save satisfaction by difficulty plot: {e}", exc_info=True)
+            finally:
+                 plt.close()
         else:
             logger.warning(f"No valid satisfaction score data found for difficulty comparison ({score_col}).")
     else:
@@ -492,17 +471,12 @@ def plot_performance_by_difficulty(df: pd.DataFrame, output_dir: str):
 def generate_summary_report(df: pd.DataFrame, output_dir: str, input_pattern: str):
     """
     주요 테스트 결과 지표를 요약하여 텍스트 리포트 파일로 생성하고 저장합니다.
-
-    Args:
-        df (pd.DataFrame): 전처리된 데이터프레임.
-        output_dir (str): 생성된 리포트 파일을 저장할 디렉토리 경로.
-        input_pattern (str): 리포트 생성에 사용된 원본 결과 파일 패턴 (리포트 헤더에 명시용).
     """
     logger.info("Generating summary report...")
     report_lines = []
     report_lines.append("--- Chatbot Test Results Summary Report ---")
     report_lines.append(f"Report Generated On : {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    report_lines.append(f"Input Result Files  : {input_pattern}")
+    report_lines.append(f"Input Result Files  : {input_pattern}") # 사용된 입력 파일 패턴 명시
     report_lines.append(f"Total Test Cases    : {len(df)}")
 
     # Latency Summary
@@ -511,10 +485,13 @@ def generate_summary_report(df: pd.DataFrame, output_dir: str, input_pattern: st
         lat_col = f'results_{mode}_latency_seconds'
         suc_col = f'results_{mode}_success'
         if lat_col in df.columns and suc_col in df.columns:
-            # 성공한 케이스의 Latency만 필터링하여 평균 계산
-            avg_latency = df.loc[df[suc_col] == True, lat_col].mean() # NaN은 자동 제외
-            success_count = df[suc_col].sum()
-            report_lines.append(f"Mode {mode[-1]}: {avg_latency:.4f} (from {success_count} successful runs)")
+            successful_runs = df.loc[df[suc_col] == True, lat_col]
+            if not successful_runs.empty:
+                 avg_latency = successful_runs.mean()
+                 success_count = len(successful_runs)
+                 report_lines.append(f"Mode {mode[-1]}: {avg_latency:.4f} (from {success_count} successful runs)")
+            else:
+                 report_lines.append(f"Mode {mode[-1]}: N/A (No successful runs)")
         else:
             report_lines.append(f"Mode {mode[-1]}: N/A (Data missing)")
 
@@ -523,7 +500,6 @@ def generate_summary_report(df: pd.DataFrame, output_dir: str, input_pattern: st
     for mode in ['mode1', 'mode2', 'mode3']:
         col = f'results_{mode}_success'
         if col in df.columns:
-            # mean()은 True=1, False=0으로 계산하여 비율 반환
             success_rate = df[col].mean() * 100
             report_lines.append(f"Mode {mode[-1]}: {success_rate:.2f}%")
         else:
@@ -535,29 +511,68 @@ def generate_summary_report(df: pd.DataFrame, output_dir: str, input_pattern: st
         len_col = f'results_{mode}_response_length'
         suc_col = f'results_{mode}_success'
         if len_col in df.columns and suc_col in df.columns:
-            # 성공한 케이스의 응답 길이만 필터링하여 평균 계산
-            avg_len = df.loc[df[suc_col] == True, len_col].mean()
-            report_lines.append(f"Mode {mode[-1]}: {avg_len:.1f}")
+            successful_runs = df.loc[df[suc_col] == True, len_col]
+            if not successful_runs.empty:
+                avg_len = successful_runs.mean()
+                report_lines.append(f"Mode {mode[-1]}: {avg_len:.1f}")
+            else:
+                report_lines.append(f"Mode {mode[-1]}: N/A (No successful runs)")
         else:
             report_lines.append(f"Mode {mode[-1]}: N/A (Data missing)")
+
+    # --- [수정됨] Mode별 Token Usage Summary ---
+    report_lines.append("\n--- Average Token Usage (Successful Runs) ---")
+    for mode in ['mode1', 'mode2', 'mode3']:
+        suc_col = f'results_{mode}_success'
+        # 각 토큰 타입별 컬럼 이름 정의 (preprocess_data와 일치 확인)
+        # Mode 1/2 과 Mode 3의 토큰 컬럼 이름이 다를 수 있음에 유의 (test_runner.py 저장 방식 확인)
+        # 여기서는 Mode 1/2 는 results_modeX_token_usage_*, Mode 3 는 results_mode3_token_usage_* 로 가정
+        prompt_col = f'results_{mode}_token_usage_prompt_tokens'
+        completion_col = f'results_{mode}_token_usage_completion_tokens'
+        total_col = f'results_{mode}_token_usage_total_tokens'
+
+        # 필요한 컬럼들이 모두 존재하는지 확인
+        required_cols_exist = all(c in df.columns for c in [suc_col, prompt_col, completion_col, total_col])
+
+        if required_cols_exist:
+            # 성공한 실행 건만 필터링
+            successful_runs_df = df[df[suc_col] == True]
+            num_successful = len(successful_runs_df)
+
+            if num_successful > 0:
+                # 각 토큰 타입별 평균 계산 (mean()은 NaN 자동 제외)
+                avg_prompt = successful_runs_df[prompt_col].mean()
+                avg_completion = successful_runs_df[completion_col].mean()
+                avg_total = successful_runs_df[total_col].mean()
+                report_lines.append(f"Mode {mode[-1]}: Avg Prompt={avg_prompt:.1f}, Avg Completion={avg_completion:.1f}, Avg Total={avg_total:.1f} (from {num_successful} runs)")
+            else:
+                report_lines.append(f"Mode {mode[-1]}: N/A (No successful runs with token data)")
+        else:
+            # 필요한 컬럼 중 하나라도 없으면 N/A 보고
+            missing_cols_info = [c for c in [suc_col, prompt_col, completion_col, total_col] if c not in df.columns]
+            report_lines.append(f"Mode {mode[-1]}: N/A (Data missing for columns: {missing_cols_info})")
+    # --- [토큰 사용량 요약 끝] ---
+
 
     # Mode 3 Satisfaction Summary
     score_col = 'satisfaction_evaluation_overall_satisfaction_score'
     report_lines.append("\n--- Mode 3 Satisfaction Evaluation (Overall Score 1-5) ---")
     if score_col in df.columns:
-        valid_scores = df[score_col].dropna() # NaN 값 제외
+        valid_scores = df[score_col].dropna()
         if not valid_scores.empty:
             avg_score = valid_scores.mean()
             median_score = valid_scores.median()
             std_dev = valid_scores.std()
             min_score = valid_scores.min()
             max_score = valid_scores.max()
+            evaluated_count = len(valid_scores)
+            total_mode3_runs = df['results_mode3_success'].notna().sum() # Mode 3 실행 횟수 (성공/실패 포함)
             report_lines.append(f"  Average : {avg_score:.2f}")
             report_lines.append(f"  Median  : {median_score:.2f}")
             report_lines.append(f"  Std Dev : {std_dev:.2f}")
             report_lines.append(f"  Min Score: {min_score:.0f}")
             report_lines.append(f"  Max Score: {max_score:.0f}")
-            report_lines.append(f"  Evaluated Count: {len(valid_scores)} / {len(df)}") # 평가된 케이스 수 / 전체 케이스 수
+            report_lines.append(f"  Evaluated Count: {evaluated_count} / {total_mode3_runs}") # 평가된 케이스 수 / Mode3 실행 케이스 수
         else:
             report_lines.append("  No valid satisfaction scores found.")
     else:
@@ -567,7 +582,7 @@ def generate_summary_report(df: pd.DataFrame, output_dir: str, input_pattern: st
     model_col = 'mode3_model_chosen'
     report_lines.append("\n--- Mode 3 Model Usage Distribution ---")
     if model_col in df.columns:
-        # normalize=True 로 비율 계산, dropna=False로 결측치('Unknown' 등)도 포함 가능성 고려
+        # normalize=True 로 비율 계산, dropna=False로 결측치('Unknown' 등)도 포함
         model_counts = df[model_col].value_counts(normalize=True, dropna=False) * 100
         if not model_counts.empty:
             for model, percentage in model_counts.items():
@@ -624,7 +639,7 @@ if __name__ == "__main__":
         logger.error("Failed to load or no data found in result file(s). Exiting.")
         exit(1)
 
-    # 2. 데이터 전처리
+    # 2. 데이터 전처리 (Mode 3 토큰 처리 포함)
     df_processed = preprocess_data(df_raw)
 
     # 3. 그래프 생성 함수 호출
@@ -634,9 +649,9 @@ if __name__ == "__main__":
     plot_satisfaction_distribution(df_processed, args.output_dir)
     plot_model_routing_distribution(df_processed, args.output_dir)
     plot_performance_by_difficulty(df_processed, args.output_dir)
-    # TODO: 추가적인 분석 및 시각화 함수 호출 가능
+    # TODO: 추가적인 분석 및 시각화 함수 호출 가능 (현재는 보류)
 
-    # 4. 요약 리포트 생성
+    # 4. 요약 리포트 생성 (Mode 3 토큰 보고 포함)
     generate_summary_report(df_processed, args.output_dir, args.input)
 
     logger.info(f"--- Test Results Visualization Finished. Check outputs in '{args.output_dir}' ---")

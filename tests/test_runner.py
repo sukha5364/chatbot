@@ -1,4 +1,4 @@
-# tests/test_runner.py (요구사항 반영 최종본)
+# tests/test_runner.py (Mode 3 토큰 추출 및 요약 보고 포함 최종본)
 
 import os
 import json
@@ -10,6 +10,7 @@ import aiohttp
 from datetime import datetime
 import logging
 from typing import List, Dict, Optional, Any
+import numpy as np # 요약 계산을 위해 추가
 
 # --- 로깅 설정 (DEBUG 레벨 고정) ---
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -37,6 +38,7 @@ try:
     testing_config = config.get('testing', {})
     tasks_config = config.get('tasks', {})
     prompts_config = config.get('prompts', {}) # 필요시 사용
+    # [수정] gen_config 추가 (Mode 1, 2 파라미터용)
     gen_config = config.get('generation', {}) # 필요시 사용
 
     # 필수 키 검증
@@ -97,10 +99,10 @@ def save_test_results(results: List[Dict], output_dir: str, filename: str):
                     f.write(json.dumps(result, ensure_ascii=False, default=str) + '\n')
                     saved_count += 1
                 except TypeError as te:
-                     logger.warning(f"Could not serialize result item due to TypeError: {te}. Item keys: {list(result.keys())}. Skipping item.")
-                     # 부분적인 데이터라도 기록하고 싶다면 아래처럼 처리 가능
-                     # simplified_result = {k: str(v) for k, v in result.items()} # 모든 값을 문자열로 변환 (정보 손실 가능)
-                     # f.write(json.dumps(simplified_result, ensure_ascii=False) + '\n')
+                    logger.warning(f"Could not serialize result item due to TypeError: {te}. Item keys: {list(result.keys())}. Skipping item.")
+                    # 부분적인 데이터라도 기록하고 싶다면 아래처럼 처리 가능
+                    # simplified_result = {k: str(v) for k, v in result.items()} # 모든 값을 문자열로 변환 (정보 손실 가능)
+                    # f.write(json.dumps(simplified_result, ensure_ascii=False) + '\n')
         logger.info(f"Successfully saved {saved_count}/{len(results)} results.")
     except Exception as e:
         logger.error(f"Error saving test results to {filepath}: {e}", exc_info=True)
@@ -171,7 +173,7 @@ def load_test_cases(test_type: str, set_number: Optional[int] = None) -> List[Di
 
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
-                loaded_count = 0
+                loaded_count_file = 0
                 for i, line in enumerate(f):
                     line = line.strip()
                     if not line: continue
@@ -182,10 +184,10 @@ def load_test_cases(test_type: str, set_number: Optional[int] = None) -> List[Di
                             continue
                         test_case['_source_file'] = filename # 소스 파일 정보 추가
                         all_test_cases.append(test_case)
-                        loaded_count += 1
+                        loaded_count_file += 1
                     except json.JSONDecodeError:
                         logger.warning(f"Skipping invalid JSON line {i+1} in {filename}: {line[:100]}...")
-                logger.info(f"Loaded {loaded_count} test cases from {filename}")
+                logger.info(f"Loaded {loaded_count_file} test cases from {filename}")
         except Exception as e:
             logger.error(f"Error loading file {filename}: {e}", exc_info=True)
 
@@ -217,8 +219,7 @@ async def evaluate_satisfaction_async(
         # 오류 정보 명확화
         return {"error": "Empty or invalid response provided", "status": "evaluation_skipped"}
 
-    # 평가 프롬프트 (내용은 이전 답변 참조 - config.yaml로 이동 고려 가능)
-    # TODO: 이 프롬프트도 config.yaml의 prompts 섹션으로 이동 관리 가능
+    # 평가 프롬프트 (config.yaml로 이동 고려 가능)
     evaluation_prompt = f"""
     다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 1점에서 5점 사이로 평가하고, 각 항목별 점수와 간결한 평가 이유를 JSON 형식으로 제공해주세요.
 
@@ -274,9 +275,9 @@ async def evaluate_satisfaction_async(
             try:
                 json_start = clean_eval_content.find('{'); json_end = clean_eval_content.rfind('}')
                 if json_start != -1 and json_end != -1:
-                     json_string = clean_eval_content[json_start:json_end+1]
+                    json_string = clean_eval_content[json_start:json_end+1]
                 else:
-                     json_string = clean_eval_content # 중괄호 없으면 그대로 시도
+                    json_string = clean_eval_content # 중괄호 없으면 그대로 시도
 
                 evaluation_result = json.loads(json_string)
 
@@ -288,31 +289,31 @@ async def evaluate_satisfaction_async(
 
                 for key in required_scores:
                     if key not in evaluation_result:
-                         missing_scores.append(key)
-                         valid_result[key] = None # 키가 없으면 None
-                         continue
+                        missing_scores.append(key)
+                        valid_result[key] = None # 키가 없으면 None
+                        continue
                     try:
-                         # 점수가 숫자가 아니거나 1~5 범위 밖이면 None 처리 또는 경고
-                         score = int(evaluation_result[key])
-                         if 1 <= score <= 5:
-                              valid_result[key] = score
-                         else:
-                              logger.warning(f"Evaluation score '{key}' ({score}) out of range (1-5). Setting to None.")
-                              valid_result[key] = None
-                              conversion_errors.append(f"{key}: out_of_range({score})")
+                        # 점수가 숫자가 아니거나 1~5 범위 밖이면 None 처리 또는 경고
+                        score = int(evaluation_result[key])
+                        if 1 <= score <= 5:
+                            valid_result[key] = score
+                        else:
+                            logger.warning(f"Evaluation score '{key}' ({score}) out of range (1-5). Setting to None.")
+                            valid_result[key] = None
+                            conversion_errors.append(f"{key}: out_of_range({score})")
                     except (ValueError, TypeError):
-                         logger.warning(f"Could not convert score '{key}' to int: {evaluation_result[key]}. Setting to None.")
-                         valid_result[key] = None
-                         conversion_errors.append(f"{key}: conversion_error({evaluation_result[key]})")
+                        logger.warning(f"Could not convert score '{key}' to int: {evaluation_result[key]}. Setting to None.")
+                        valid_result[key] = None
+                        conversion_errors.append(f"{key}: conversion_error({evaluation_result[key]})")
 
                 valid_result["evaluation_reason"] = evaluation_result.get("evaluation_reason", "N/A") # 이유 텍스트
 
                 if missing_scores:
-                     logger.warning(f"Evaluation result missing scores: {missing_scores}")
-                     valid_result["status"] = "parsing_warning_missing_scores"
+                    logger.warning(f"Evaluation result missing scores: {missing_scores}")
+                    valid_result["status"] = "parsing_warning_missing_scores"
                 if conversion_errors:
-                     logger.warning(f"Evaluation score conversion issues: {conversion_errors}")
-                     valid_result["status"] = "parsing_warning_conversion_error"
+                    logger.warning(f"Evaluation score conversion issues: {conversion_errors}")
+                    valid_result["status"] = "parsing_warning_conversion_error"
 
                 logger.info("Satisfaction evaluation successful.")
                 return valid_result # 정제된 결과 반환
@@ -364,13 +365,15 @@ async def run_test_async(
     # 테스트 모드 헤더 딕셔너리
     test_mode_header_dict = {TEST_MODE_HEADER_NAME: 'true'}
 
-    # 공통 파라미터 (Mode 1, 2 용)
+    # 공통 파라미터 (Mode 1, 2 용) - config.yaml의 generation 섹션 사용 (없으면 기본값)
     common_params = {
         "session": session,
-        # generation 섹션에서 온도/토큰 읽기 (기본값 설정)
-        "temperature": gen_config.get('final_response_temperature', 0.7),
-        "max_tokens": gen_config.get('final_response_max_tokens', 500)
+        # generation 섹션 키 이름은 예시, 실제 config.yaml과 일치 필요
+        "temperature": gen_config.get('baseline_temperature', 0.7),
+        "max_tokens": gen_config.get('baseline_max_tokens', 500)
     }
+    logger.debug(f"Using common params for Mode 1/2: temp={common_params['temperature']}, max_tokens={common_params['max_tokens']}")
+
 
     logger.debug(f"Running test case ID: {result_data['test_run_id']} for question: '{question[:50]}...'")
 
@@ -395,10 +398,10 @@ async def run_test_async(
             })
         else:
              result_data['results']['mode1'].update({
-                 "error": "API call failed or no choices",
-                 "status": "failed_api",
-                 "latency_seconds": round(mode1_latency, 4),
-                 "raw_response": response_m1_data # 실패 시 원본 응답 저장
+                "error": "API call failed or no choices",
+                "status": "failed_api",
+                "latency_seconds": round(mode1_latency, 4),
+                "raw_response": response_m1_data # 실패 시 원본 응답 저장
              })
     except Exception as e:
         mode1_latency = time.time() - mode1_start
@@ -419,22 +422,22 @@ async def run_test_async(
         response_m2_data = await call_gpt_async(messages=messages_m2, model=model_m2, **common_params)
         mode2_latency = time.time() - mode2_start
         if response_m2_data and response_m2_data.get("choices"):
-             response_text = response_m2_data["choices"][0].get("message", {}).get("content", "")
-             result_data['results']['mode2'].update({
-                 "success": True,
-                 "status": "completed",
-                 "response": response_text,
-                 "latency_seconds": round(mode2_latency, 4),
-                 "model_used": model_m2,
-                 "token_usage": response_m2_data.get("usage")
-             })
+            response_text = response_m2_data["choices"][0].get("message", {}).get("content", "")
+            result_data['results']['mode2'].update({
+                "success": True,
+                "status": "completed",
+                "response": response_text,
+                "latency_seconds": round(mode2_latency, 4),
+                "model_used": model_m2,
+                "token_usage": response_m2_data.get("usage")
+            })
         else:
-             result_data['results']['mode2'].update({
-                 "error": "API call failed or no choices",
-                 "status": "failed_api",
-                 "latency_seconds": round(mode2_latency, 4),
-                 "raw_response": response_m2_data
-             })
+            result_data['results']['mode2'].update({
+                "error": "API call failed or no choices",
+                "status": "failed_api",
+                "latency_seconds": round(mode2_latency, 4),
+                "raw_response": response_m2_data
+            })
     except Exception as e:
         mode2_latency = time.time() - mode2_start
         logger.error(f"[{result_data['test_run_id']}] Error in Mode 2 execution: {e}", exc_info=True)
@@ -476,8 +479,28 @@ async def run_test_async(
                         "status": "completed",
                         "response": response_m3 or "", # None 대신 빈 문자열
                         "debug_info": debug_info_m3 or {} # None 대신 빈 딕셔너리
-                        # TODO: Mode 3의 토큰 사용량 정보는 debug_info에서 추출해야 함 (app.py 수정 필요)
+                        # token_usage 는 아래에서 추가
                     })
+
+                    # --- [Mode 3 토큰 사용량 추출 로직 추가] ---
+                    if debug_info_m3 and isinstance(debug_info_m3, dict):
+                        # 가정: debug_info 안에 'total_token_usage' 키로 토큰 정보가 있음
+                        # 실제 키 이름은 scheduler.py 반환값 확인 필요
+                        # 예시 경로: debug_info_m3.get('total_token_usage') 또는 debug_info_m3.get('steps', [{}])[-1].get('llm_call_usage')
+                        token_usage_m3 = debug_info_m3.get('total_token_usage') # <-- 실제 키 경로 확인 및 수정!
+
+                        if token_usage_m3 and isinstance(token_usage_m3, dict):
+                            required_keys = ['prompt_tokens', 'completion_tokens', 'total_tokens']
+                            if all(key in token_usage_m3 for key in required_keys):
+                                result_data['results']['mode3']['token_usage'] = token_usage_m3
+                                logger.debug(f"[{result_data['test_run_id']}] Extracted Mode 3 token usage: {token_usage_m3}")
+                            else:
+                                logger.warning(f"[{result_data['test_run_id']}] Mode 3 token usage found in debug_info, but missing required keys ({required_keys}). Found keys: {list(token_usage_m3.keys())}")
+                        else:
+                            # 키가 없거나 형식이 맞지 않는 경우
+                            logger.warning(f"[{result_data['test_run_id']}] Mode 3 debug_info exists, but key 'total_token_usage' (or expected path) not found or not a dictionary. Cannot extract token usage. Found debug_info keys: {list(debug_info_m3.keys())}")
+                    # --- [토큰 추출 로직 끝] ---
+
 
                     # 성공 시 만족도 평가 호출
                     if response_m3: # 응답이 있을 때만 평가
@@ -553,7 +576,6 @@ async def main():
     semaphore = asyncio.Semaphore(args.concurrency) # 동시 실행 개수 제어
 
     # aiohttp 세션 생성
-    # API 키는 gpt_interface에서 환경변수/dotenv로 로드되므로 여기서 명시적 전달 불필요
     async with aiohttp.ClientSession() as session:
         logger.info(f"Running {len(test_cases)} test cases against {CHATBOT_API_URL} with concurrency limit {args.concurrency}...")
 
@@ -565,12 +587,6 @@ async def main():
                 logger.debug(f"Starting test for case: {test_id} - '{test_case['question'][:30]}...'")
                 return await run_test_async(test_case, session)
 
-        # tqdm 등 진행률 표시 라이브러리 사용 가능
-        # pip install tqdm
-        # from tqdm.asyncio import tqdm_asyncio
-        # tasks = [run_with_semaphore(tc) for tc in test_cases]
-        # test_results = await tqdm_asyncio.gather(*tasks, desc=f"Running {args.test_type} tests")
-
         # 기본 gather 사용
         tasks = [run_with_semaphore(tc) for tc in test_cases]
         test_results = await asyncio.gather(*tasks)
@@ -580,7 +596,7 @@ async def main():
     # 3. Save Results
     save_test_results(test_results, RESULTS_DIR, result_filename)
 
-    # 4. Print Summary (개선)
+    # 4. Print Summary (개선됨: Mode 3 토큰 포함)
     overall_end_time = time.time()
     total_time = overall_end_time - overall_start_time
     total_cases = len(test_results)
@@ -592,7 +608,7 @@ async def main():
         mode_results = [r['results'].get(mode_key) for r in test_results if r.get('results') and r['results'].get(mode_key)]
 
         success_count = sum(1 for r in mode_results if r and r.get('success'))
-        failed_api_count = sum(1 for r in mode_results if r and r.get('status') == 'failed_api')
+        failed_api_count = sum(1 for r in mode_results if r and r.get('status', '').startswith('failed_api')) # failed_api_ 로 시작하는 모든 상태 카운트
         failed_exception_count = sum(1 for r in mode_results if r and r.get('status') == 'failed_exception')
         # ... 다른 실패 상태 카운트 추가 가능
 
@@ -614,11 +630,11 @@ async def main():
         eval_data = r.get('satisfaction_evaluation')
         if isinstance(eval_data, dict):
             if eval_data.get('status') == 'success' and isinstance(eval_data.get('overall_satisfaction_score'), (int, float)):
-                 valid_evals.append(eval_data['overall_satisfaction_score'])
+                valid_evals.append(eval_data['overall_satisfaction_score'])
             elif eval_data.get('status', '').startswith('evaluation_failed'):
-                 eval_failed += 1
+                eval_failed += 1
             elif eval_data.get('status') == 'evaluation_skipped':
-                 eval_skipped +=1
+                eval_skipped +=1
         else: # satisfaction_evaluation 키 자체가 없거나 다른 타입
             eval_skipped +=1 # 또는 다른 카운터 사용
 
@@ -643,6 +659,29 @@ async def main():
         print(f"    Avg Latency (Successful): {metrics['avg_latency_success']}s")
         print(f"    API Failures: {metrics['failed_api_count']}")
         print(f"    Exceptions: {metrics['failed_exception_count']}")
+
+    # --- [추가됨] 토큰 사용량 요약 출력 ---
+    print("-" * 20)
+    print("Average Token Usage per Mode (Successful Runs):")
+    for mode_num in [1, 2, 3]:
+        mode_key = f"mode{mode_num}"
+        # 성공하고 token_usage가 dict 형태인 결과만 필터링
+        token_usage_list = [r['results'].get(mode_key, {}).get('token_usage')
+                            for r in test_results
+                            if r.get('results', {}).get(mode_key, {}).get('success') and
+                               isinstance(r.get('results', {}).get(mode_key, {}).get('token_usage'), dict)]
+
+        if token_usage_list:
+            # 각 키별 평균 계산 (키가 없는 경우 0으로 처리)
+            avg_prompt = np.mean([t.get('prompt_tokens', 0) for t in token_usage_list])
+            avg_completion = np.mean([t.get('completion_tokens', 0) for t in token_usage_list])
+            avg_total = np.mean([t.get('total_tokens', 0) for t in token_usage_list])
+            print(f"  Mode {mode_num}: Avg Prompt={avg_prompt:.1f}, Avg Completion={avg_completion:.1f}, Avg Total={avg_total:.1f} (from {len(token_usage_list)} runs)")
+        else:
+            # 토큰 정보가 없거나 성공한 실행이 없는 경우
+            print(f"  Mode {mode_num}: N/A (No token usage data found or no successful runs)")
+    # --- [토큰 요약 출력 끝] ---
+
     print("-" * 20)
     print("Mode 3 Satisfaction Evaluation Summary:")
     print(f"  Average Score (Evaluated): {satisfaction_summary['average_score']}")
