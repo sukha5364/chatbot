@@ -1,0 +1,528 @@
+[2025-05-06 16:00:15] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\user\Desktop\git\logs\api_history_20250506_1600.txt
+[2025-05-06 16:00:25] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\user\Desktop\git\logs\api_history_20250506_1600.txt
+================================================================================
+[2025-05-06 16:00:25] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.854
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 지난 번 데카트론에서 구매한 배낭에 배송이 안 와 문제가 발생했어. 어떻게 해결해야 할까?... User: 지난 번 데카트론에서 구매한 배낭에 배송이 안 와 문제가 발생했어. 어떻게 해결해야 할까?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:25] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.877
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 가까운 데카트론 매장 위치 알려줘.... User: 가까운 데카트론 매장 위치 알려줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:25] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.878
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 데카트론 퀘차 매장 전화번호 알려줘.... User: 데카트론 퀘차 매장 전화번호 알려줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:25] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.904
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 오라오 러닝화 중에 제일 싼 거 뭐야?... User: 오라오 러닝화 중에 제일 싼 거 뭐야?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:25] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.905
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 포클라즈 침낭 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘.... User: 포클라즈 침낭 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 122
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.878
+Response TS: 2025-05-06T16:00:27.079
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZurG1ELRN00QOah5P4UHN1Xywc
+  Choices Count   : 1
+  Usage (P/C/T)   : 32 / 90 / 122
+  Content Preview : 죄송합니다, 데카트론 퀘차 매장 전화번호는 저희 데이터베이스에 등록되어 있지 않습니다. 직접 인터넷에서 검색하시거나 해당 매장으로 직접 연락하여...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.081
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 데카트론 퀘차 매장 전화번호 알려줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 101
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.877
+Response TS: 2025-05-06T16:00:27.262
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZuTBHzlC525nDCVUMZRocnRWaq
+  Choices Count   : 1
+  Usage (P/C/T)   : 29 / 72 / 101
+  Content Preview : 죄송합니다. 데카트론은 실제 존재하지 않는 가게입니다. 혹시 다른 가게나 브랜드에 대한 정보가 필요하시다면 알려주세요. 최대한 도와드리겠습니다....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.264
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 가까운 데카트론 매장 위치 알려줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 139
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.904
+Response TS: 2025-05-06T16:00:27.541
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6Zu7udwK9ID529awyq6whHJgQ6J
+  Choices Count   : 1
+  Usage (P/C/T)   : 28 / 111 / 139
+  Content Preview : 현재 오라오 브랜드의 가장 저렴한 러닝화는 5만원 이하의 제품이 있습니다. 그러나 정확한 제품명이나 모델은 변동할 수 있으므로 구체적인 정보는 ...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.543
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 오라오 러닝화 중에 제일 싼 거 뭐야?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 261
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.854
+Response TS: 2025-05-06T16:00:27.973
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZuAK4SHRkU9Fy1wi8rHmfwNg1X
+  Choices Count   : 1
+  Usage (P/C/T)   : 58 / 203 / 261
+  Content Preview : 먼저 데카트론 고객센터에 문제를 신고해야 합니다. 전화나 이메일을 통해 상황을 설명하고 주문번호와 배송 정보를 제공해야 합니다. 그런 다음 고객...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:27] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.984
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 지난 번 데카트론에서 구매한 배낭에 배송이 안 와 문제가 발생했어. 어떻게 해결해야 할까?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:28] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 197
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.081
+Response TS: 2025-05-06T16:00:28.232
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZvnxcwDw7wObIShMrkNtSVc2Yo
+  Choices Count   : 1
+  Usage (P/C/T)   : 138 / 59 / 197
+  Content Preview : 데카트론 코리아의 퀘차 매장 전화번호는 02-1234-5678입니다. 궁금한 점이 있으시면 언제든지 문의해 주세요....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:28] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 255
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.543
+Response TS: 2025-05-06T16:00:28.969
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZvmbG5R20ykEAYiDVeoIqNBsPH
+  Choices Count   : 1
+  Usage (P/C/T)   : 134 / 121 / 255
+  Content Preview : 안녕하세요! 데카트론 코리아입니다. 현재 저희 브랜드에서 판매하는 오라오 러닝화 중에서 제일 저렴한 제품은 '오라오 러닝화 라이트'입니다. 가격...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:29] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 268
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.264
+Response TS: 2025-05-06T16:00:29.220
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZvcCTifTwSwOH6ZfFKhhT09NpL
+  Choices Count   : 1
+  Usage (P/C/T)   : 135 / 133 / 268
+  Content Preview : 네, 고객님 어디 지역에 계신가요? 혹시 서울, 경기, 인천, 대구, 부산, 광주, 대전, 울산, 세종, 강원, 충북, 충남, 전북, 전남, 경...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:30] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 361
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:27.984
+Response TS: 2025-05-06T16:00:30.305
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZwonG7unuju6OjO4BSDwaOclXG
+  Choices Count   : 1
+  Usage (P/C/T)   : 164 / 197 / 361
+  Content Preview : 안녕하세요, 데카트론 코리아입니다. 먼저 불편을 끼쳐드려 죄송합니다. 구매하신 상품이 배송 중 문제가 발생했다는 사실을 알려주셔서 감사합니다. ...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 474
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:25.905
+Response TS: 2025-05-06T16:00:31.524
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZumNe8APAltHpQP7phs2SvK7bA
+  Choices Count   : 1
+  Usage (P/C/T)   : 67 / 407 / 474
+  Content Preview : 포클라즈 침낭의 새로운 모델은 이전의 데카트론 모델보다 몇 가지 새로운 기능과 개선 사항이 있습니다. 
+
+먼저, 포클라즈 침낭은 더 경량화되어 ...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:31.532
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 포클라즈 침낭 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.539
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ... User: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.915
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ... User: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:33] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 259
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:31.532
+Response TS: 2025-05-06T16:00:33.893
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZzIg0XaAMImt2AOvcQyabNrzMx
+  Choices Count   : 1
+  Usage (P/C/T)   : 173 / 86 / 259
+  Content Preview : 안녕하세요! 죄송하지만 현재 포클라즈 침낭의 신제품은 출시되지 않았습니다. 혹시 다른 제품에 대해 궁금한 점이 있으시면 언제든지 질문해 주세요....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:34] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:34.333
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ... User: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - ChatCompletion success from gpt-4o. Tokens: 587
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.539
+Response TS: 2025-05-06T16:00:35.234
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZzvsmA0HQigJuTJ1ZHFN7j9rPf
+  Choices Count   : 1
+  Usage (P/C/T)   : 425 / 162 / 587
+  Content Preview : 
+    {
+      "relevance_score": 4,
+      "accuracy_score": 5,
+      "completenes...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - ChatCompletion success from gpt-4o. Tokens: 571
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.915
+Response TS: 2025-05-06T16:00:35.235
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a0IiHjME68L03Akqm7WwQ7GVp7
+  Choices Count   : 1
+  Usage (P/C/T)   : 436 / 135 / 571
+  Content Preview : 
+    {
+      "relevance_score": 5,
+      "accuracy_score": 5,
+      "completenes...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:35.359
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 푸마 등산화랑 데카트론 배낭 비교해줘.... User: 푸마 등산화랑 데카트론 배낭 비교해줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:00:35.360
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 뉴페일 자전거 의류 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘... User: 뉴페일 자전거 의류 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:35.896
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ... User: 
+    다음은 사용자 질문과 챗봇의 답변입니다. 아래 평가 기준에 따라 답변의 만족도를 ...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+

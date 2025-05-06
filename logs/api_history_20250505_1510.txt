@@ -1,0 +1,186 @@
+[2025-05-05 15:10:38] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\user\Desktop\git\logs\api_history_20250505_1510.txt
+================================================================================
+[2025-05-05 15:10:45] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-05T15:10:45.902
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Messages Preview: System: 당신은 사용자의 자연어 문의에서 핵심 정보를 추출하여 구조화된 JSON 형식으로 반환하는 ... User: 당신은 사용자의 자연어 문의에서 핵심 정보를 추출하여 구조화된 JSON 형식으로 반환하는 ...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:45] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-05T15:10:45.914
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 300
+  Messages Preview: System: # 역할 정의
+당신은 사용자 질문의 처리 복잡도를 평가하는 분류기입니다.
+
+# 작업 지시
+... User: # 역할 정의
+당신은 사용자 질문의 처리 복잡도를 평가하는 분류기입니다.
+
+# 작업 지시
+...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:45] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-05T15:10:45.915
+
+--- Payload Info ---
+  Messages Count: N/A
+  Input Length  : 4
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:45] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-05T15:10:45.917
+
+--- Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.5
+  Max Tokens    : 1500
+  Messages Preview: System: # 역할 정의
+당신은 사용자의 질문에 대해 가장 효과적이고 정확한 답변을 생성하기 위한 논... User: # 역할 정의
+당신은 사용자의 질문에 대해 가장 효과적이고 정확한 답변을 생성하기 위한 논...
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:47] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1380
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-05T15:10:45.902
+Response TS: 2025-05-05T15:10:47.330
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BTjKI7wCrtkboXgHpYE2gpHvE9WHl
+  Choices Count  : 1
+  Usage (P/C/T)  : 1355 / 25 / 1380
+  Content Preview: {
+    "brand_mentioned": "나이키",
+    "product_category": "신발"
+}...
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:47] [INFO] - ChatCompletion success from gpt-4o. Tokens: 730
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-05T15:10:45.914
+Response TS: 2025-05-05T15:10:47.342
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BTjKIVYVbU0jAY883xietxzoFe6sx
+  Choices Count  : 1
+  Usage (P/C/T)  : 717 / 13 / 730
+  Content Preview: 
+{
+  "complexity_level": "easy"
+}...
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:47] [INFO] - Embedding success from text-embedding-3-large. Tokens: 8
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-05T15:10:45.915
+Response TS: 2025-05-05T15:10:47.153
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)  : 8 / ? / 8
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:54] [INFO] - ChatCompletion success from gpt-4o. Tokens: 830
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-05T15:10:45.917
+Response TS: 2025-05-05T15:10:54.595
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BTjKILiftxfGvk3hOGqDNWnPLERKC
+  Choices Count  : 1
+  Usage (P/C/T)  : 417 / 413 / 830
+  Content Preview: 1. **질문 분석:**
+   - 현재 사용자 질문 "ㅎㅇㅎㅇ"는 비공식적인 인사말로 보입니다. 사용자가 구체적인 질문이나 요청을 하지 않았으므...
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:54] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG level - full prompt logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-05T15:10:54.628
+
+--- Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: ㅎㅇㅎㅇ...
+================================================================================
+
+================================================================================
+[2025-05-05 15:10:55] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 628
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-05T15:10:54.628
+Response TS: 2025-05-05T15:10:55.741
+Status Code: 200
+
+--- Response Info ---
+  ID             : chatcmpl-BTjKQEdOBVQqIc1JCgP3EYoFqU81W
+  Choices Count  : 1
+  Usage (P/C/T)  : 574 / 54 / 628
+  Content Preview: 안녕하세요! 어떤 도움이 필요하신가요? 혹시 나이키의 어떤 신발에 대해 궁금하신가요?...
+================================================================================
+

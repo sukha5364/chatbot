@@ -1,0 +1,6 @@
+[2025-05-05 15:08:23] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check log file at: C:\Users\user\Desktop\git\logs\api_history_20250505_1508.txt
+[2025-05-05 15:08:42] [ERROR] - OpenAI API Key is missing, cannot make API call.
+[2025-05-05 15:08:42] [ERROR] - OpenAI API Key is missing, cannot make API call.
+[2025-05-05 15:08:42] [ERROR] - OpenAI API Key missing for Embedding call.
+[2025-05-05 15:08:42] [ERROR] - OpenAI API Key is missing, cannot make API call.
+[2025-05-05 15:08:42] [ERROR] - OpenAI API Key is missing, cannot make API call.

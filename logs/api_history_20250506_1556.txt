@@ -1,0 +1,1 @@
+[2025-05-06 15:56:52] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\user\Desktop\git\logs\api_history_20250506_1556.txt

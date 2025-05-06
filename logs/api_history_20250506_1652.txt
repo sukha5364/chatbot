@@ -1,0 +1,291 @@
+[2025-05-06 16:52:24] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\user\Desktop\git\logs\api_history_20250506_1652.txt
+================================================================================
+[2025-05-06 16:52:24] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:52:24.508
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 안녕하세요... User: 안녕하세요...
+================================================================================
+
+================================================================================
+[2025-05-06 16:52:25] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 43
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:52:24.508
+Response TS: 2025-05-06T16:52:25.387
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7OCYPTU8jDvRMWTYZqqro1ynee2
+  Choices Count    : 1
+  Usage (P/C/T)    : 21 / 22 / 43
+  Content Preview  : 안녕하세요! 무엇을 도와드릴까요?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:52:25] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:52:25.389
+
+--- Request Payload Info ---
+  Messages Count: 3
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 안녕하세요...
+================================================================================
+
+================================================================================
+[2025-05-06 16:52:26] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 171
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:52:25.389
+Response TS: 2025-05-06T16:52:26.305
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7ODt0UIbxmWXG8zM08h9nf60aKx
+  Choices Count    : 1
+  Usage (P/C/T)    : 127 / 44 / 171
+  Content Preview  : 안녕하세요! 데카트론 코리아에 오신 것을 환영합니다. 무엇을 도와드릴까요?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:53:04] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:53:04.306
+
+--- Request Payload Info ---
+  Messages Count: 4
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 안녕하세요... User: 남자 270 사이즈의 데카트론 운동화를 추천받고 싶어....
+================================================================================
+
+================================================================================
+[2025-05-06 16:53:07] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 330
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:53:04.306
+Response TS: 2025-05-06T16:53:07.049
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7OqysUWjBPCnuo54i1HNdAvkhjf
+  Choices Count    : 1
+  Usage (P/C/T)    : 109 / 221 / 330
+  Content Preview  : 죄송합니다, 저는 실제로 제품을 판매하거나 구매를 도와드릴 수 없습니다. 하지만 일반적으로 데카트론은 다양한 사이즈와 디자인의 운동화를 판매하고...
+================================================================================
+
+================================================================================
+[2025-05-06 16:53:07] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:53:07.053
+
+--- Request Payload Info ---
+  Messages Count: 5
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 남자 270 사이즈의 데카트론 운동화를 추천받고 싶어....
+================================================================================
+
+================================================================================
+[2025-05-06 16:53:08] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 395
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:53:07.053
+Response TS: 2025-05-06T16:53:08.751
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7OtXdvHNgp0YHhJO9NyGDXLd8tW
+  Choices Count    : 1
+  Usage (P/C/T)    : 237 / 158 / 395
+  Content Preview  : 알겠습니다! 먼저 감사합니다. 데카트론에서는 다양한 종류의 운동화를 판매하고 있습니다. 제가 몇 가지 추천해 드릴 수 있도록 더 자세한 정보를 ...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:12] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:12.294
+
+--- Request Payload Info ---
+  Messages Count: 6
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 안녕하세요... User: 방수가 잘되는 운동화 중에서 추천할 만한게 있을까?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:17] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 801
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:12.294
+Response TS: 2025-05-06T16:54:17.817
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7PwfvL0HFDOtGEOCNuPiqVg6Ek2
+  Choices Count    : 1
+  Usage (P/C/T)    : 357 / 444 / 801
+  Content Preview  : 방수가 잘되는 운동화를 선택할 때에는 다음과 같은 요소를 고려하는 것이 좋습니다:
+
+1. 방수 기술: 일반적으로 고어텍스(Gore-Tex)나 유...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:17] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:17.824
+
+--- Request Payload Info ---
+  Messages Count: 7
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 방수가 잘되는 운동화 중에서 추천할 만한게 있을까?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:19] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 632
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:17.824
+Response TS: 2025-05-06T16:54:19.777
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7Q2ALIbK0oCbL7aobueVKiKhp8Y
+  Choices Count    : 1
+  Usage (P/C/T)    : 422 / 210 / 632
+  Content Preview  : 물론입니다! 방수 기능이 뛰어난 데카트론 운동화 중에서 추천드리는 제품은 '데카트론 레인 스니커즈'입니다. 이 제품은 뛰어난 방수 기능과 튼튼한...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:54] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:54.962
+
+--- Request Payload Info ---
+  Messages Count: 8
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 안녕하세요... User: 내가 위에서 무슨 사이즈의 운동화를 찾는다고 물었는지 기억해?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:57] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 1014
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:54.962
+Response TS: 2025-05-06T16:54:57.110
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7Qd7FcCFsUihVkffmrk24rxwmFu
+  Choices Count    : 1
+  Usage (P/C/T)    : 851 / 163 / 1014
+  Content Preview  : 네, 기억합니다. 270 사이즈의 데카트론 운동화를 추천받고 싶다고 문의하셨죠. 이어서 방수가 잘되는 운동화를 추천받고 싶다고 하셨습니다. 위에...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:57] [INFO] - Sending ChatCompletion request to gpt-3.5-turbo (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:57.116
+
+--- Request Payload Info ---
+  Messages Count: 9
+  Temperature   : 0.7
+  Max Tokens    : 500
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: 당신은 스포츠 전문 브랜드 '데카트론 코리아'의 AI 고객 서비스 상담원입니다. 항상 전문... User: 내가 위에서 무슨 사이즈의 운동화를 찾는다고 물었는지 기억해?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:54:58] [INFO] - ChatCompletion success from gpt-3.5-turbo. Tokens: 809
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-3.5-turbo
+Request TS : 2025-05-06T16:54:57.116
+Response TS: 2025-05-06T16:54:58.790
+Status Code: 200
+
+--- Response Info ---
+  ID               : chatcmpl-BU7QfH8Xzry491yVjxDR8UnPrJQQZ
+  Choices Count    : 1
+  Usage (P/C/T)    : 683 / 126 / 809
+  Content Preview  : 네, 죄송합니다. 사용자분께서 남자 270 사이즈의 데카트론 운동화를 찾는다고 말씀하셨습니다. 방수 기능이 뛰어난 데카트론 운동화 중에서 추천해...
+================================================================================
+

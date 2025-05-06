@@ -1,0 +1,748 @@
+[2025-05-06 15:32:33] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\user\Desktop\git\logs\api_history_20250506_1532.txt
+[2025-05-06 15:32:58] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\user\Desktop\git\logs\api_history_20250506_1532.txt
+================================================================================
+[2025-05-06 16:00:28] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:28.237
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.2
+  Max Tokens    : 1500
+  Tools Count   : 1
+  Tool Choice   : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+당신은 데카트론 및 연관 브랜드(나이... User: 데카트론 퀘차 매장 전화번호 알려줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:28] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:28.975
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.2
+  Max Tokens    : 1500
+  Tools Count   : 1
+  Tool Choice   : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+당신은 데카트론 및 연관 브랜드(나이... User: 오라오 러닝화 중에 제일 싼 거 뭐야?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:29] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:29.225
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.2
+  Max Tokens    : 1500
+  Tools Count   : 1
+  Tool Choice   : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+당신은 데카트론 및 연관 브랜드(나이... User: 가까운 데카트론 매장 위치 알려줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:30] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:30.314
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature   : 0.2
+  Max Tokens    : 1500
+  Tools Count   : 1
+  Tool Choice   : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+당신은 데카트론 및 연관 브랜드(나이... User: 지난 번 데카트론에서 구매한 배낭에 배송이 안 와 문제가 발생했어. 어떻게 해결해야 할까?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - ChatCompletion success from gpt-4o. Tokens: 4534
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:29.225
+Response TS: 2025-05-06T16:00:31.521
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZxNvXRNMDSF1YZ3FFtWnBQCmHu
+  Choices Count   : 1
+  Usage (P/C/T)   : 4475 / 59 / 4534
+  Content Preview : 죄송하지만, 현재 시스템에서는 데카트론 매장의 위치 정보를 제공할 수 없습니다. 데카트론 공식 웹사이트나 모바일 앱을 통해 가까운 매장을 확인하...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.538
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.540
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의... User: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - ChatCompletion success from gpt-4o. Tokens: 4548. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:28.975
+Response TS: 2025-05-06T16:00:31.877
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZxerJ1bnBT998nXoRvBOIC6E9X
+  Choices Count   : 1
+  Usage (P/C/T)   : 4478 / 70 / 4548
+  Content Preview : N/A (Check tool_calls)
+  Tool Calls Count: 1
+  Tool Calls Summ : [{'id': 'call_U6LOAdlu1nZbWHYRkLqY2KaY', 'function': 'product_search'}]
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-06T16:00:31.886
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length  : 19
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - ChatCompletion success from gpt-4o. Tokens: 4544
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:28.237
+Response TS: 2025-05-06T16:00:31.905
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZwW1YezTbX3y5BY8KQ3MIOAE3K
+  Choices Count   : 1
+  Usage (P/C/T)   : 4477 / 67 / 4544
+  Content Preview : 죄송하지만, 데카트론 퀘차 매장의 전화번호는 제공할 수 없습니다. 데카트론 공식 웹사이트나 고객 서비스 센터를 통해 매장 정보를 확인하시거나 직...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.912
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:31] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.915
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의... User: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:32] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1058
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.538
+Response TS: 2025-05-06T16:00:32.478
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6Zz33GTLigSZkApzP6NwzWlWal1
+  Choices Count   : 1
+  Usage (P/C/T)   : 1056 / 2 / 1058
+  Content Preview : {}...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:32] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1060
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.912
+Response TS: 2025-05-06T16:00:32.848
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a0qUOYNxLJRobK21iiXrqtO7vt
+  Choices Count   : 1
+  Usage (P/C/T)   : 1058 / 2 / 1060
+  Content Preview : {}...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:33] [INFO] - Embedding success from text-embedding-3-large. Tokens: 21
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-06T16:00:31.886
+Response TS: 2025-05-06T16:00:32.826
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)   : 21 / ? / 21
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:33] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:33.122
+
+--- Request Payload Info ---
+  Messages Count: 4
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Tools Count   : 1
+  Tool Choice   : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+당신은 데카트론 및 연관 브랜드(나이... User: {"results_found": false}...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:34] [INFO] - ChatCompletion success from gpt-4o. Tokens: 4605
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:33.122
+Response TS: 2025-05-06T16:00:34.317
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a1X8MWrThOuhCWyZLurL1yQ8TC
+  Choices Count   : 1
+  Usage (P/C/T)   : 4561 / 44 / 4605
+  Content Preview : 죄송합니다. 문의하신 오라오 브랜드의 러닝화 중 가장 저렴한 제품을 찾지 못했습니다. 혹시 다른 브랜드나 조건으로 검색을 도와드릴까요?...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:34] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:34.332
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:34] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:34.333
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의... User: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - ChatCompletion success from gpt-4o. Tokens: 519
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.540
+Response TS: 2025-05-06T16:00:35.045
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6ZzLEiMz8qPxp2N2jOTuYB0Fhds
+  Choices Count   : 1
+  Usage (P/C/T)   : 440 / 79 / 519
+  Content Preview : 사용자가 가까운 데카트론 매장의 위치를 문의하였으나, AI는 현재 시스템에서 매장 위치 정보를 제공할 수 없음을 설명하였습니다. 대신, 데카트론...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:35.078
+
+--- Request Payload Info ---
+  Messages Count: 8
+  Temperature   : 0.2
+  Max Tokens    : 1500
+  Tools Count   : 1
+  Tool Choice   : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+당신은 데카트론 및 연관 브랜드(나이... User: 포클라즈 침낭 신제품 나왔어? 이전에 쓰던 데카트론 모델보다 뭐가 좋아졌는지 설명해줘....
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - ChatCompletion success from gpt-4o. Tokens: 4683
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:30.314
+Response TS: 2025-05-06T16:00:35.889
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a0rCv3xRumGEW6foW40Q7kxyF8
+  Choices Count   : 1
+  Usage (P/C/T)   : 4490 / 193 / 4683
+  Content Preview : 배송 문제로 불편을 드려 죄송합니다. 데카트론의 배송 관련 문제는 고객 서비스 팀을 통해 가장 빠르고 정확하게 해결할 수 있습니다. 다음과 같은...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:35.896
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:35.896
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의... User: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:35] [INFO] - ChatCompletion success from gpt-4o. Tokens: 1084
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:34.332
+Response TS: 2025-05-06T16:00:35.941
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a2UPVK1byFIMRQRFWc9ELBoXm6
+  Choices Count   : 1
+  Usage (P/C/T)   : 1059 / 25 / 1084
+  Content Preview : {
+  "product_category": "러닝화",
+  "user_preference": ["제일 싼"]
+}...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:36] [ERROR] - API Error (429 Rate Limit)
+--------------------------------------------------------------------------------
+Event Type : api_response_error
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:35.896
+Response TS: 2025-05-06T16:00:36.253
+Status Code: 429
+
+--- Response Info ---
+  ID              : None
+  Choices Count   : 0
+  Content Preview : N/A (Check tool_calls)
+
+--- Error Details ---
+  Type    : tokens
+  Code    : rate_limit_exceeded
+  Param   : None
+  Message : Rate limit reached for gpt-4o in organization org-F37U5sT4xsm2MQGmyNfM0GlM on tokens per min (TPM): Limit 30000, Used 29438, Requested 991. Please try again in 858ms. Visit https://platform.openai.com/account/rate-limits to learn more.
+
+--- Failed Input Exists (Set DEBUG level for details) ---
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:36] [ERROR] - API Error (429 Rate Limit)
+--------------------------------------------------------------------------------
+Event Type : api_response_error
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:35.896
+Response TS: 2025-05-06T16:00:36.281
+Status Code: 429
+
+--- Response Info ---
+  ID              : None
+  Choices Count   : 0
+  Content Preview : N/A (Check tool_calls)
+
+--- Error Details ---
+  Type    : tokens
+  Code    : rate_limit_exceeded
+  Param   : None
+  Message : Rate limit reached for gpt-4o in organization org-F37U5sT4xsm2MQGmyNfM0GlM on tokens per min (TPM): Limit 30000, Used 29431, Requested 716. Please try again in 294ms. Visit https://platform.openai.com/account/rate-limits to learn more.
+
+--- Failed Input Exists (Set DEBUG level for details) ---
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:36] [INFO] - ChatCompletion success from gpt-4o. Tokens: 4795. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:35.078
+Response TS: 2025-05-06T16:00:36.395
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a3MTKOVXaCjmIrKYWPqnM6uFUH
+  Choices Count   : 1
+  Usage (P/C/T)   : 4727 / 68 / 4795
+  Content Preview : N/A (Check tool_calls)
+  Tool Calls Count: 1
+  Tool Calls Summ : [{'id': 'call_1JIwTulhmhhoD1ZU3fQeZugY', 'function': 'product_search'}]
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:36] [INFO] - Sending Embedding request to text-embedding-3-large
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-06T16:00:36.409
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length  : 11
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:36] [INFO] - ChatCompletion success from gpt-4o. Tokens: 624
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:31.915
+Response TS: 2025-05-06T16:00:36.586
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a0Qce99dLLcSXHOc717ko6ZJfK
+  Choices Count   : 1
+  Usage (P/C/T)   : 525 / 99 / 624
+  Content Preview : 사용자가 가까운 데카트론 매장의 위치와 퀘차 매장의 전화번호를 문의하였습니다. 그러나 현재 시스템에서는 이러한 구체적인 매장 정보 제공이 불가능...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:37] [INFO] - Embedding success from text-embedding-3-large. Tokens: 18
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-06T16:00:36.409
+Response TS: 2025-05-06T16:00:37.183
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count: 1
+  Usage (P/C/T)   : 18 / ? / 18
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:37] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:37.459
+
+--- Request Payload Info ---
+  Messages Count: 10
+  Temperature   : 0.7
+  Max Tokens    : 3000
+  Tools Count   : 1
+  Tool Choice   : auto
+  Messages Preview: System: # 역할: 데카트론 AI 상담원 + 정보 검색 전문가
+당신은 데카트론 및 연관 브랜드(나이... User: {"results_found": false}...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:37] [INFO] - ChatCompletion success from gpt-4o. Tokens: 703
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:34.333
+Response TS: 2025-05-06T16:00:37.570
+Status Code: 200
+
+--- Response Info ---
+  ID              : chatcmpl-BU6a2Pn8UyR1Cyt9EpSWZoIwh3Mf9
+  Choices Count   : 1
+  Usage (P/C/T)   : 588 / 115 / 703
+  Content Preview : 사용자는 데카트론 매장의 위치와 퀘차 매장의 전화번호를 문의했으나, AI는 현재 시스템에서 해당 정보를 제공할 수 없음을 안내했습니다. 대신 데...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:37] [ERROR] - API Error (429 Rate Limit)
+--------------------------------------------------------------------------------
+Event Type : api_response_error
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:37.459
+Response TS: 2025-05-06T16:00:37.808
+Status Code: 429
+
+--- Response Info ---
+  ID              : None
+  Choices Count   : 0
+  Content Preview : N/A (Check tool_calls)
+
+--- Error Details ---
+  Type    : tokens
+  Code    : rate_limit_exceeded
+  Param   : None
+  Message : Rate limit reached for gpt-4o in organization org-F37U5sT4xsm2MQGmyNfM0GlM on tokens per min (TPM): Limit 30000, Used 29714, Requested 3916. Please try again in 7.26s. Visit https://platform.openai.com/account/rate-limits to learn more.
+
+--- Failed Input Exists (Set DEBUG level for details) ---
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:37] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:37.809
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.1
+  Max Tokens    : 1000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은... User: # ... (slot_extractor.py 프롬프트 내용과 동일하게 유지) ...
+당신은...
+  Additional Params: {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:37] [INFO] - Sending ChatCompletion request to gpt-4o (DEBUG: full prompt/tools logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:37.809
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature   : 0.3
+  Max Tokens    : 2000
+  Tools Count   : 0
+  Tool Choice   : Not Specified
+  Messages Preview: System: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의... User: # ... (summarizer.py 프롬프트 내용과 동일하게 유지) ...
+# 역할 정의...
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:38] [ERROR] - API Error (429 Rate Limit)
+--------------------------------------------------------------------------------
+Event Type : api_response_error
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:37.809
+Response TS: 2025-05-06T16:00:38.152
+Status Code: 429
+
+--- Response Info ---
+  ID              : None
+  Choices Count   : 0
+  Content Preview : N/A (Check tool_calls)
+
+--- Error Details ---
+  Type    : tokens
+  Code    : rate_limit_exceeded
+  Param   : None
+  Message : Rate limit reached for gpt-4o in organization org-F37U5sT4xsm2MQGmyNfM0GlM on tokens per min (TPM): Limit 30000, Used 29541, Requested 550. Please try again in 182ms. Visit https://platform.openai.com/account/rate-limits to learn more.
+
+--- Failed Input Exists (Set DEBUG level for details) ---
+================================================================================
+
+================================================================================
+[2025-05-06 16:00:38] [ERROR] - API Error (429 Rate Limit)
+--------------------------------------------------------------------------------
+Event Type : api_response_error
+Direction  : response
+API Type   : chat_completion
+Model      : gpt-4o
+Request TS : 2025-05-06T16:00:37.809
+Response TS: 2025-05-06T16:00:38.166
+Status Code: 429
+
+--- Response Info ---
+  ID              : None
+  Choices Count   : 0
+  Content Preview : N/A (Check tool_calls)
+
+--- Error Details ---
+  Type    : tokens
+  Code    : rate_limit_exceeded
+  Param   : None
+  Message : Rate limit reached for gpt-4o in organization org-F37U5sT4xsm2MQGmyNfM0GlM on tokens per min (TPM): Limit 30000, Used 29544, Requested 991. Please try again in 1.07s. Visit https://platform.openai.com/account/rate-limits to learn more.
+
+--- Failed Input Exists (Set DEBUG level for details) ---
+================================================================================
+
