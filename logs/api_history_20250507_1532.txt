@@ -1,0 +1,12 @@
+[2025-05-07 15:32:23] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\Users\Jeong SeokHa\Desktop\chatbot\logs\api_history_20250507_1532.txt
+[2025-05-07 15:32:25] [ERROR] - Error setting up API parameters: name 'logger' is not defined
+Traceback (most recent call last):
+  File "C:\Users\Jeong SeokHa\Desktop\chatbot\chatbot\gpt_interface.py", line 340, in call_gpt_async
+    logger.debug(f"Using 'max_completion_tokens: {max_tokens}' for o3 model family.")
+    ^^^^^^
+NameError: name 'logger' is not defined
+Traceback (most recent call last):
+  File "C:\Users\Jeong SeokHa\Desktop\chatbot\chatbot\gpt_interface.py", line 340, in call_gpt_async
+    logger.debug(f"Using 'max_completion_tokens: {max_tokens}' for o3 model family.")
+    ^^^^^^
+NameError: name 'logger' is not defined
