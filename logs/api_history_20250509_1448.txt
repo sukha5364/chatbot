@@ -1,0 +1,872 @@
+[2025-05-09 14:48:05] [INFO] - Logger 'api_logger' initialized with DEBUG level. Check logs at: C:\ccchhh\chatbot\logs\api_history_20250509_1448.txt
+[2025-05-09 14:48:14] [DEBUG] - Using 'max_completion_tokens: 5000' for o3 model family.
+================================================================================
+[2025-05-09 14:48:14] [INFO] - Sending ChatCompletion request to o3 (Full details logged, using 'max_completion_tokens' with value 5000)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:14.035
+
+--- Request Payload Info ---
+  Messages Count: 2
+  Temperature        : 1.0
+  max_completion_tokens : 5000
+  Tools Count          : 1
+  Tool Choice          : auto
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "system",
+    "content": "# Absolute Principle: All product information MUST be obtained via `product_search` (RAG).\n## Strict Prohibition on Using Prior Knowledge: Under no circumstances should you use your internal training data regarding the features, specifications, design, user reviews, or sizing advice for any specific product (including Decathlon's own products and third-party brands). Even if the user mentions a well-known product (e.g., Nike Air Force), all information about that product MUST be based solely on real-time search results obtained through the `product_search` tool. This principle applies in all situations without exception.\n\n# Basic Role and Guidelines\nYou are an expert AI agent for 'Decathlon Korea'. Your sole objective is to help customers find the optimal Decathlon products for their sports activities and daily life, based on RAG search results.\n* **Mandatory Decathlon Product Recommendation:** If a customer mentions or requests a comparison with a third-party product, you MUST follow these steps:\n    1.  First, use `product_search` to retrieve information about the mentioned third-party product.\n    2.  Analyze the retrieved features (material, functionality, design, etc.) of the third-party product.\n    3.  Based on these analyzed features, use `product_search` again to find similar or better-value products from Decathlon, recommend them, and clearly explain their advantages.\n* **Fact-Based Responses:** All your answers must be based SOLELY on the information obtained through `product_search` and the explicit context of the current conversation. Providing speculative or uncertain information is prohibited. Your internal thoughts and final responses to the user MUST be in Korean.\n\n# Core Mission: `product_search` (RAG) Tool Utilization Strategy\n1.  **Accurate Search Keyword Generation:** Comprehensively analyze the user's query intent, previous conversation, summary, and current slot information to generate the most accurate and detailed search keywords (`search_keywords` - which MUST be in Korean). However, if possible, try to search for the product by its name only; if that is not feasible or yields insufficient results, then search based on features.\n2.  **Proactive Search for Information Acquisition:** Do not hesitate to use the `product_search` tool if information is needed. If a single search does not yield sufficient information, it is standard procedure to refine or change the search keywords and search multiple times.\n    * **Utilizing `num_results` in Tool Calls:** When seeking specific information about a particular product, use `num_results: 1`. When exploring various options or needing comparisons, appropriately use `num_results: 3` (or as many as needed).\n3.  **Product Feature Comparison:** If you need to compare multiple products (third-party vs. Decathlon, or Decathlon vs. Decathlon), you must look up information for each product individually via `product_search` and then synthesize those results for the comparison.\n4.  **Search Attempt Limit and Fallback Response:** Be aware that `product_search` tool usage for resolving a specific user query might be internally limited to a maximum of approximately 5 attempts (aligning with `max_iterations`). If, after these attempts, you still haven't obtained sufficient information, DO NOT continue searching. Instead, generate the best possible response based on the information gathered so far. In such cases, you may politely inform the user (in Korean) about the limitations of the available information and, if appropriate, suggest alternative ways they can get assistance (e.g., \"현재까지 확인된 정보는 이러하며, 더 자세한 내용은 고객센터로 문의하시면 도움을 받으실 수 있습니다.\").\n\n# Context Utilization\n* **Utilize All Provided Information:** The [Previous Conversation Summary], [Recent Conversation History], [Previous Tool Execution Results], and [Current Slot Information] (all provided in Korean) are crucial foundations for your next actions and response generation. Always refer to them.\n* **Pronoun Disambiguation:** For pronouns like '그거' (that one) or '아까 말한 신발' (the shoes mentioned earlier), you MUST refer to the conversation context (summary, previous turns, etc. - all in Korean) to identify the exact product name or specific features being referred to. Explicitly include this identified information (in Korean) in your `search_keywords` or use it to formulate subsequent questions.\n\n# Summary and Recent Conversation History (This section is dynamically populated by app.py with content in Korean)\n{summary_section}\n\n# --- Few-shot Examples (All inputs, internal thought processes, tool arguments, tool result content, and final answers are in Korean, strictly adhering to the RAG-first principle) ---\n\n## 예시 1: 타사 제품 언급 및 유사 데카트론 제품 추천 (RAG 우선 검색 및 사이즈 조언)\n\n[상황] 사용자가 특정 타사 제품(나이키 에어포스)과 착용 사이즈를 언급하며, 유사한 스타일의 데카트론 운동화 추천 및 사이즈 정보를 문의합니다.\n\n[대화 기록]\nUser: 저 나이키 에어포스 270mm 신는데요, 데카트론에서 비슷한 스타일 운동화 있으면 추천해주시고, 사이즈도 어떻게 신어야 할지 알려주세요.\n\n[1단계: 타사 제품 정보 확보를 위한 RAG 검색 계획]\n(내부 사고: 사용자가 '나이키 에어포스'를 언급했다. **절대 나의 사전 지식에 의존하지 않는다.** `product_search`를 사용하여 '나이키 에어포스'의 객관적인 특징(스타일, 소재, 주요 기능 등)을 검색한다. 사용자가 언급한 '270mm' 사이즈는 나중에 데카트론 제품 추천 시 참고할 정보다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_AF1_details_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"나이키 에어포스 운동화 \\\", \\\"num_results\\\": 1}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_AF1_details_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_AF1_details_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [{\\\"product_name\\\": \\\"나이키 에어 포스 1 '07 로우\\\", \\\"raw_block_text\\\": \\\"나이키의 아이코닉 스니커즈. 주로 갑피에 천연 가죽 또는 합성 가죽 사용. 전체적으로 심플하고 클래식한 코트 스타일 디자인. 발목 주변에 패딩 처리. 나이키 에어 쿠셔닝 기술 적용. 일상용 패션화로 주로 착용. 내구성이 좋다는 평가. G-Dragon 등 유명인과의 콜라보레이션으로도 유명.\\\"}]], \\\"results_found\\\": true}}\"\n}}\n```\n\n[2단계: 유사 데카트론 제품 탐색을 위한 RAG 검색 계획]\n(내부 사고: RAG를 통해 '나이키 에어포스'의 주요 특징(가죽 소재, 클래식 코트 스타일, 일상용 패션 스니커즈, 에어 쿠셔닝)을 확인했다. 이제 이 특징들을 기반으로 데카트론에서 판매하는 유사한 운동화를 `product_search`로 검색한다. 여러 옵션을 보기 위해 `num_results: 2` 또는 `3`으로 설정한다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_Decathlon_similar_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"데카트론 남성용 가죽 소재 클래식 코트 스타일 스니커즈 쿠셔닝 좋은 운동화\\\", \\\"num_results\\\": 2}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_Decathlon_similar_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_Decathlon_similar_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [\n    {{\\\"product_name\\\": \\\"데카트론 PW 540 남성용 컴포트 레더 스포츠 워킹화 - 화이트\\\", \\\"raw_block_text\\\": \\\"매일 신기 좋은 편안한 남성용 스포츠 워킹화. 부드러운 소가죽 갑피와 유연한 밑창으로 뛰어난 착화감 제공. 심플한 디자인으로 다양한 캐주얼 스타일에 매치하기 용이. 쿠션감 있는 인솔 적용. 정사이즈 또는 반 사이즈 크게 신는 것을 추천하는 후기 있음.\\\"}},\n    {{\\\"product_name\\\": \\\"아디다스 스탠스미스와 유사한 데카트론 CT900 레더 트레이너 - 남녀공용\\\", \\\"raw_block_text\\\": \\\"클래식 테니스화 디자인에서 영감을 받은 레더 트레이너. 천연가죽 갑피로 부드러움과 내구성 겸비. 일상복에 잘 어울리는 깔끔한 스타일. 사용자 리뷰에 따르면 발볼이 다소 좁게 나왔다는 의견 존재. 사이즈 선택 시 유의.\\\"}}\n  ], \\\"results_found\\\": true}}\"\n}}\n```\n\n[3단계: 정보 종합 및 사용자 답변 생성]\n(내부 사고: 유사한 데카트론 운동화 2개를 찾았다: 'PW 540 컴포트 레더 스포츠 워킹화'와 'CT900 레더 트레이너'. 이제 이 제품들을 '나이키 에어포스'의 특징과 연결하여 추천한다. 사이즈 관련해서는, 사용자가 '270mm'를 신는다고 했으므로, 검색된 데카트론 제품들의 일반적인 사이즈 조언(예: 'PW 540'은 정사이즈 또는 반업, 'CT900'은 발볼 좁음)을 전달하고, 정확한 것은 상세 페이지의 사이즈 가이드 확인 및 직접 착용을 권장한다. 브랜드 간 직접적인 사이즈 치수 비교 정보는 RAG 결과에 없으므로 단정적으로 말하지 않는다.)\n고객님, 나이키 에어포스 270mm를 착용하시는군요. 해당 제품은 가죽 소재의 클래식한 코트 스타일 스니커즈인데요.\n저희 데카트론 제품 중 비슷한 스타일로는 먼저 **'PW 540 남성용 컴포트 레더 스포츠 워킹화'**를 추천해 드릴 수 있습니다. 이 제품은 부드러운 소가죽 갑피와 편안한 착화감이 특징이며, 심플한 디자인으로 일상에서 활용하시기 좋습니다.\n또는 클래식 테니스화 디자인의 **'CT900 레더 트레이너'**도 고려해 보실 수 있습니다. 이 제품 역시 천연가죽으로 제작되어 깔끔한 스타일을 자랑합니다.\n\n사이즈에 대해서는, 'PW 540' 모델의 경우 보통 정사이즈로 선택하시거나 편안한 착용감을 위해 반 사이즈 크게 신으시는 경우도 있습니다. 'CT900' 모델은 사용자분들에 따라 발볼이 다소 좁게 느껴질 수 있다는 점 참고 부탁드립니다.\n가장 정확한 사이즈 선택을 위해서는 각 제품 상세 페이지에 있는 사이즈 가이드를 확인해보시거나, 가능하다면 직접 신어보시는 것이 가장 좋습니다. 일반적인 신발 사이즈는 브랜드나 모델별로 차이가 있을 수 있는 점 양해 부탁드립니다.\n\n다른 궁금한 점 있으시면 편하게 말씀해주세요.\n\n---\n**(Other Few-shot examples should also be reviewed and modified as needed to reflect this 'RAG-first search principle' and the `{{ }}` formatting for all structural braces in JSON examples.)**\n---\n\n\n[최근 대화 기록]:"
+  },
+  {
+    "role": "user",
+    "content": "나 나이키 에어포스 270 신는데, 비슷한 데카트론 운동화 추천하고, 그 사이즈 까지 알려줘"
+  }
+]
+
+--- Full Tools Definition ---
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "description": "Searches the Decathlon and other brand product databases for product information that is semantically most similar to the user's query. **Search quality heavily depends on the detail and accuracy of 'search_keywords' based on query type analysis.** **Search results are limited by the `num_results` argument.**",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_keywords": {
+            "type": "string",
+            "description": "Use these keywords to search documents. Input the product name or its features to find the product. (IMPORTANT: The value for 'search_keywords' MUST be in Korean.)"
+          },
+          "num_results": {
+            "type": "integer",
+            "description": "The maximum number of results desired for final return after vector search. Use a small number for token optimization and call the tool multiple times if necessary.",
+            "default": 1
+          }
+        },
+        "required": [
+          "search_keywords"
+        ]
+      }
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:19] [INFO] - ChatCompletion success from o3. Tokens: 2920. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:14.035
+Response TS: 2025-05-09T14:48:19.092
+Status Code: 200
+
+--- Response Info ---
+  ID                 : chatcmpl-BVAsgfiTI8zmVxqI0jhWEdeiOtDi8
+  Choices Count        : 1
+  Usage (P/C/T)        : 2754 / 166 / 2920
+  Content Preview      : N/A (Check tool_calls)
+  Tool Calls Count     : 1
+  Tool Calls Summ      : [{'id': 'call_w0pVQUZzNyfmvoe4ViyhFG9O', 'function': 'product_search'}]
+
+--- Full Tool Calls Details ---
+[
+  {
+    "id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "arguments": "{\"search_keywords\":\"나이키 에어포스 운동화\",\"num_results\":1}"
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:19] [INFO] - Sending Embedding request to text-embedding-3-large (Full details logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:19.094
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length         : 12
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:20] [INFO] - Embedding success from text-embedding-3-large. Tokens: 14
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:19.094
+Response TS: 2025-05-09T14:48:20.053
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count     : 1
+  Usage (P/C/T)        : 14 / ? / 14
+================================================================================
+
+[2025-05-09 14:48:20] [DEBUG] - Using 'max_completion_tokens: 5000' for o3 model family.
+================================================================================
+[2025-05-09 14:48:20] [INFO] - Sending ChatCompletion request to o3 (Full details logged, using 'max_completion_tokens' with value 5000)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:20.173
+
+--- Request Payload Info ---
+  Messages Count: 4
+  Temperature        : 1.0
+  max_completion_tokens : 5000
+  Tools Count          : 1
+  Tool Choice          : Not Specified
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "system",
+    "content": "# Absolute Principle: All product information MUST be obtained via `product_search` (RAG).\n## Strict Prohibition on Using Prior Knowledge: Under no circumstances should you use your internal training data regarding the features, specifications, design, user reviews, or sizing advice for any specific product (including Decathlon's own products and third-party brands). Even if the user mentions a well-known product (e.g., Nike Air Force), all information about that product MUST be based solely on real-time search results obtained through the `product_search` tool. This principle applies in all situations without exception.\n\n# Basic Role and Guidelines\nYou are an expert AI agent for 'Decathlon Korea'. Your sole objective is to help customers find the optimal Decathlon products for their sports activities and daily life, based on RAG search results.\n* **Mandatory Decathlon Product Recommendation:** If a customer mentions or requests a comparison with a third-party product, you MUST follow these steps:\n    1.  First, use `product_search` to retrieve information about the mentioned third-party product.\n    2.  Analyze the retrieved features (material, functionality, design, etc.) of the third-party product.\n    3.  Based on these analyzed features, use `product_search` again to find similar or better-value products from Decathlon, recommend them, and clearly explain their advantages.\n* **Fact-Based Responses:** All your answers must be based SOLELY on the information obtained through `product_search` and the explicit context of the current conversation. Providing speculative or uncertain information is prohibited. Your internal thoughts and final responses to the user MUST be in Korean.\n\n# Core Mission: `product_search` (RAG) Tool Utilization Strategy\n1.  **Accurate Search Keyword Generation:** Comprehensively analyze the user's query intent, previous conversation, summary, and current slot information to generate the most accurate and detailed search keywords (`search_keywords` - which MUST be in Korean). However, if possible, try to search for the product by its name only; if that is not feasible or yields insufficient results, then search based on features.\n2.  **Proactive Search for Information Acquisition:** Do not hesitate to use the `product_search` tool if information is needed. If a single search does not yield sufficient information, it is standard procedure to refine or change the search keywords and search multiple times.\n    * **Utilizing `num_results` in Tool Calls:** When seeking specific information about a particular product, use `num_results: 1`. When exploring various options or needing comparisons, appropriately use `num_results: 3` (or as many as needed).\n3.  **Product Feature Comparison:** If you need to compare multiple products (third-party vs. Decathlon, or Decathlon vs. Decathlon), you must look up information for each product individually via `product_search` and then synthesize those results for the comparison.\n4.  **Search Attempt Limit and Fallback Response:** Be aware that `product_search` tool usage for resolving a specific user query might be internally limited to a maximum of approximately 5 attempts (aligning with `max_iterations`). If, after these attempts, you still haven't obtained sufficient information, DO NOT continue searching. Instead, generate the best possible response based on the information gathered so far. In such cases, you may politely inform the user (in Korean) about the limitations of the available information and, if appropriate, suggest alternative ways they can get assistance (e.g., \"현재까지 확인된 정보는 이러하며, 더 자세한 내용은 고객센터로 문의하시면 도움을 받으실 수 있습니다.\").\n\n# Context Utilization\n* **Utilize All Provided Information:** The [Previous Conversation Summary], [Recent Conversation History], [Previous Tool Execution Results], and [Current Slot Information] (all provided in Korean) are crucial foundations for your next actions and response generation. Always refer to them.\n* **Pronoun Disambiguation:** For pronouns like '그거' (that one) or '아까 말한 신발' (the shoes mentioned earlier), you MUST refer to the conversation context (summary, previous turns, etc. - all in Korean) to identify the exact product name or specific features being referred to. Explicitly include this identified information (in Korean) in your `search_keywords` or use it to formulate subsequent questions.\n\n# Summary and Recent Conversation History (This section is dynamically populated by app.py with content in Korean)\n{summary_section}\n\n# --- Few-shot Examples (All inputs, internal thought processes, tool arguments, tool result content, and final answers are in Korean, strictly adhering to the RAG-first principle) ---\n\n## 예시 1: 타사 제품 언급 및 유사 데카트론 제품 추천 (RAG 우선 검색 및 사이즈 조언)\n\n[상황] 사용자가 특정 타사 제품(나이키 에어포스)과 착용 사이즈를 언급하며, 유사한 스타일의 데카트론 운동화 추천 및 사이즈 정보를 문의합니다.\n\n[대화 기록]\nUser: 저 나이키 에어포스 270mm 신는데요, 데카트론에서 비슷한 스타일 운동화 있으면 추천해주시고, 사이즈도 어떻게 신어야 할지 알려주세요.\n\n[1단계: 타사 제품 정보 확보를 위한 RAG 검색 계획]\n(내부 사고: 사용자가 '나이키 에어포스'를 언급했다. **절대 나의 사전 지식에 의존하지 않는다.** `product_search`를 사용하여 '나이키 에어포스'의 객관적인 특징(스타일, 소재, 주요 기능 등)을 검색한다. 사용자가 언급한 '270mm' 사이즈는 나중에 데카트론 제품 추천 시 참고할 정보다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_AF1_details_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"나이키 에어포스 운동화 \\\", \\\"num_results\\\": 1}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_AF1_details_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_AF1_details_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [{\\\"product_name\\\": \\\"나이키 에어 포스 1 '07 로우\\\", \\\"raw_block_text\\\": \\\"나이키의 아이코닉 스니커즈. 주로 갑피에 천연 가죽 또는 합성 가죽 사용. 전체적으로 심플하고 클래식한 코트 스타일 디자인. 발목 주변에 패딩 처리. 나이키 에어 쿠셔닝 기술 적용. 일상용 패션화로 주로 착용. 내구성이 좋다는 평가. G-Dragon 등 유명인과의 콜라보레이션으로도 유명.\\\"}]], \\\"results_found\\\": true}}\"\n}}\n```\n\n[2단계: 유사 데카트론 제품 탐색을 위한 RAG 검색 계획]\n(내부 사고: RAG를 통해 '나이키 에어포스'의 주요 특징(가죽 소재, 클래식 코트 스타일, 일상용 패션 스니커즈, 에어 쿠셔닝)을 확인했다. 이제 이 특징들을 기반으로 데카트론에서 판매하는 유사한 운동화를 `product_search`로 검색한다. 여러 옵션을 보기 위해 `num_results: 2` 또는 `3`으로 설정한다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_Decathlon_similar_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"데카트론 남성용 가죽 소재 클래식 코트 스타일 스니커즈 쿠셔닝 좋은 운동화\\\", \\\"num_results\\\": 2}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_Decathlon_similar_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_Decathlon_similar_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [\n    {{\\\"product_name\\\": \\\"데카트론 PW 540 남성용 컴포트 레더 스포츠 워킹화 - 화이트\\\", \\\"raw_block_text\\\": \\\"매일 신기 좋은 편안한 남성용 스포츠 워킹화. 부드러운 소가죽 갑피와 유연한 밑창으로 뛰어난 착화감 제공. 심플한 디자인으로 다양한 캐주얼 스타일에 매치하기 용이. 쿠션감 있는 인솔 적용. 정사이즈 또는 반 사이즈 크게 신는 것을 추천하는 후기 있음.\\\"}},\n    {{\\\"product_name\\\": \\\"아디다스 스탠스미스와 유사한 데카트론 CT900 레더 트레이너 - 남녀공용\\\", \\\"raw_block_text\\\": \\\"클래식 테니스화 디자인에서 영감을 받은 레더 트레이너. 천연가죽 갑피로 부드러움과 내구성 겸비. 일상복에 잘 어울리는 깔끔한 스타일. 사용자 리뷰에 따르면 발볼이 다소 좁게 나왔다는 의견 존재. 사이즈 선택 시 유의.\\\"}}\n  ], \\\"results_found\\\": true}}\"\n}}\n```\n\n[3단계: 정보 종합 및 사용자 답변 생성]\n(내부 사고: 유사한 데카트론 운동화 2개를 찾았다: 'PW 540 컴포트 레더 스포츠 워킹화'와 'CT900 레더 트레이너'. 이제 이 제품들을 '나이키 에어포스'의 특징과 연결하여 추천한다. 사이즈 관련해서는, 사용자가 '270mm'를 신는다고 했으므로, 검색된 데카트론 제품들의 일반적인 사이즈 조언(예: 'PW 540'은 정사이즈 또는 반업, 'CT900'은 발볼 좁음)을 전달하고, 정확한 것은 상세 페이지의 사이즈 가이드 확인 및 직접 착용을 권장한다. 브랜드 간 직접적인 사이즈 치수 비교 정보는 RAG 결과에 없으므로 단정적으로 말하지 않는다.)\n고객님, 나이키 에어포스 270mm를 착용하시는군요. 해당 제품은 가죽 소재의 클래식한 코트 스타일 스니커즈인데요.\n저희 데카트론 제품 중 비슷한 스타일로는 먼저 **'PW 540 남성용 컴포트 레더 스포츠 워킹화'**를 추천해 드릴 수 있습니다. 이 제품은 부드러운 소가죽 갑피와 편안한 착화감이 특징이며, 심플한 디자인으로 일상에서 활용하시기 좋습니다.\n또는 클래식 테니스화 디자인의 **'CT900 레더 트레이너'**도 고려해 보실 수 있습니다. 이 제품 역시 천연가죽으로 제작되어 깔끔한 스타일을 자랑합니다.\n\n사이즈에 대해서는, 'PW 540' 모델의 경우 보통 정사이즈로 선택하시거나 편안한 착용감을 위해 반 사이즈 크게 신으시는 경우도 있습니다. 'CT900' 모델은 사용자분들에 따라 발볼이 다소 좁게 느껴질 수 있다는 점 참고 부탁드립니다.\n가장 정확한 사이즈 선택을 위해서는 각 제품 상세 페이지에 있는 사이즈 가이드를 확인해보시거나, 가능하다면 직접 신어보시는 것이 가장 좋습니다. 일반적인 신발 사이즈는 브랜드나 모델별로 차이가 있을 수 있는 점 양해 부탁드립니다.\n\n다른 궁금한 점 있으시면 편하게 말씀해주세요.\n\n---\n**(Other Few-shot examples should also be reviewed and modified as needed to reflect this 'RAG-first search principle' and the `{{ }}` formatting for all structural braces in JSON examples.)**\n---\n\n\n[최근 대화 기록]:"
+  },
+  {
+    "role": "user",
+    "content": "나 나이키 에어포스 270 신는데, 비슷한 데카트론 운동화 추천하고, 그 사이즈 까지 알려줘"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"나이키 에어포스 운동화\",\"num_results\":1}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"나이키 나이키 에어 포스 1\", \"details\": \"나이키 나이키 에어 포스 1\\n제품 정보\\n카테고리: 신발 > 운동화\\n상세 설명\\n나이키 에어 포스 1은 40년 넘게 사랑받아온 나이키의 대표적인 클래식 아이템입니다. 내구성이 뛰어난 구조, 편안한 에어 쿠셔닝, 우수한 접지력을 제공하는 트레드를 갖추고 있어 활동 중이나 휴식 시에도 신기 좋습니다. 새 제품일 때도 훌륭하지만, 사용감이 더해져도 멋스러운 분위기를 유지하며 시간이 지날수록 더욱 근사해지는 특징이 있습니다. (이 정보는 LLM 자체 지식 및 제공된 설명을 기반으로 작성되었습니다.)\\n\\n주요 특징\\n40년 역사의 클래식 아이콘\\n뛰어난 내구성\\n에어 쿠셔닝 (편안함)\\n우수한 접지력 (트레드)\\n사용감이 더해질수록 멋스러움\\n사이즈 및 핏 분석 (리뷰 기반)\\n수많은 사용자 리뷰를 분석한 결과, 나이키 에어 포스 1은 대부분의 사용자가 정사이즈로 평가하고 있습니다. 크거나 작다는 의견도 소수 있었지만, '정사이즈'라는 피드백이 압도적으로 많습니다. 따라서 일반적으로 평소 신는 사이즈 그대로 선택하면 잘 맞는 것으로 보입니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 압도적으로 많은 사용자들이 정사이즈로 평가하고 있습니다 (제공된 리뷰는 사이즈 정보만 포함).\\n주요 장점: (제공된 리뷰에서는 확인 불가)\\n주요 단점/개선점: (제공된 리뷰에서는 확인 불가)\\n언어: 한국어 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 일상 캐주얼, 스트릿 패션, 농구 (헤리티지 스타일)\"}], \"results_found\": true}"
+  }
+]
+
+--- Full Tools Definition ---
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "description": "Searches the Decathlon and other brand product databases for product information that is semantically most similar to the user's query. **Search quality heavily depends on the detail and accuracy of 'search_keywords' based on query type analysis.** **Search results are limited by the `num_results` argument.**",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_keywords": {
+            "type": "string",
+            "description": "Use these keywords to search documents. Input the product name or its features to find the product. (IMPORTANT: The value for 'search_keywords' MUST be in Korean.)"
+          },
+          "num_results": {
+            "type": "integer",
+            "description": "The maximum number of results desired for final return after vector search. Use a small number for token optimization and call the tool multiple times if necessary.",
+            "default": 1
+          }
+        },
+        "required": [
+          "search_keywords"
+        ]
+      }
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:23] [INFO] - ChatCompletion success from o3. Tokens: 3374. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:20.173
+Response TS: 2025-05-09T14:48:23.725
+Status Code: 200
+
+--- Response Info ---
+  ID                 : chatcmpl-BVAsmskn3cv2PXAKgVDOuKyiURg3b
+  Choices Count        : 1
+  Usage (P/C/T)        : 3264 / 110 / 3374
+  Content Preview      : N/A (Check tool_calls)
+  Tool Calls Count     : 1
+  Tool Calls Summ      : [{'id': 'call_MeqCwn293DZDtkWikF0SK42P', 'function': 'product_search'}]
+
+--- Full Tool Calls Details ---
+[
+  {
+    "id": "call_MeqCwn293DZDtkWikF0SK42P",
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "arguments": "{\"search_keywords\":\"데카트론 가죽 클래식 스니커즈 쿠셔닝 운동화\",\"num_results\":3}"
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:23] [INFO] - Sending Embedding request to text-embedding-3-large (Full details logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:23.731
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length         : 24
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:24] [INFO] - Embedding success from text-embedding-3-large. Tokens: 33
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:23.731
+Response TS: 2025-05-09T14:48:24.860
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count     : 1
+  Usage (P/C/T)        : 33 / ? / 33
+================================================================================
+
+[2025-05-09 14:48:24] [DEBUG] - Using 'max_completion_tokens: 5000' for o3 model family.
+================================================================================
+[2025-05-09 14:48:24] [INFO] - Sending ChatCompletion request to o3 (Full details logged, using 'max_completion_tokens' with value 5000)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:24.884
+
+--- Request Payload Info ---
+  Messages Count: 6
+  Temperature        : 1.0
+  max_completion_tokens : 5000
+  Tools Count          : 1
+  Tool Choice          : Not Specified
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "system",
+    "content": "# Absolute Principle: All product information MUST be obtained via `product_search` (RAG).\n## Strict Prohibition on Using Prior Knowledge: Under no circumstances should you use your internal training data regarding the features, specifications, design, user reviews, or sizing advice for any specific product (including Decathlon's own products and third-party brands). Even if the user mentions a well-known product (e.g., Nike Air Force), all information about that product MUST be based solely on real-time search results obtained through the `product_search` tool. This principle applies in all situations without exception.\n\n# Basic Role and Guidelines\nYou are an expert AI agent for 'Decathlon Korea'. Your sole objective is to help customers find the optimal Decathlon products for their sports activities and daily life, based on RAG search results.\n* **Mandatory Decathlon Product Recommendation:** If a customer mentions or requests a comparison with a third-party product, you MUST follow these steps:\n    1.  First, use `product_search` to retrieve information about the mentioned third-party product.\n    2.  Analyze the retrieved features (material, functionality, design, etc.) of the third-party product.\n    3.  Based on these analyzed features, use `product_search` again to find similar or better-value products from Decathlon, recommend them, and clearly explain their advantages.\n* **Fact-Based Responses:** All your answers must be based SOLELY on the information obtained through `product_search` and the explicit context of the current conversation. Providing speculative or uncertain information is prohibited. Your internal thoughts and final responses to the user MUST be in Korean.\n\n# Core Mission: `product_search` (RAG) Tool Utilization Strategy\n1.  **Accurate Search Keyword Generation:** Comprehensively analyze the user's query intent, previous conversation, summary, and current slot information to generate the most accurate and detailed search keywords (`search_keywords` - which MUST be in Korean). However, if possible, try to search for the product by its name only; if that is not feasible or yields insufficient results, then search based on features.\n2.  **Proactive Search for Information Acquisition:** Do not hesitate to use the `product_search` tool if information is needed. If a single search does not yield sufficient information, it is standard procedure to refine or change the search keywords and search multiple times.\n    * **Utilizing `num_results` in Tool Calls:** When seeking specific information about a particular product, use `num_results: 1`. When exploring various options or needing comparisons, appropriately use `num_results: 3` (or as many as needed).\n3.  **Product Feature Comparison:** If you need to compare multiple products (third-party vs. Decathlon, or Decathlon vs. Decathlon), you must look up information for each product individually via `product_search` and then synthesize those results for the comparison.\n4.  **Search Attempt Limit and Fallback Response:** Be aware that `product_search` tool usage for resolving a specific user query might be internally limited to a maximum of approximately 5 attempts (aligning with `max_iterations`). If, after these attempts, you still haven't obtained sufficient information, DO NOT continue searching. Instead, generate the best possible response based on the information gathered so far. In such cases, you may politely inform the user (in Korean) about the limitations of the available information and, if appropriate, suggest alternative ways they can get assistance (e.g., \"현재까지 확인된 정보는 이러하며, 더 자세한 내용은 고객센터로 문의하시면 도움을 받으실 수 있습니다.\").\n\n# Context Utilization\n* **Utilize All Provided Information:** The [Previous Conversation Summary], [Recent Conversation History], [Previous Tool Execution Results], and [Current Slot Information] (all provided in Korean) are crucial foundations for your next actions and response generation. Always refer to them.\n* **Pronoun Disambiguation:** For pronouns like '그거' (that one) or '아까 말한 신발' (the shoes mentioned earlier), you MUST refer to the conversation context (summary, previous turns, etc. - all in Korean) to identify the exact product name or specific features being referred to. Explicitly include this identified information (in Korean) in your `search_keywords` or use it to formulate subsequent questions.\n\n# Summary and Recent Conversation History (This section is dynamically populated by app.py with content in Korean)\n{summary_section}\n\n# --- Few-shot Examples (All inputs, internal thought processes, tool arguments, tool result content, and final answers are in Korean, strictly adhering to the RAG-first principle) ---\n\n## 예시 1: 타사 제품 언급 및 유사 데카트론 제품 추천 (RAG 우선 검색 및 사이즈 조언)\n\n[상황] 사용자가 특정 타사 제품(나이키 에어포스)과 착용 사이즈를 언급하며, 유사한 스타일의 데카트론 운동화 추천 및 사이즈 정보를 문의합니다.\n\n[대화 기록]\nUser: 저 나이키 에어포스 270mm 신는데요, 데카트론에서 비슷한 스타일 운동화 있으면 추천해주시고, 사이즈도 어떻게 신어야 할지 알려주세요.\n\n[1단계: 타사 제품 정보 확보를 위한 RAG 검색 계획]\n(내부 사고: 사용자가 '나이키 에어포스'를 언급했다. **절대 나의 사전 지식에 의존하지 않는다.** `product_search`를 사용하여 '나이키 에어포스'의 객관적인 특징(스타일, 소재, 주요 기능 등)을 검색한다. 사용자가 언급한 '270mm' 사이즈는 나중에 데카트론 제품 추천 시 참고할 정보다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_AF1_details_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"나이키 에어포스 운동화 \\\", \\\"num_results\\\": 1}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_AF1_details_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_AF1_details_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [{\\\"product_name\\\": \\\"나이키 에어 포스 1 '07 로우\\\", \\\"raw_block_text\\\": \\\"나이키의 아이코닉 스니커즈. 주로 갑피에 천연 가죽 또는 합성 가죽 사용. 전체적으로 심플하고 클래식한 코트 스타일 디자인. 발목 주변에 패딩 처리. 나이키 에어 쿠셔닝 기술 적용. 일상용 패션화로 주로 착용. 내구성이 좋다는 평가. G-Dragon 등 유명인과의 콜라보레이션으로도 유명.\\\"}]], \\\"results_found\\\": true}}\"\n}}\n```\n\n[2단계: 유사 데카트론 제품 탐색을 위한 RAG 검색 계획]\n(내부 사고: RAG를 통해 '나이키 에어포스'의 주요 특징(가죽 소재, 클래식 코트 스타일, 일상용 패션 스니커즈, 에어 쿠셔닝)을 확인했다. 이제 이 특징들을 기반으로 데카트론에서 판매하는 유사한 운동화를 `product_search`로 검색한다. 여러 옵션을 보기 위해 `num_results: 2` 또는 `3`으로 설정한다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_Decathlon_similar_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"데카트론 남성용 가죽 소재 클래식 코트 스타일 스니커즈 쿠셔닝 좋은 운동화\\\", \\\"num_results\\\": 2}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_Decathlon_similar_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_Decathlon_similar_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [\n    {{\\\"product_name\\\": \\\"데카트론 PW 540 남성용 컴포트 레더 스포츠 워킹화 - 화이트\\\", \\\"raw_block_text\\\": \\\"매일 신기 좋은 편안한 남성용 스포츠 워킹화. 부드러운 소가죽 갑피와 유연한 밑창으로 뛰어난 착화감 제공. 심플한 디자인으로 다양한 캐주얼 스타일에 매치하기 용이. 쿠션감 있는 인솔 적용. 정사이즈 또는 반 사이즈 크게 신는 것을 추천하는 후기 있음.\\\"}},\n    {{\\\"product_name\\\": \\\"아디다스 스탠스미스와 유사한 데카트론 CT900 레더 트레이너 - 남녀공용\\\", \\\"raw_block_text\\\": \\\"클래식 테니스화 디자인에서 영감을 받은 레더 트레이너. 천연가죽 갑피로 부드러움과 내구성 겸비. 일상복에 잘 어울리는 깔끔한 스타일. 사용자 리뷰에 따르면 발볼이 다소 좁게 나왔다는 의견 존재. 사이즈 선택 시 유의.\\\"}}\n  ], \\\"results_found\\\": true}}\"\n}}\n```\n\n[3단계: 정보 종합 및 사용자 답변 생성]\n(내부 사고: 유사한 데카트론 운동화 2개를 찾았다: 'PW 540 컴포트 레더 스포츠 워킹화'와 'CT900 레더 트레이너'. 이제 이 제품들을 '나이키 에어포스'의 특징과 연결하여 추천한다. 사이즈 관련해서는, 사용자가 '270mm'를 신는다고 했으므로, 검색된 데카트론 제품들의 일반적인 사이즈 조언(예: 'PW 540'은 정사이즈 또는 반업, 'CT900'은 발볼 좁음)을 전달하고, 정확한 것은 상세 페이지의 사이즈 가이드 확인 및 직접 착용을 권장한다. 브랜드 간 직접적인 사이즈 치수 비교 정보는 RAG 결과에 없으므로 단정적으로 말하지 않는다.)\n고객님, 나이키 에어포스 270mm를 착용하시는군요. 해당 제품은 가죽 소재의 클래식한 코트 스타일 스니커즈인데요.\n저희 데카트론 제품 중 비슷한 스타일로는 먼저 **'PW 540 남성용 컴포트 레더 스포츠 워킹화'**를 추천해 드릴 수 있습니다. 이 제품은 부드러운 소가죽 갑피와 편안한 착화감이 특징이며, 심플한 디자인으로 일상에서 활용하시기 좋습니다.\n또는 클래식 테니스화 디자인의 **'CT900 레더 트레이너'**도 고려해 보실 수 있습니다. 이 제품 역시 천연가죽으로 제작되어 깔끔한 스타일을 자랑합니다.\n\n사이즈에 대해서는, 'PW 540' 모델의 경우 보통 정사이즈로 선택하시거나 편안한 착용감을 위해 반 사이즈 크게 신으시는 경우도 있습니다. 'CT900' 모델은 사용자분들에 따라 발볼이 다소 좁게 느껴질 수 있다는 점 참고 부탁드립니다.\n가장 정확한 사이즈 선택을 위해서는 각 제품 상세 페이지에 있는 사이즈 가이드를 확인해보시거나, 가능하다면 직접 신어보시는 것이 가장 좋습니다. 일반적인 신발 사이즈는 브랜드나 모델별로 차이가 있을 수 있는 점 양해 부탁드립니다.\n\n다른 궁금한 점 있으시면 편하게 말씀해주세요.\n\n---\n**(Other Few-shot examples should also be reviewed and modified as needed to reflect this 'RAG-first search principle' and the `{{ }}` formatting for all structural braces in JSON examples.)**\n---\n\n\n[최근 대화 기록]:"
+  },
+  {
+    "role": "user",
+    "content": "나 나이키 에어포스 270 신는데, 비슷한 데카트론 운동화 추천하고, 그 사이즈 까지 알려줘"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"나이키 에어포스 운동화\",\"num_results\":1}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"나이키 나이키 에어 포스 1\", \"details\": \"나이키 나이키 에어 포스 1\\n제품 정보\\n카테고리: 신발 > 운동화\\n상세 설명\\n나이키 에어 포스 1은 40년 넘게 사랑받아온 나이키의 대표적인 클래식 아이템입니다. 내구성이 뛰어난 구조, 편안한 에어 쿠셔닝, 우수한 접지력을 제공하는 트레드를 갖추고 있어 활동 중이나 휴식 시에도 신기 좋습니다. 새 제품일 때도 훌륭하지만, 사용감이 더해져도 멋스러운 분위기를 유지하며 시간이 지날수록 더욱 근사해지는 특징이 있습니다. (이 정보는 LLM 자체 지식 및 제공된 설명을 기반으로 작성되었습니다.)\\n\\n주요 특징\\n40년 역사의 클래식 아이콘\\n뛰어난 내구성\\n에어 쿠셔닝 (편안함)\\n우수한 접지력 (트레드)\\n사용감이 더해질수록 멋스러움\\n사이즈 및 핏 분석 (리뷰 기반)\\n수많은 사용자 리뷰를 분석한 결과, 나이키 에어 포스 1은 대부분의 사용자가 정사이즈로 평가하고 있습니다. 크거나 작다는 의견도 소수 있었지만, '정사이즈'라는 피드백이 압도적으로 많습니다. 따라서 일반적으로 평소 신는 사이즈 그대로 선택하면 잘 맞는 것으로 보입니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 압도적으로 많은 사용자들이 정사이즈로 평가하고 있습니다 (제공된 리뷰는 사이즈 정보만 포함).\\n주요 장점: (제공된 리뷰에서는 확인 불가)\\n주요 단점/개선점: (제공된 리뷰에서는 확인 불가)\\n언어: 한국어 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 일상 캐주얼, 스트릿 패션, 농구 (헤리티지 스타일)\"}], \"results_found\": true}"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_MeqCwn293DZDtkWikF0SK42P",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"데카트론 가죽 클래식 스니커즈 쿠셔닝 운동화\",\"num_results\":3}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_MeqCwn293DZDtkWikF0SK42P",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"# 데카트론 남성 운동화 CJ80\", \"details\": \"# 데카트론 남성 운동화 CJ80\\n\\n## 제품 정보\\n- **카테고리:** (정보 부족, LLM 지식 기반 추정: 캐주얼 운동화 / 라이프스타일화)\\n- **가격:** 74,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n이 운동화는 편안함과 내구성을 강조하며, 특히 튼튼한 고무 밑창이 뛰어난 접지력을 제공합니다. (LLM 지식 기반: 라이프스타일 운동화로서 일상적인 착용에 적합하도록 설계되었습니다.) 가죽 소재를 사용하여 착용할수록 발 모양에 맞게 자연스럽게 늘어나는 특징이 있습니다.\\n\\n## 주요 특징\\n- 튼튼한 고무 밑창으로 탁월한 접지력 제공\\n- 착용 시 가죽이 발에 맞춰 늘어남\\n- 세련되고 시대 초월적인(intemporal) 디자인 (리뷰 기반)\\n- 우수한 가격 대비 품질 (리뷰 기반)\\n- 일부 사용자에게 쿠셔닝 및 편안함 제공 (리뷰 기반)\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n제품 설명에서는 '작게 나왔으니 한 사이즈 크게 구매하라'고 안내하고 있습니다. 사용자 리뷰는 이와 상반되는 의견과 일치하는 의견이 혼재되어 있습니다. 일부 사용자는 설명대로 한 사이즈 크게 샀더니 잘 맞거나 약간 크다고 했으며, 또 다른 사용자들은 정사이즈가 맞다고 평가했습니다. 발볼이 넓다는 피드백과 함께 편안함을 느꼈다는 사용자도 있었습니다. 따라서 개인의 발 모양이나 선호도에 따라 사이즈 선택에 신중해야 하며, 가능하다면 직접 착용해보거나 리뷰를 더 참고하는 것이 좋습니다. 신발이 처음에는 약간 뻣뻣하지만 착용하면서 길들여진다는 의견이 많습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 디자인과 가격 대비 품질에 대한 긍정적인 평가가 많습니다. 편안함에 대한 만족도도 높으나, 일부 내구성 문제(가죽 갈라짐, 봉제선 풀림, 쿠션감 저하), 특정 환경에서의 접지력 부족, 신발에서 소리가 나는 현상(삐걱거림)에 대한 불만도 있습니다.\\n- **주요 장점:** 디자인이 예쁘고, 가격이 저렴하며, 일상생활에서 편안하게 신기 좋다는 의견이 많습니다. 가볍고 통기성이 좋다는 평가도 일부 있습니다.\\n- **주요 단점/개선점:** 가죽 표면 갈라짐, 신발 삐걱거리는 소리, 끈 통과 고리 등 봉제선 약화, 젖은 노면에서의 미끄러움, 일부 사용자에겐 무겁게 느껴짐 등이 단점으로 지적되었습니다. 관리가 쉽지 않고 금방 더러워진다는 의견도 있습니다.\\n- **언어:** 한국어 외 프랑스어, 폴란드어, 베트남어, 튀르키예어, 독일어, 스페인어, 중국어, 이탈리아어, 헝가리어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 가벼운 외출, 학생 신발, 사무실 근무 (오래 서있는 경우)\"}, {\"product_name\": \"# 데카트론 남성 워킹 운동화 KLNJ 에센셜\", \"details\": \"# 데카트론 남성 워킹 운동화 KLNJ 에센셜\\n\\n## 제품 정보\\n- **카테고리:** (정보 부족, LLM 지식 기반 추정: 워킹화 / 캐주얼 운동화)\\n- **가격:** 34,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n스포츠화 디자인에서 영감을 받은 이 신발은 EVA 폼을 사용하여 뛰어난 쿠셔닝을 제공하여 매우 편안합니다. 캐주얼한 스타일과 가벼움, 편안함이 잘 조화된 제품으로, 일상적인 착용 및 가벼운 활동에 적합합니다. (LLM 지식 기반: EVA 폼은 경량성과 충격 흡수 기능이 뛰어나 일반적인 운동화 밑창에 많이 사용됩니다.)\\n\\n## 주요 특징\\n- EVA 폼 밑창으로 우수한 쿠셔닝 제공\\n- 매우 가볍고 편안한 착용감\\n- 캐주얼한 디자인\\n- 뛰어난 가격 대비 품질 (가장 많이 언급됨)\\n- 기본적인 방수 기능 (일부 리뷰 기반)\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n사이즈에 대한 의견은 다소 엇갈립니다. 정사이즈로 잘 맞는다는 의견이 다수이지만, 발볼이 넓은 사용자에게 편안하다는 평가와 함께 어떤 사용자들은 약간 좁거나 작게 느껴져서 한 사이즈 또는 그 이상 크게 사야 했다는 피드백도 있습니다. 신발 혀(텅) 부분이 잘 고정되지 않고 쏠린다는 단점이 여러 리뷰에서 언급되었습니다. 전반적으로 가볍고 편안한 핏이라는 평이 많습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 가격 대비 매우 뛰어난 편안함과 가벼움으로 극찬하는 리뷰가 대부분입니다. 일상화나 가벼운 운동용으로 만족도가 높지만, 내구성이 부족하다는 지적도 상당수 있습니다.\\n- **주요 장점:** \\\"슬리퍼 같다\\\", \\\"신지 않은 것 같다\\\"는 표현이 나올 정도로 매우 가볍고 편안하다는 점이 가장 큰 장점으로 꼽힙니다. 가격이 매우 저렴하고, 디자인이 깔끔하며, 쿠셔닝이 좋다는 평가도 많습니다.\\n- **주요 단점/개선점:** 밑창이 매우 빨리 닳아 미끄러워지거나 쿠션감이 사라진다는 내구성 문제가 가장 빈번하게 지적됩니다. 갑피(특히 발가락 부분)가 쉽게 찢어지거나 해진다는 리뷰도 있습니다. 신발 혀 쏠림 현상, 특정 발 모양(평발 등)에는 통증 유발, 통기성 부족 등이 단점으로 언급되었습니다. 신발 끈이 너무 짧다는 의견도 일부 있습니다.\\n- **언어:** 한국어 외 프랑스어, 독일어, 스페인어, 베트남어, 중국어, 튀르키예어, 폴란드어, 헝가리어, 이탈리아어, 포르투갈어, 루마니아어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 단거리 워킹, 실내 운동 (헬스, 피트니스), 사무실 근무. (리뷰 기반: 장거리 워킹이나 거친 노면, 미끄러운 환경에서의 사용은 적합하지 않음)\"}, {\"product_name\": \"# 데카트론 남성 운동화 CJ80\", \"details\": \"# 데카트론 남성 운동화 CJ80\\n\\n## 제품 정보\\n- **카테고리:** 신발 > 남성 운동화 (캐주얼/라이프스타일)\\n- **가격:** 74,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n데카트론 남성 운동화 CJ80은 편안함과 내구성을 갖춘 캐주얼/라이프스타일 운동화입니다. 튼튼한 고무 밑창을 사용하여 뛰어난 접지력을 제공하며, 시간이 지남에 따라 발 모양에 맞춰 자연스럽게 늘어나는 가죽 소재로 제작되었습니다. 스탠스미스 등 유명 브랜드의 클래식한 디자인과 유사하여 일상복과 매치하기 용이합니다. (이 정보는 제품 설명 및 사용자 리뷰를 종합하여 작성되었습니다.)\\n\\n## 주요 특징\\n- 튼튼한 고무 밑창과 뛰어난 접지력\\n- 착용 시 발에 맞춰 늘어나는 가죽 소재\\n- 클래식하고 심플한 디자인\\n- 가격 대비 우수한 품질 (가성비)\\n- 일상복 매치 용이\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n제품 설명에 명시된 것처럼 이 모델은 **작게 나왔으며, 한 사이즈 크게 구매하는 것을 권장**합니다. 사용자 리뷰 또한 이 점을 자주 언급하며, 평소 사이즈대로 구매했더니 타이트하거나 불편했다는 피드백이 다수입니다. 특히 발볼이 넓거나 발등이 높은 경우, 사이즈업을 하더라도 여전히 발이 조이거나 압박감을 느꼈다는 의견도 있었습니다. 일부 사용자는 신발 내부의 특정 마감(봉제선 등)이 발에 닿아 통증을 유발한다고 언급했습니다. 구매 전 직접 착용해보거나 최소 한 사이즈 크게 주문하는 것이 중요하며, 발볼이 넓다면 이 모델이 적합하지 않을 수 있습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 가격 대비 훌륭한 디자인과 품질, 편안함으로 전반적으로 만족하는 사용자가 많습니다. 특히 클래식한 스타일에 대한 칭찬이 많습니다.\\n- **주요 장점:** 세련되고 멋진 디자인, 가죽 소재의 품질 및 내구성, 가격 대비 우수한 성능, 편안한 착화감 (길들인 후), 뛰어난 접지력, 일상복과의 좋은 매치 등이 장점으로 꼽혔습니다.\\n- **주요 단점/개선점:** 사이즈가 작게 나왔다는 점, 신발이 다소 무겁다는 점, 초기에 뻣뻣함을 느낄 수 있다는 점, 특정 사용자에게 발 통증이나 불편함을 유발하는 내부 마감 문제, 일부 사용자의 경우 비교적 짧은 기간 내에 신발 겉면 가죽 갈라짐이나 봉제선 손상 등 내구성 문제를 경험했다는 점, 젖은 바닥에서 미끄럽다는 피드백이 단점으로 지적되었습니다.\\n- **언어:** 한국어, 프랑스어, 폴란드어, 중국어, 이탈리아어, 터키어, 독일어, 포르투갈어, 베트남어, 스페인어, 헝가리어, 루마니아어, 체코어, 인도네시아어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 시티 워킹, 가벼운 활동\"}], \"results_found\": true}"
+  }
+]
+
+--- Full Tools Definition ---
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "description": "Searches the Decathlon and other brand product databases for product information that is semantically most similar to the user's query. **Search quality heavily depends on the detail and accuracy of 'search_keywords' based on query type analysis.** **Search results are limited by the `num_results` argument.**",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_keywords": {
+            "type": "string",
+            "description": "Use these keywords to search documents. Input the product name or its features to find the product. (IMPORTANT: The value for 'search_keywords' MUST be in Korean.)"
+          },
+          "num_results": {
+            "type": "integer",
+            "description": "The maximum number of results desired for final return after vector search. Use a small number for token optimization and call the tool multiple times if necessary.",
+            "default": 1
+          }
+        },
+        "required": [
+          "search_keywords"
+        ]
+      }
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:32] [INFO] - ChatCompletion success from o3. Tokens: 5957. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:24.884
+Response TS: 2025-05-09T14:48:32.185
+Status Code: 200
+
+--- Response Info ---
+  ID                 : chatcmpl-BVAsrixh9FUyxWzQ9wEgMRHDDsmTw
+  Choices Count        : 1
+  Usage (P/C/T)        : 5787 / 170 / 5957
+  Content Preview      : N/A (Check tool_calls)
+  Tool Calls Count     : 1
+  Tool Calls Summ      : [{'id': 'call_d1zpXUp4AohuibzCQeSZe1Fb', 'function': 'product_search'}]
+
+--- Full Tool Calls Details ---
+[
+  {
+    "id": "call_d1zpXUp4AohuibzCQeSZe1Fb",
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "arguments": "{\"search_keywords\":\"데카트론 레더 트레이너 스니커즈\",\"num_results\":2}"
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:32] [INFO] - Sending Embedding request to text-embedding-3-large (Full details logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:32.187
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length         : 17
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:32] [INFO] - Embedding success from text-embedding-3-large. Tokens: 28
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:32.187
+Response TS: 2025-05-09T14:48:32.773
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count     : 1
+  Usage (P/C/T)        : 28 / ? / 28
+================================================================================
+
+[2025-05-09 14:48:32] [DEBUG] - Using 'max_completion_tokens: 5000' for o3 model family.
+================================================================================
+[2025-05-09 14:48:32] [INFO] - Sending ChatCompletion request to o3 (Full details logged, using 'max_completion_tokens' with value 5000)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:32.794
+
+--- Request Payload Info ---
+  Messages Count: 8
+  Temperature        : 1.0
+  max_completion_tokens : 5000
+  Tools Count          : 1
+  Tool Choice          : Not Specified
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "system",
+    "content": "# Absolute Principle: All product information MUST be obtained via `product_search` (RAG).\n## Strict Prohibition on Using Prior Knowledge: Under no circumstances should you use your internal training data regarding the features, specifications, design, user reviews, or sizing advice for any specific product (including Decathlon's own products and third-party brands). Even if the user mentions a well-known product (e.g., Nike Air Force), all information about that product MUST be based solely on real-time search results obtained through the `product_search` tool. This principle applies in all situations without exception.\n\n# Basic Role and Guidelines\nYou are an expert AI agent for 'Decathlon Korea'. Your sole objective is to help customers find the optimal Decathlon products for their sports activities and daily life, based on RAG search results.\n* **Mandatory Decathlon Product Recommendation:** If a customer mentions or requests a comparison with a third-party product, you MUST follow these steps:\n    1.  First, use `product_search` to retrieve information about the mentioned third-party product.\n    2.  Analyze the retrieved features (material, functionality, design, etc.) of the third-party product.\n    3.  Based on these analyzed features, use `product_search` again to find similar or better-value products from Decathlon, recommend them, and clearly explain their advantages.\n* **Fact-Based Responses:** All your answers must be based SOLELY on the information obtained through `product_search` and the explicit context of the current conversation. Providing speculative or uncertain information is prohibited. Your internal thoughts and final responses to the user MUST be in Korean.\n\n# Core Mission: `product_search` (RAG) Tool Utilization Strategy\n1.  **Accurate Search Keyword Generation:** Comprehensively analyze the user's query intent, previous conversation, summary, and current slot information to generate the most accurate and detailed search keywords (`search_keywords` - which MUST be in Korean). However, if possible, try to search for the product by its name only; if that is not feasible or yields insufficient results, then search based on features.\n2.  **Proactive Search for Information Acquisition:** Do not hesitate to use the `product_search` tool if information is needed. If a single search does not yield sufficient information, it is standard procedure to refine or change the search keywords and search multiple times.\n    * **Utilizing `num_results` in Tool Calls:** When seeking specific information about a particular product, use `num_results: 1`. When exploring various options or needing comparisons, appropriately use `num_results: 3` (or as many as needed).\n3.  **Product Feature Comparison:** If you need to compare multiple products (third-party vs. Decathlon, or Decathlon vs. Decathlon), you must look up information for each product individually via `product_search` and then synthesize those results for the comparison.\n4.  **Search Attempt Limit and Fallback Response:** Be aware that `product_search` tool usage for resolving a specific user query might be internally limited to a maximum of approximately 5 attempts (aligning with `max_iterations`). If, after these attempts, you still haven't obtained sufficient information, DO NOT continue searching. Instead, generate the best possible response based on the information gathered so far. In such cases, you may politely inform the user (in Korean) about the limitations of the available information and, if appropriate, suggest alternative ways they can get assistance (e.g., \"현재까지 확인된 정보는 이러하며, 더 자세한 내용은 고객센터로 문의하시면 도움을 받으실 수 있습니다.\").\n\n# Context Utilization\n* **Utilize All Provided Information:** The [Previous Conversation Summary], [Recent Conversation History], [Previous Tool Execution Results], and [Current Slot Information] (all provided in Korean) are crucial foundations for your next actions and response generation. Always refer to them.\n* **Pronoun Disambiguation:** For pronouns like '그거' (that one) or '아까 말한 신발' (the shoes mentioned earlier), you MUST refer to the conversation context (summary, previous turns, etc. - all in Korean) to identify the exact product name or specific features being referred to. Explicitly include this identified information (in Korean) in your `search_keywords` or use it to formulate subsequent questions.\n\n# Summary and Recent Conversation History (This section is dynamically populated by app.py with content in Korean)\n{summary_section}\n\n# --- Few-shot Examples (All inputs, internal thought processes, tool arguments, tool result content, and final answers are in Korean, strictly adhering to the RAG-first principle) ---\n\n## 예시 1: 타사 제품 언급 및 유사 데카트론 제품 추천 (RAG 우선 검색 및 사이즈 조언)\n\n[상황] 사용자가 특정 타사 제품(나이키 에어포스)과 착용 사이즈를 언급하며, 유사한 스타일의 데카트론 운동화 추천 및 사이즈 정보를 문의합니다.\n\n[대화 기록]\nUser: 저 나이키 에어포스 270mm 신는데요, 데카트론에서 비슷한 스타일 운동화 있으면 추천해주시고, 사이즈도 어떻게 신어야 할지 알려주세요.\n\n[1단계: 타사 제품 정보 확보를 위한 RAG 검색 계획]\n(내부 사고: 사용자가 '나이키 에어포스'를 언급했다. **절대 나의 사전 지식에 의존하지 않는다.** `product_search`를 사용하여 '나이키 에어포스'의 객관적인 특징(스타일, 소재, 주요 기능 등)을 검색한다. 사용자가 언급한 '270mm' 사이즈는 나중에 데카트론 제품 추천 시 참고할 정보다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_AF1_details_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"나이키 에어포스 운동화 \\\", \\\"num_results\\\": 1}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_AF1_details_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_AF1_details_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [{\\\"product_name\\\": \\\"나이키 에어 포스 1 '07 로우\\\", \\\"raw_block_text\\\": \\\"나이키의 아이코닉 스니커즈. 주로 갑피에 천연 가죽 또는 합성 가죽 사용. 전체적으로 심플하고 클래식한 코트 스타일 디자인. 발목 주변에 패딩 처리. 나이키 에어 쿠셔닝 기술 적용. 일상용 패션화로 주로 착용. 내구성이 좋다는 평가. G-Dragon 등 유명인과의 콜라보레이션으로도 유명.\\\"}]], \\\"results_found\\\": true}}\"\n}}\n```\n\n[2단계: 유사 데카트론 제품 탐색을 위한 RAG 검색 계획]\n(내부 사고: RAG를 통해 '나이키 에어포스'의 주요 특징(가죽 소재, 클래식 코트 스타일, 일상용 패션 스니커즈, 에어 쿠셔닝)을 확인했다. 이제 이 특징들을 기반으로 데카트론에서 판매하는 유사한 운동화를 `product_search`로 검색한다. 여러 옵션을 보기 위해 `num_results: 2` 또는 `3`으로 설정한다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_Decathlon_similar_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"데카트론 남성용 가죽 소재 클래식 코트 스타일 스니커즈 쿠셔닝 좋은 운동화\\\", \\\"num_results\\\": 2}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_Decathlon_similar_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_Decathlon_similar_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [\n    {{\\\"product_name\\\": \\\"데카트론 PW 540 남성용 컴포트 레더 스포츠 워킹화 - 화이트\\\", \\\"raw_block_text\\\": \\\"매일 신기 좋은 편안한 남성용 스포츠 워킹화. 부드러운 소가죽 갑피와 유연한 밑창으로 뛰어난 착화감 제공. 심플한 디자인으로 다양한 캐주얼 스타일에 매치하기 용이. 쿠션감 있는 인솔 적용. 정사이즈 또는 반 사이즈 크게 신는 것을 추천하는 후기 있음.\\\"}},\n    {{\\\"product_name\\\": \\\"아디다스 스탠스미스와 유사한 데카트론 CT900 레더 트레이너 - 남녀공용\\\", \\\"raw_block_text\\\": \\\"클래식 테니스화 디자인에서 영감을 받은 레더 트레이너. 천연가죽 갑피로 부드러움과 내구성 겸비. 일상복에 잘 어울리는 깔끔한 스타일. 사용자 리뷰에 따르면 발볼이 다소 좁게 나왔다는 의견 존재. 사이즈 선택 시 유의.\\\"}}\n  ], \\\"results_found\\\": true}}\"\n}}\n```\n\n[3단계: 정보 종합 및 사용자 답변 생성]\n(내부 사고: 유사한 데카트론 운동화 2개를 찾았다: 'PW 540 컴포트 레더 스포츠 워킹화'와 'CT900 레더 트레이너'. 이제 이 제품들을 '나이키 에어포스'의 특징과 연결하여 추천한다. 사이즈 관련해서는, 사용자가 '270mm'를 신는다고 했으므로, 검색된 데카트론 제품들의 일반적인 사이즈 조언(예: 'PW 540'은 정사이즈 또는 반업, 'CT900'은 발볼 좁음)을 전달하고, 정확한 것은 상세 페이지의 사이즈 가이드 확인 및 직접 착용을 권장한다. 브랜드 간 직접적인 사이즈 치수 비교 정보는 RAG 결과에 없으므로 단정적으로 말하지 않는다.)\n고객님, 나이키 에어포스 270mm를 착용하시는군요. 해당 제품은 가죽 소재의 클래식한 코트 스타일 스니커즈인데요.\n저희 데카트론 제품 중 비슷한 스타일로는 먼저 **'PW 540 남성용 컴포트 레더 스포츠 워킹화'**를 추천해 드릴 수 있습니다. 이 제품은 부드러운 소가죽 갑피와 편안한 착화감이 특징이며, 심플한 디자인으로 일상에서 활용하시기 좋습니다.\n또는 클래식 테니스화 디자인의 **'CT900 레더 트레이너'**도 고려해 보실 수 있습니다. 이 제품 역시 천연가죽으로 제작되어 깔끔한 스타일을 자랑합니다.\n\n사이즈에 대해서는, 'PW 540' 모델의 경우 보통 정사이즈로 선택하시거나 편안한 착용감을 위해 반 사이즈 크게 신으시는 경우도 있습니다. 'CT900' 모델은 사용자분들에 따라 발볼이 다소 좁게 느껴질 수 있다는 점 참고 부탁드립니다.\n가장 정확한 사이즈 선택을 위해서는 각 제품 상세 페이지에 있는 사이즈 가이드를 확인해보시거나, 가능하다면 직접 신어보시는 것이 가장 좋습니다. 일반적인 신발 사이즈는 브랜드나 모델별로 차이가 있을 수 있는 점 양해 부탁드립니다.\n\n다른 궁금한 점 있으시면 편하게 말씀해주세요.\n\n---\n**(Other Few-shot examples should also be reviewed and modified as needed to reflect this 'RAG-first search principle' and the `{{ }}` formatting for all structural braces in JSON examples.)**\n---\n\n\n[최근 대화 기록]:"
+  },
+  {
+    "role": "user",
+    "content": "나 나이키 에어포스 270 신는데, 비슷한 데카트론 운동화 추천하고, 그 사이즈 까지 알려줘"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"나이키 에어포스 운동화\",\"num_results\":1}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"나이키 나이키 에어 포스 1\", \"details\": \"나이키 나이키 에어 포스 1\\n제품 정보\\n카테고리: 신발 > 운동화\\n상세 설명\\n나이키 에어 포스 1은 40년 넘게 사랑받아온 나이키의 대표적인 클래식 아이템입니다. 내구성이 뛰어난 구조, 편안한 에어 쿠셔닝, 우수한 접지력을 제공하는 트레드를 갖추고 있어 활동 중이나 휴식 시에도 신기 좋습니다. 새 제품일 때도 훌륭하지만, 사용감이 더해져도 멋스러운 분위기를 유지하며 시간이 지날수록 더욱 근사해지는 특징이 있습니다. (이 정보는 LLM 자체 지식 및 제공된 설명을 기반으로 작성되었습니다.)\\n\\n주요 특징\\n40년 역사의 클래식 아이콘\\n뛰어난 내구성\\n에어 쿠셔닝 (편안함)\\n우수한 접지력 (트레드)\\n사용감이 더해질수록 멋스러움\\n사이즈 및 핏 분석 (리뷰 기반)\\n수많은 사용자 리뷰를 분석한 결과, 나이키 에어 포스 1은 대부분의 사용자가 정사이즈로 평가하고 있습니다. 크거나 작다는 의견도 소수 있었지만, '정사이즈'라는 피드백이 압도적으로 많습니다. 따라서 일반적으로 평소 신는 사이즈 그대로 선택하면 잘 맞는 것으로 보입니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 압도적으로 많은 사용자들이 정사이즈로 평가하고 있습니다 (제공된 리뷰는 사이즈 정보만 포함).\\n주요 장점: (제공된 리뷰에서는 확인 불가)\\n주요 단점/개선점: (제공된 리뷰에서는 확인 불가)\\n언어: 한국어 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 일상 캐주얼, 스트릿 패션, 농구 (헤리티지 스타일)\"}], \"results_found\": true}"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_MeqCwn293DZDtkWikF0SK42P",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"데카트론 가죽 클래식 스니커즈 쿠셔닝 운동화\",\"num_results\":3}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_MeqCwn293DZDtkWikF0SK42P",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"# 데카트론 남성 운동화 CJ80\", \"details\": \"# 데카트론 남성 운동화 CJ80\\n\\n## 제품 정보\\n- **카테고리:** (정보 부족, LLM 지식 기반 추정: 캐주얼 운동화 / 라이프스타일화)\\n- **가격:** 74,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n이 운동화는 편안함과 내구성을 강조하며, 특히 튼튼한 고무 밑창이 뛰어난 접지력을 제공합니다. (LLM 지식 기반: 라이프스타일 운동화로서 일상적인 착용에 적합하도록 설계되었습니다.) 가죽 소재를 사용하여 착용할수록 발 모양에 맞게 자연스럽게 늘어나는 특징이 있습니다.\\n\\n## 주요 특징\\n- 튼튼한 고무 밑창으로 탁월한 접지력 제공\\n- 착용 시 가죽이 발에 맞춰 늘어남\\n- 세련되고 시대 초월적인(intemporal) 디자인 (리뷰 기반)\\n- 우수한 가격 대비 품질 (리뷰 기반)\\n- 일부 사용자에게 쿠셔닝 및 편안함 제공 (리뷰 기반)\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n제품 설명에서는 '작게 나왔으니 한 사이즈 크게 구매하라'고 안내하고 있습니다. 사용자 리뷰는 이와 상반되는 의견과 일치하는 의견이 혼재되어 있습니다. 일부 사용자는 설명대로 한 사이즈 크게 샀더니 잘 맞거나 약간 크다고 했으며, 또 다른 사용자들은 정사이즈가 맞다고 평가했습니다. 발볼이 넓다는 피드백과 함께 편안함을 느꼈다는 사용자도 있었습니다. 따라서 개인의 발 모양이나 선호도에 따라 사이즈 선택에 신중해야 하며, 가능하다면 직접 착용해보거나 리뷰를 더 참고하는 것이 좋습니다. 신발이 처음에는 약간 뻣뻣하지만 착용하면서 길들여진다는 의견이 많습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 디자인과 가격 대비 품질에 대한 긍정적인 평가가 많습니다. 편안함에 대한 만족도도 높으나, 일부 내구성 문제(가죽 갈라짐, 봉제선 풀림, 쿠션감 저하), 특정 환경에서의 접지력 부족, 신발에서 소리가 나는 현상(삐걱거림)에 대한 불만도 있습니다.\\n- **주요 장점:** 디자인이 예쁘고, 가격이 저렴하며, 일상생활에서 편안하게 신기 좋다는 의견이 많습니다. 가볍고 통기성이 좋다는 평가도 일부 있습니다.\\n- **주요 단점/개선점:** 가죽 표면 갈라짐, 신발 삐걱거리는 소리, 끈 통과 고리 등 봉제선 약화, 젖은 노면에서의 미끄러움, 일부 사용자에겐 무겁게 느껴짐 등이 단점으로 지적되었습니다. 관리가 쉽지 않고 금방 더러워진다는 의견도 있습니다.\\n- **언어:** 한국어 외 프랑스어, 폴란드어, 베트남어, 튀르키예어, 독일어, 스페인어, 중국어, 이탈리아어, 헝가리어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 가벼운 외출, 학생 신발, 사무실 근무 (오래 서있는 경우)\"}, {\"product_name\": \"# 데카트론 남성 워킹 운동화 KLNJ 에센셜\", \"details\": \"# 데카트론 남성 워킹 운동화 KLNJ 에센셜\\n\\n## 제품 정보\\n- **카테고리:** (정보 부족, LLM 지식 기반 추정: 워킹화 / 캐주얼 운동화)\\n- **가격:** 34,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n스포츠화 디자인에서 영감을 받은 이 신발은 EVA 폼을 사용하여 뛰어난 쿠셔닝을 제공하여 매우 편안합니다. 캐주얼한 스타일과 가벼움, 편안함이 잘 조화된 제품으로, 일상적인 착용 및 가벼운 활동에 적합합니다. (LLM 지식 기반: EVA 폼은 경량성과 충격 흡수 기능이 뛰어나 일반적인 운동화 밑창에 많이 사용됩니다.)\\n\\n## 주요 특징\\n- EVA 폼 밑창으로 우수한 쿠셔닝 제공\\n- 매우 가볍고 편안한 착용감\\n- 캐주얼한 디자인\\n- 뛰어난 가격 대비 품질 (가장 많이 언급됨)\\n- 기본적인 방수 기능 (일부 리뷰 기반)\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n사이즈에 대한 의견은 다소 엇갈립니다. 정사이즈로 잘 맞는다는 의견이 다수이지만, 발볼이 넓은 사용자에게 편안하다는 평가와 함께 어떤 사용자들은 약간 좁거나 작게 느껴져서 한 사이즈 또는 그 이상 크게 사야 했다는 피드백도 있습니다. 신발 혀(텅) 부분이 잘 고정되지 않고 쏠린다는 단점이 여러 리뷰에서 언급되었습니다. 전반적으로 가볍고 편안한 핏이라는 평이 많습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 가격 대비 매우 뛰어난 편안함과 가벼움으로 극찬하는 리뷰가 대부분입니다. 일상화나 가벼운 운동용으로 만족도가 높지만, 내구성이 부족하다는 지적도 상당수 있습니다.\\n- **주요 장점:** \\\"슬리퍼 같다\\\", \\\"신지 않은 것 같다\\\"는 표현이 나올 정도로 매우 가볍고 편안하다는 점이 가장 큰 장점으로 꼽힙니다. 가격이 매우 저렴하고, 디자인이 깔끔하며, 쿠셔닝이 좋다는 평가도 많습니다.\\n- **주요 단점/개선점:** 밑창이 매우 빨리 닳아 미끄러워지거나 쿠션감이 사라진다는 내구성 문제가 가장 빈번하게 지적됩니다. 갑피(특히 발가락 부분)가 쉽게 찢어지거나 해진다는 리뷰도 있습니다. 신발 혀 쏠림 현상, 특정 발 모양(평발 등)에는 통증 유발, 통기성 부족 등이 단점으로 언급되었습니다. 신발 끈이 너무 짧다는 의견도 일부 있습니다.\\n- **언어:** 한국어 외 프랑스어, 독일어, 스페인어, 베트남어, 중국어, 튀르키예어, 폴란드어, 헝가리어, 이탈리아어, 포르투갈어, 루마니아어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 단거리 워킹, 실내 운동 (헬스, 피트니스), 사무실 근무. (리뷰 기반: 장거리 워킹이나 거친 노면, 미끄러운 환경에서의 사용은 적합하지 않음)\"}, {\"product_name\": \"# 데카트론 남성 운동화 CJ80\", \"details\": \"# 데카트론 남성 운동화 CJ80\\n\\n## 제품 정보\\n- **카테고리:** 신발 > 남성 운동화 (캐주얼/라이프스타일)\\n- **가격:** 74,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n데카트론 남성 운동화 CJ80은 편안함과 내구성을 갖춘 캐주얼/라이프스타일 운동화입니다. 튼튼한 고무 밑창을 사용하여 뛰어난 접지력을 제공하며, 시간이 지남에 따라 발 모양에 맞춰 자연스럽게 늘어나는 가죽 소재로 제작되었습니다. 스탠스미스 등 유명 브랜드의 클래식한 디자인과 유사하여 일상복과 매치하기 용이합니다. (이 정보는 제품 설명 및 사용자 리뷰를 종합하여 작성되었습니다.)\\n\\n## 주요 특징\\n- 튼튼한 고무 밑창과 뛰어난 접지력\\n- 착용 시 발에 맞춰 늘어나는 가죽 소재\\n- 클래식하고 심플한 디자인\\n- 가격 대비 우수한 품질 (가성비)\\n- 일상복 매치 용이\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n제품 설명에 명시된 것처럼 이 모델은 **작게 나왔으며, 한 사이즈 크게 구매하는 것을 권장**합니다. 사용자 리뷰 또한 이 점을 자주 언급하며, 평소 사이즈대로 구매했더니 타이트하거나 불편했다는 피드백이 다수입니다. 특히 발볼이 넓거나 발등이 높은 경우, 사이즈업을 하더라도 여전히 발이 조이거나 압박감을 느꼈다는 의견도 있었습니다. 일부 사용자는 신발 내부의 특정 마감(봉제선 등)이 발에 닿아 통증을 유발한다고 언급했습니다. 구매 전 직접 착용해보거나 최소 한 사이즈 크게 주문하는 것이 중요하며, 발볼이 넓다면 이 모델이 적합하지 않을 수 있습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 가격 대비 훌륭한 디자인과 품질, 편안함으로 전반적으로 만족하는 사용자가 많습니다. 특히 클래식한 스타일에 대한 칭찬이 많습니다.\\n- **주요 장점:** 세련되고 멋진 디자인, 가죽 소재의 품질 및 내구성, 가격 대비 우수한 성능, 편안한 착화감 (길들인 후), 뛰어난 접지력, 일상복과의 좋은 매치 등이 장점으로 꼽혔습니다.\\n- **주요 단점/개선점:** 사이즈가 작게 나왔다는 점, 신발이 다소 무겁다는 점, 초기에 뻣뻣함을 느낄 수 있다는 점, 특정 사용자에게 발 통증이나 불편함을 유발하는 내부 마감 문제, 일부 사용자의 경우 비교적 짧은 기간 내에 신발 겉면 가죽 갈라짐이나 봉제선 손상 등 내구성 문제를 경험했다는 점, 젖은 바닥에서 미끄럽다는 피드백이 단점으로 지적되었습니다.\\n- **언어:** 한국어, 프랑스어, 폴란드어, 중국어, 이탈리아어, 터키어, 독일어, 포르투갈어, 베트남어, 스페인어, 헝가리어, 루마니아어, 체코어, 인도네시아어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 시티 워킹, 가벼운 활동\"}], \"results_found\": true}"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_d1zpXUp4AohuibzCQeSZe1Fb",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"데카트론 레더 트레이너 스니커즈\",\"num_results\":2}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_d1zpXUp4AohuibzCQeSZe1Fb",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"데카트론 남성 트레일 러닝 방수 자켓 런 500\", \"details\": \"데카트론 남성 트레일 러닝 방수 자켓 런 500\\n제품 정보\\n카테고리: 의류 > 남성 자켓 > 트레일 러닝 방수 자켓\\n가격: 129,000원\\n주요 대상: 남성\\n상세 설명\\n이 자켓은 데카트론의 에바딕트(Evadict) 또는 킵런(Kiprun) 라인업으로 출시된 제품으로, 장거리 트레일 러닝 시 필수적인 방수 요건을 충족하도록 설계되었습니다. 경량 원단과 전체 봉제선에 적용된 테이핑 마감 덕분에 10,000mm의 우수한 내수압을 제공하여 비 오는 날씨에도 착용자를 보호합니다. 또한, 작게 접어서 배낭이나 주머니에 넣어 휴대하기 편리하도록 디자인되어 있어 갑작스러운 기상 변화에 대비하기 좋습니다.\\n\\n주요 특징\\n뛰어난 방수 성능 (내수압 10,000mm 및 전체 심실링 처리)\\n매우 가볍고 부피가 작아 휴대 및 수납 용이\\n효과적인 바람 차단 기능\\n머리 움직임을 잘 따르고 시야를 가리지 않는 인체공학적 후드 디자인\\n(리뷰 기반) 일반적으로 우수한 가격 대비 성능으로 평가됨\\n사이즈 및 핏 분석 (리뷰 기반)\\n사용자 리뷰를 종합해 보면, 이 제품의 사이즈 및 핏에 대한 의견은 다소 나뉩니다. 일부 사용자는 정사이즈로 잘 맞는다고 느끼지만, 다른 사용자들은 평소 착용하는 사이즈보다 한 사이즈 크게 선택하는 것을 권장합니다. 특히 안에 다른 레이어를 껴입거나 발볼/어깨가 넓은 체형의 경우 사이즈 업이 필요하다는 의견이 있었습니다. 자켓 밑단이 넓다는 피드백과 팔을 들 때 자켓 밑단이 올라간다는 경험담도 있으며, 소매 길이가 약간 길지만 조절 기능이 없다는 언급도 있었습니다. 전반적으로 편안한 활동성을 제공하지만, 개인의 체형과 안에 착용할 의류에 따라 사이즈 선택에 주의가 필요합니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 사용자 평가는 긍정적인 측면과 아쉬운 측면이 공존하는 혼합적인 양상입니다. 가벼움, 휴대성, 가격 대비 성능 및 기본적인 방수/방풍 기능에 만족하는 사용자들이 많습니다. 하지만 통기성 부족으로 인한 내부 습기 발생, 예상보다 낮은 방수 지속력(강한 비나 장시간 착용 시), 그리고 내구성(특히 지퍼)에 대한 불만족스러운 피드백도 상당수 존재합니다.\\n주요 장점: 우수한 가벼움과 수납성, 바람막이 기능, (일부 사용자의 경우) 효과적인 방수 성능, 좋은 후드 핏, 가격 대비 뛰어난 가치.\\n주요 단점/개선점: 통기성 부족으로 땀이 잘 차거나 내부 결로 발생, 내구성 문제(지퍼 고장 빈번, 원단 손상), 강한 비에 대한 방수 한계, 팔 아래 등 추가적인 환기 시스템 부재, 반사 요소나 밝은 색상 부족(안전/디자인), 소매 조절 기능 없음.\\n언어: 한국어, 영어, 독일어, 이탈리아어, 프랑스어, 폴란드어, 헝가리어, 터키어, 루마니아어, 스페인어, 중국어, 베트남어 등 매우 다양한 언어의 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 장거리 및 필수 장비 요건이 있는 트레일 러닝, 가벼운 비나 바람이 부는 날의 일반 러닝, 하이킹, 백패킹 (비상용 휴대), 일상 방수/방풍 자켓.\"}, {\"product_name\": \"데카트론 TR 여성용 트레일 러닝화\", \"details\": \"데카트론 TR 여성용 트레일 러닝화\\n제품 정보\\n카테고리: 신발 > 트레일 러닝화 (여성용)\\n가격: 49,000원\\n주요 대상: 여성\\n상세 설명\\n이 제품은 트레일 러닝을 이제 막 시작하거나 쉬운 코스를 달릴 때 이상적이며, 도로 구간에서도 유연하게 활용할 수 있는 다목적 트레일 러닝화입니다. (원본 설명 기반) 일반적으로 트레일 러닝화는 거친 지면에서의 안정적인 접지력과 발 보호 기능을 제공하는 데 중점을 두며, 이 신발 역시 다양한 노면 환경에서 사용 가능하도록 설계되었습니다. (LLM 지식 기반)\\n\\n주요 특징\\n트레일 및 도로 모두에서 사용 가능한 다목적 디자인\\n비포장 및 거친 노면(흙, 진흙, 돌 등)에서의 뛰어난 접지력\\n가벼운 무게로 편안한 착화감 제공\\n(사용자 리뷰 기반) 발목 지지력 및 안정성에 대한 긍정적 피드백\\n(사용자 리뷰 기반) 통기성이 좋다는 언급 있음\\n(사용자 리뷰 기반) 신발 끈을 보관할 수 있는 포켓 기능 포함\\n사이즈 및 핏 분석 (리뷰 기반)\\n사용자 리뷰를 종합 분석한 결과, 이 제품의 사이즈와 핏에 대한 경험은 다양하게 나타났습니다. 정사이즈로 편안하게 잘 맞는다는 의견이 다수였으나, 발볼이 넓거나 발등이 높은 사용자들에게는 다소 좁게 느껴질 수 있다는 피드백이 있었습니다. 일부 사용자들은 편안함을 위해 평소 신는 신발 사이즈보다 한 치수 크게 구매하는 것을 추천했습니다. 뒤꿈치 부분에 대한 언급도 있었는데, 일부 사용자들은 초기 착용 시 뻣뻣함을 느끼거나 뒤꿈치 쓸림, 또는 내피 마모 문제를 경험했다고 합니다. 대체로는 발을 잘 잡아주어 안정적이라는 평이 많았습니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 가격 대비 우수한 성능(가성비)과 트레일 환경에서의 안정적인 접지력에 대해 높은 만족도를 보인다는 평가가 많습니다. 트레일 러닝 입문용이나 가벼운 아웃도어 활동화로 인기가 있습니다.\\n주요 장점: 편안한 착용감, 뛰어난 접지력, 가벼운 무게, 합리적인 가격, 다목적 활용성 (트레일, 도로, 워킹 등), 색상/디자인 만족도.\\n주요 단점/개선점: 일부 사용자에게는 좁게 느껴지는 핏과 그로 인한 사이즈 선택의 어려움, 일부 사례에서의 내구성 문제 (밑창 마모, 내피 손상 등), 특정 노면(예: 젖은 타일)에서의 미끄러움 가능성, 초기 착용 시 느껴지는 뻣뻣함.\\n언어: 한국어, 중국어, 프랑스어, 영어, 포르투갈어, 스페인어, 터키어, 이탈리아어, 체코어, 독일어, 헝가리어, 아랍어, 폴란드어, 루마니아어, 태국어 등 다양한 언어의 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 트레일 러닝 (입문 및 초급), 가벼운 트레킹/하이킹, 도심 및 자연에서의 워킹, 혼합 지형 달리기.\\n관리 팁: (정보 부족) 일반적으로 운동화 청소 및 관리에 준하며, 젖었을 경우 통풍이 잘 되는 곳에서 자연 건조하는 것이 좋습니다. (LLM 지식 기반)\"}], \"results_found\": true}"
+  }
+]
+
+--- Full Tools Definition ---
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "description": "Searches the Decathlon and other brand product databases for product information that is semantically most similar to the user's query. **Search quality heavily depends on the detail and accuracy of 'search_keywords' based on query type analysis.** **Search results are limited by the `num_results` argument.**",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_keywords": {
+            "type": "string",
+            "description": "Use these keywords to search documents. Input the product name or its features to find the product. (IMPORTANT: The value for 'search_keywords' MUST be in Korean.)"
+          },
+          "num_results": {
+            "type": "integer",
+            "description": "The maximum number of results desired for final return after vector search. Use a small number for token optimization and call the tool multiple times if necessary.",
+            "default": 1
+          }
+        },
+        "required": [
+          "search_keywords"
+        ]
+      }
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:40] [INFO] - ChatCompletion success from o3. Tokens: 8103. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:32.794
+Response TS: 2025-05-09T14:48:40.123
+Status Code: 200
+
+--- Response Info ---
+  ID                 : chatcmpl-BVAszYPvdARTsh4e7SEADiGtHzV2E
+  Choices Count        : 1
+  Usage (P/C/T)        : 7681 / 422 / 8103
+  Content Preview      : N/A (Check tool_calls)
+  Tool Calls Count     : 1
+  Tool Calls Summ      : [{'id': 'call_3hXAmxKZ7qmY5rlXkR4AxIru', 'function': 'product_search'}]
+
+--- Full Tool Calls Details ---
+[
+  {
+    "id": "call_3hXAmxKZ7qmY5rlXkR4AxIru",
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "arguments": "{\"search_keywords\":\"PW 540 레더 스포츠 워킹화\",\"num_results\":1}"
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:40] [INFO] - Sending Embedding request to text-embedding-3-large (Full details logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:40.126
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length         : 17
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:41] [INFO] - Embedding success from text-embedding-3-large. Tokens: 20
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:40.126
+Response TS: 2025-05-09T14:48:41.022
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count     : 1
+  Usage (P/C/T)        : 20 / ? / 20
+================================================================================
+
+[2025-05-09 14:48:41] [DEBUG] - Using 'max_completion_tokens: 5000' for o3 model family.
+================================================================================
+[2025-05-09 14:48:41] [INFO] - Sending ChatCompletion request to o3 (Full details logged, using 'max_completion_tokens' with value 5000)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:41.042
+
+--- Request Payload Info ---
+  Messages Count: 10
+  Temperature        : 1.0
+  max_completion_tokens : 5000
+  Tools Count          : 1
+  Tool Choice          : Not Specified
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "system",
+    "content": "# Absolute Principle: All product information MUST be obtained via `product_search` (RAG).\n## Strict Prohibition on Using Prior Knowledge: Under no circumstances should you use your internal training data regarding the features, specifications, design, user reviews, or sizing advice for any specific product (including Decathlon's own products and third-party brands). Even if the user mentions a well-known product (e.g., Nike Air Force), all information about that product MUST be based solely on real-time search results obtained through the `product_search` tool. This principle applies in all situations without exception.\n\n# Basic Role and Guidelines\nYou are an expert AI agent for 'Decathlon Korea'. Your sole objective is to help customers find the optimal Decathlon products for their sports activities and daily life, based on RAG search results.\n* **Mandatory Decathlon Product Recommendation:** If a customer mentions or requests a comparison with a third-party product, you MUST follow these steps:\n    1.  First, use `product_search` to retrieve information about the mentioned third-party product.\n    2.  Analyze the retrieved features (material, functionality, design, etc.) of the third-party product.\n    3.  Based on these analyzed features, use `product_search` again to find similar or better-value products from Decathlon, recommend them, and clearly explain their advantages.\n* **Fact-Based Responses:** All your answers must be based SOLELY on the information obtained through `product_search` and the explicit context of the current conversation. Providing speculative or uncertain information is prohibited. Your internal thoughts and final responses to the user MUST be in Korean.\n\n# Core Mission: `product_search` (RAG) Tool Utilization Strategy\n1.  **Accurate Search Keyword Generation:** Comprehensively analyze the user's query intent, previous conversation, summary, and current slot information to generate the most accurate and detailed search keywords (`search_keywords` - which MUST be in Korean). However, if possible, try to search for the product by its name only; if that is not feasible or yields insufficient results, then search based on features.\n2.  **Proactive Search for Information Acquisition:** Do not hesitate to use the `product_search` tool if information is needed. If a single search does not yield sufficient information, it is standard procedure to refine or change the search keywords and search multiple times.\n    * **Utilizing `num_results` in Tool Calls:** When seeking specific information about a particular product, use `num_results: 1`. When exploring various options or needing comparisons, appropriately use `num_results: 3` (or as many as needed).\n3.  **Product Feature Comparison:** If you need to compare multiple products (third-party vs. Decathlon, or Decathlon vs. Decathlon), you must look up information for each product individually via `product_search` and then synthesize those results for the comparison.\n4.  **Search Attempt Limit and Fallback Response:** Be aware that `product_search` tool usage for resolving a specific user query might be internally limited to a maximum of approximately 5 attempts (aligning with `max_iterations`). If, after these attempts, you still haven't obtained sufficient information, DO NOT continue searching. Instead, generate the best possible response based on the information gathered so far. In such cases, you may politely inform the user (in Korean) about the limitations of the available information and, if appropriate, suggest alternative ways they can get assistance (e.g., \"현재까지 확인된 정보는 이러하며, 더 자세한 내용은 고객센터로 문의하시면 도움을 받으실 수 있습니다.\").\n\n# Context Utilization\n* **Utilize All Provided Information:** The [Previous Conversation Summary], [Recent Conversation History], [Previous Tool Execution Results], and [Current Slot Information] (all provided in Korean) are crucial foundations for your next actions and response generation. Always refer to them.\n* **Pronoun Disambiguation:** For pronouns like '그거' (that one) or '아까 말한 신발' (the shoes mentioned earlier), you MUST refer to the conversation context (summary, previous turns, etc. - all in Korean) to identify the exact product name or specific features being referred to. Explicitly include this identified information (in Korean) in your `search_keywords` or use it to formulate subsequent questions.\n\n# Summary and Recent Conversation History (This section is dynamically populated by app.py with content in Korean)\n{summary_section}\n\n# --- Few-shot Examples (All inputs, internal thought processes, tool arguments, tool result content, and final answers are in Korean, strictly adhering to the RAG-first principle) ---\n\n## 예시 1: 타사 제품 언급 및 유사 데카트론 제품 추천 (RAG 우선 검색 및 사이즈 조언)\n\n[상황] 사용자가 특정 타사 제품(나이키 에어포스)과 착용 사이즈를 언급하며, 유사한 스타일의 데카트론 운동화 추천 및 사이즈 정보를 문의합니다.\n\n[대화 기록]\nUser: 저 나이키 에어포스 270mm 신는데요, 데카트론에서 비슷한 스타일 운동화 있으면 추천해주시고, 사이즈도 어떻게 신어야 할지 알려주세요.\n\n[1단계: 타사 제품 정보 확보를 위한 RAG 검색 계획]\n(내부 사고: 사용자가 '나이키 에어포스'를 언급했다. **절대 나의 사전 지식에 의존하지 않는다.** `product_search`를 사용하여 '나이키 에어포스'의 객관적인 특징(스타일, 소재, 주요 기능 등)을 검색한다. 사용자가 언급한 '270mm' 사이즈는 나중에 데카트론 제품 추천 시 참고할 정보다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_AF1_details_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"나이키 에어포스 운동화 \\\", \\\"num_results\\\": 1}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_AF1_details_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_AF1_details_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [{\\\"product_name\\\": \\\"나이키 에어 포스 1 '07 로우\\\", \\\"raw_block_text\\\": \\\"나이키의 아이코닉 스니커즈. 주로 갑피에 천연 가죽 또는 합성 가죽 사용. 전체적으로 심플하고 클래식한 코트 스타일 디자인. 발목 주변에 패딩 처리. 나이키 에어 쿠셔닝 기술 적용. 일상용 패션화로 주로 착용. 내구성이 좋다는 평가. G-Dragon 등 유명인과의 콜라보레이션으로도 유명.\\\"}]], \\\"results_found\\\": true}}\"\n}}\n```\n\n[2단계: 유사 데카트론 제품 탐색을 위한 RAG 검색 계획]\n(내부 사고: RAG를 통해 '나이키 에어포스'의 주요 특징(가죽 소재, 클래식 코트 스타일, 일상용 패션 스니커즈, 에어 쿠셔닝)을 확인했다. 이제 이 특징들을 기반으로 데카트론에서 판매하는 유사한 운동화를 `product_search`로 검색한다. 여러 옵션을 보기 위해 `num_results: 2` 또는 `3`으로 설정한다.)\n```json\n{{\n  \"tool_calls\": [\n    {{\n      \"id\": \"call_Decathlon_similar_search\",\n      \"type\": \"function\",\n      \"function\": {{\n        \"name\": \"product_search\",\n        \"arguments\": \"{{\\\"search_keywords\\\": \\\"데카트론 남성용 가죽 소재 클래식 코트 스타일 스니커즈 쿠셔닝 좋은 운동화\\\", \\\"num_results\\\": 2}}\"\n      }}\n    }}\n  ]\n}}\n```\n\n[Tool 결과 메시지 (call_Decathlon_similar_search 결과)]\n```json\n{{\n  \"tool_call_id\": \"call_Decathlon_similar_search\",\n  \"role\": \"tool\",\n  \"name\": \"product_search\",\n  \"content\": \"{{\\\"results\\\": [\n    {{\\\"product_name\\\": \\\"데카트론 PW 540 남성용 컴포트 레더 스포츠 워킹화 - 화이트\\\", \\\"raw_block_text\\\": \\\"매일 신기 좋은 편안한 남성용 스포츠 워킹화. 부드러운 소가죽 갑피와 유연한 밑창으로 뛰어난 착화감 제공. 심플한 디자인으로 다양한 캐주얼 스타일에 매치하기 용이. 쿠션감 있는 인솔 적용. 정사이즈 또는 반 사이즈 크게 신는 것을 추천하는 후기 있음.\\\"}},\n    {{\\\"product_name\\\": \\\"아디다스 스탠스미스와 유사한 데카트론 CT900 레더 트레이너 - 남녀공용\\\", \\\"raw_block_text\\\": \\\"클래식 테니스화 디자인에서 영감을 받은 레더 트레이너. 천연가죽 갑피로 부드러움과 내구성 겸비. 일상복에 잘 어울리는 깔끔한 스타일. 사용자 리뷰에 따르면 발볼이 다소 좁게 나왔다는 의견 존재. 사이즈 선택 시 유의.\\\"}}\n  ], \\\"results_found\\\": true}}\"\n}}\n```\n\n[3단계: 정보 종합 및 사용자 답변 생성]\n(내부 사고: 유사한 데카트론 운동화 2개를 찾았다: 'PW 540 컴포트 레더 스포츠 워킹화'와 'CT900 레더 트레이너'. 이제 이 제품들을 '나이키 에어포스'의 특징과 연결하여 추천한다. 사이즈 관련해서는, 사용자가 '270mm'를 신는다고 했으므로, 검색된 데카트론 제품들의 일반적인 사이즈 조언(예: 'PW 540'은 정사이즈 또는 반업, 'CT900'은 발볼 좁음)을 전달하고, 정확한 것은 상세 페이지의 사이즈 가이드 확인 및 직접 착용을 권장한다. 브랜드 간 직접적인 사이즈 치수 비교 정보는 RAG 결과에 없으므로 단정적으로 말하지 않는다.)\n고객님, 나이키 에어포스 270mm를 착용하시는군요. 해당 제품은 가죽 소재의 클래식한 코트 스타일 스니커즈인데요.\n저희 데카트론 제품 중 비슷한 스타일로는 먼저 **'PW 540 남성용 컴포트 레더 스포츠 워킹화'**를 추천해 드릴 수 있습니다. 이 제품은 부드러운 소가죽 갑피와 편안한 착화감이 특징이며, 심플한 디자인으로 일상에서 활용하시기 좋습니다.\n또는 클래식 테니스화 디자인의 **'CT900 레더 트레이너'**도 고려해 보실 수 있습니다. 이 제품 역시 천연가죽으로 제작되어 깔끔한 스타일을 자랑합니다.\n\n사이즈에 대해서는, 'PW 540' 모델의 경우 보통 정사이즈로 선택하시거나 편안한 착용감을 위해 반 사이즈 크게 신으시는 경우도 있습니다. 'CT900' 모델은 사용자분들에 따라 발볼이 다소 좁게 느껴질 수 있다는 점 참고 부탁드립니다.\n가장 정확한 사이즈 선택을 위해서는 각 제품 상세 페이지에 있는 사이즈 가이드를 확인해보시거나, 가능하다면 직접 신어보시는 것이 가장 좋습니다. 일반적인 신발 사이즈는 브랜드나 모델별로 차이가 있을 수 있는 점 양해 부탁드립니다.\n\n다른 궁금한 점 있으시면 편하게 말씀해주세요.\n\n---\n**(Other Few-shot examples should also be reviewed and modified as needed to reflect this 'RAG-first search principle' and the `{{ }}` formatting for all structural braces in JSON examples.)**\n---\n\n\n[최근 대화 기록]:"
+  },
+  {
+    "role": "user",
+    "content": "나 나이키 에어포스 270 신는데, 비슷한 데카트론 운동화 추천하고, 그 사이즈 까지 알려줘"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"나이키 에어포스 운동화\",\"num_results\":1}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_w0pVQUZzNyfmvoe4ViyhFG9O",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"나이키 나이키 에어 포스 1\", \"details\": \"나이키 나이키 에어 포스 1\\n제품 정보\\n카테고리: 신발 > 운동화\\n상세 설명\\n나이키 에어 포스 1은 40년 넘게 사랑받아온 나이키의 대표적인 클래식 아이템입니다. 내구성이 뛰어난 구조, 편안한 에어 쿠셔닝, 우수한 접지력을 제공하는 트레드를 갖추고 있어 활동 중이나 휴식 시에도 신기 좋습니다. 새 제품일 때도 훌륭하지만, 사용감이 더해져도 멋스러운 분위기를 유지하며 시간이 지날수록 더욱 근사해지는 특징이 있습니다. (이 정보는 LLM 자체 지식 및 제공된 설명을 기반으로 작성되었습니다.)\\n\\n주요 특징\\n40년 역사의 클래식 아이콘\\n뛰어난 내구성\\n에어 쿠셔닝 (편안함)\\n우수한 접지력 (트레드)\\n사용감이 더해질수록 멋스러움\\n사이즈 및 핏 분석 (리뷰 기반)\\n수많은 사용자 리뷰를 분석한 결과, 나이키 에어 포스 1은 대부분의 사용자가 정사이즈로 평가하고 있습니다. 크거나 작다는 의견도 소수 있었지만, '정사이즈'라는 피드백이 압도적으로 많습니다. 따라서 일반적으로 평소 신는 사이즈 그대로 선택하면 잘 맞는 것으로 보입니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 압도적으로 많은 사용자들이 정사이즈로 평가하고 있습니다 (제공된 리뷰는 사이즈 정보만 포함).\\n주요 장점: (제공된 리뷰에서는 확인 불가)\\n주요 단점/개선점: (제공된 리뷰에서는 확인 불가)\\n언어: 한국어 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 일상 캐주얼, 스트릿 패션, 농구 (헤리티지 스타일)\"}], \"results_found\": true}"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_MeqCwn293DZDtkWikF0SK42P",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"데카트론 가죽 클래식 스니커즈 쿠셔닝 운동화\",\"num_results\":3}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_MeqCwn293DZDtkWikF0SK42P",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"# 데카트론 남성 운동화 CJ80\", \"details\": \"# 데카트론 남성 운동화 CJ80\\n\\n## 제품 정보\\n- **카테고리:** (정보 부족, LLM 지식 기반 추정: 캐주얼 운동화 / 라이프스타일화)\\n- **가격:** 74,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n이 운동화는 편안함과 내구성을 강조하며, 특히 튼튼한 고무 밑창이 뛰어난 접지력을 제공합니다. (LLM 지식 기반: 라이프스타일 운동화로서 일상적인 착용에 적합하도록 설계되었습니다.) 가죽 소재를 사용하여 착용할수록 발 모양에 맞게 자연스럽게 늘어나는 특징이 있습니다.\\n\\n## 주요 특징\\n- 튼튼한 고무 밑창으로 탁월한 접지력 제공\\n- 착용 시 가죽이 발에 맞춰 늘어남\\n- 세련되고 시대 초월적인(intemporal) 디자인 (리뷰 기반)\\n- 우수한 가격 대비 품질 (리뷰 기반)\\n- 일부 사용자에게 쿠셔닝 및 편안함 제공 (리뷰 기반)\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n제품 설명에서는 '작게 나왔으니 한 사이즈 크게 구매하라'고 안내하고 있습니다. 사용자 리뷰는 이와 상반되는 의견과 일치하는 의견이 혼재되어 있습니다. 일부 사용자는 설명대로 한 사이즈 크게 샀더니 잘 맞거나 약간 크다고 했으며, 또 다른 사용자들은 정사이즈가 맞다고 평가했습니다. 발볼이 넓다는 피드백과 함께 편안함을 느꼈다는 사용자도 있었습니다. 따라서 개인의 발 모양이나 선호도에 따라 사이즈 선택에 신중해야 하며, 가능하다면 직접 착용해보거나 리뷰를 더 참고하는 것이 좋습니다. 신발이 처음에는 약간 뻣뻣하지만 착용하면서 길들여진다는 의견이 많습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 디자인과 가격 대비 품질에 대한 긍정적인 평가가 많습니다. 편안함에 대한 만족도도 높으나, 일부 내구성 문제(가죽 갈라짐, 봉제선 풀림, 쿠션감 저하), 특정 환경에서의 접지력 부족, 신발에서 소리가 나는 현상(삐걱거림)에 대한 불만도 있습니다.\\n- **주요 장점:** 디자인이 예쁘고, 가격이 저렴하며, 일상생활에서 편안하게 신기 좋다는 의견이 많습니다. 가볍고 통기성이 좋다는 평가도 일부 있습니다.\\n- **주요 단점/개선점:** 가죽 표면 갈라짐, 신발 삐걱거리는 소리, 끈 통과 고리 등 봉제선 약화, 젖은 노면에서의 미끄러움, 일부 사용자에겐 무겁게 느껴짐 등이 단점으로 지적되었습니다. 관리가 쉽지 않고 금방 더러워진다는 의견도 있습니다.\\n- **언어:** 한국어 외 프랑스어, 폴란드어, 베트남어, 튀르키예어, 독일어, 스페인어, 중국어, 이탈리아어, 헝가리어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 가벼운 외출, 학생 신발, 사무실 근무 (오래 서있는 경우)\"}, {\"product_name\": \"# 데카트론 남성 워킹 운동화 KLNJ 에센셜\", \"details\": \"# 데카트론 남성 워킹 운동화 KLNJ 에센셜\\n\\n## 제품 정보\\n- **카테고리:** (정보 부족, LLM 지식 기반 추정: 워킹화 / 캐주얼 운동화)\\n- **가격:** 34,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n스포츠화 디자인에서 영감을 받은 이 신발은 EVA 폼을 사용하여 뛰어난 쿠셔닝을 제공하여 매우 편안합니다. 캐주얼한 스타일과 가벼움, 편안함이 잘 조화된 제품으로, 일상적인 착용 및 가벼운 활동에 적합합니다. (LLM 지식 기반: EVA 폼은 경량성과 충격 흡수 기능이 뛰어나 일반적인 운동화 밑창에 많이 사용됩니다.)\\n\\n## 주요 특징\\n- EVA 폼 밑창으로 우수한 쿠셔닝 제공\\n- 매우 가볍고 편안한 착용감\\n- 캐주얼한 디자인\\n- 뛰어난 가격 대비 품질 (가장 많이 언급됨)\\n- 기본적인 방수 기능 (일부 리뷰 기반)\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n사이즈에 대한 의견은 다소 엇갈립니다. 정사이즈로 잘 맞는다는 의견이 다수이지만, 발볼이 넓은 사용자에게 편안하다는 평가와 함께 어떤 사용자들은 약간 좁거나 작게 느껴져서 한 사이즈 또는 그 이상 크게 사야 했다는 피드백도 있습니다. 신발 혀(텅) 부분이 잘 고정되지 않고 쏠린다는 단점이 여러 리뷰에서 언급되었습니다. 전반적으로 가볍고 편안한 핏이라는 평이 많습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 가격 대비 매우 뛰어난 편안함과 가벼움으로 극찬하는 리뷰가 대부분입니다. 일상화나 가벼운 운동용으로 만족도가 높지만, 내구성이 부족하다는 지적도 상당수 있습니다.\\n- **주요 장점:** \\\"슬리퍼 같다\\\", \\\"신지 않은 것 같다\\\"는 표현이 나올 정도로 매우 가볍고 편안하다는 점이 가장 큰 장점으로 꼽힙니다. 가격이 매우 저렴하고, 디자인이 깔끔하며, 쿠셔닝이 좋다는 평가도 많습니다.\\n- **주요 단점/개선점:** 밑창이 매우 빨리 닳아 미끄러워지거나 쿠션감이 사라진다는 내구성 문제가 가장 빈번하게 지적됩니다. 갑피(특히 발가락 부분)가 쉽게 찢어지거나 해진다는 리뷰도 있습니다. 신발 혀 쏠림 현상, 특정 발 모양(평발 등)에는 통증 유발, 통기성 부족 등이 단점으로 언급되었습니다. 신발 끈이 너무 짧다는 의견도 일부 있습니다.\\n- **언어:** 한국어 외 프랑스어, 독일어, 스페인어, 베트남어, 중국어, 튀르키예어, 폴란드어, 헝가리어, 이탈리아어, 포르투갈어, 루마니아어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 단거리 워킹, 실내 운동 (헬스, 피트니스), 사무실 근무. (리뷰 기반: 장거리 워킹이나 거친 노면, 미끄러운 환경에서의 사용은 적합하지 않음)\"}, {\"product_name\": \"# 데카트론 남성 운동화 CJ80\", \"details\": \"# 데카트론 남성 운동화 CJ80\\n\\n## 제품 정보\\n- **카테고리:** 신발 > 남성 운동화 (캐주얼/라이프스타일)\\n- **가격:** 74,900원\\n- **주요 대상:** 남성\\n\\n## 상세 설명\\n데카트론 남성 운동화 CJ80은 편안함과 내구성을 갖춘 캐주얼/라이프스타일 운동화입니다. 튼튼한 고무 밑창을 사용하여 뛰어난 접지력을 제공하며, 시간이 지남에 따라 발 모양에 맞춰 자연스럽게 늘어나는 가죽 소재로 제작되었습니다. 스탠스미스 등 유명 브랜드의 클래식한 디자인과 유사하여 일상복과 매치하기 용이합니다. (이 정보는 제품 설명 및 사용자 리뷰를 종합하여 작성되었습니다.)\\n\\n## 주요 특징\\n- 튼튼한 고무 밑창과 뛰어난 접지력\\n- 착용 시 발에 맞춰 늘어나는 가죽 소재\\n- 클래식하고 심플한 디자인\\n- 가격 대비 우수한 품질 (가성비)\\n- 일상복 매치 용이\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n제품 설명에 명시된 것처럼 이 모델은 **작게 나왔으며, 한 사이즈 크게 구매하는 것을 권장**합니다. 사용자 리뷰 또한 이 점을 자주 언급하며, 평소 사이즈대로 구매했더니 타이트하거나 불편했다는 피드백이 다수입니다. 특히 발볼이 넓거나 발등이 높은 경우, 사이즈업을 하더라도 여전히 발이 조이거나 압박감을 느꼈다는 의견도 있었습니다. 일부 사용자는 신발 내부의 특정 마감(봉제선 등)이 발에 닿아 통증을 유발한다고 언급했습니다. 구매 전 직접 착용해보거나 최소 한 사이즈 크게 주문하는 것이 중요하며, 발볼이 넓다면 이 모델이 적합하지 않을 수 있습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 가격 대비 훌륭한 디자인과 품질, 편안함으로 전반적으로 만족하는 사용자가 많습니다. 특히 클래식한 스타일에 대한 칭찬이 많습니다.\\n- **주요 장점:** 세련되고 멋진 디자인, 가죽 소재의 품질 및 내구성, 가격 대비 우수한 성능, 편안한 착화감 (길들인 후), 뛰어난 접지력, 일상복과의 좋은 매치 등이 장점으로 꼽혔습니다.\\n- **주요 단점/개선점:** 사이즈가 작게 나왔다는 점, 신발이 다소 무겁다는 점, 초기에 뻣뻣함을 느낄 수 있다는 점, 특정 사용자에게 발 통증이나 불편함을 유발하는 내부 마감 문제, 일부 사용자의 경우 비교적 짧은 기간 내에 신발 겉면 가죽 갈라짐이나 봉제선 손상 등 내구성 문제를 경험했다는 점, 젖은 바닥에서 미끄럽다는 피드백이 단점으로 지적되었습니다.\\n- **언어:** 한국어, 프랑스어, 폴란드어, 중국어, 이탈리아어, 터키어, 독일어, 포르투갈어, 베트남어, 스페인어, 헝가리어, 루마니아어, 체코어, 인도네시아어 등 다양한 언어의 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 일상 캐주얼, 시티 워킹, 가벼운 활동\"}], \"results_found\": true}"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_d1zpXUp4AohuibzCQeSZe1Fb",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"데카트론 레더 트레이너 스니커즈\",\"num_results\":2}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_d1zpXUp4AohuibzCQeSZe1Fb",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"데카트론 남성 트레일 러닝 방수 자켓 런 500\", \"details\": \"데카트론 남성 트레일 러닝 방수 자켓 런 500\\n제품 정보\\n카테고리: 의류 > 남성 자켓 > 트레일 러닝 방수 자켓\\n가격: 129,000원\\n주요 대상: 남성\\n상세 설명\\n이 자켓은 데카트론의 에바딕트(Evadict) 또는 킵런(Kiprun) 라인업으로 출시된 제품으로, 장거리 트레일 러닝 시 필수적인 방수 요건을 충족하도록 설계되었습니다. 경량 원단과 전체 봉제선에 적용된 테이핑 마감 덕분에 10,000mm의 우수한 내수압을 제공하여 비 오는 날씨에도 착용자를 보호합니다. 또한, 작게 접어서 배낭이나 주머니에 넣어 휴대하기 편리하도록 디자인되어 있어 갑작스러운 기상 변화에 대비하기 좋습니다.\\n\\n주요 특징\\n뛰어난 방수 성능 (내수압 10,000mm 및 전체 심실링 처리)\\n매우 가볍고 부피가 작아 휴대 및 수납 용이\\n효과적인 바람 차단 기능\\n머리 움직임을 잘 따르고 시야를 가리지 않는 인체공학적 후드 디자인\\n(리뷰 기반) 일반적으로 우수한 가격 대비 성능으로 평가됨\\n사이즈 및 핏 분석 (리뷰 기반)\\n사용자 리뷰를 종합해 보면, 이 제품의 사이즈 및 핏에 대한 의견은 다소 나뉩니다. 일부 사용자는 정사이즈로 잘 맞는다고 느끼지만, 다른 사용자들은 평소 착용하는 사이즈보다 한 사이즈 크게 선택하는 것을 권장합니다. 특히 안에 다른 레이어를 껴입거나 발볼/어깨가 넓은 체형의 경우 사이즈 업이 필요하다는 의견이 있었습니다. 자켓 밑단이 넓다는 피드백과 팔을 들 때 자켓 밑단이 올라간다는 경험담도 있으며, 소매 길이가 약간 길지만 조절 기능이 없다는 언급도 있었습니다. 전반적으로 편안한 활동성을 제공하지만, 개인의 체형과 안에 착용할 의류에 따라 사이즈 선택에 주의가 필요합니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 사용자 평가는 긍정적인 측면과 아쉬운 측면이 공존하는 혼합적인 양상입니다. 가벼움, 휴대성, 가격 대비 성능 및 기본적인 방수/방풍 기능에 만족하는 사용자들이 많습니다. 하지만 통기성 부족으로 인한 내부 습기 발생, 예상보다 낮은 방수 지속력(강한 비나 장시간 착용 시), 그리고 내구성(특히 지퍼)에 대한 불만족스러운 피드백도 상당수 존재합니다.\\n주요 장점: 우수한 가벼움과 수납성, 바람막이 기능, (일부 사용자의 경우) 효과적인 방수 성능, 좋은 후드 핏, 가격 대비 뛰어난 가치.\\n주요 단점/개선점: 통기성 부족으로 땀이 잘 차거나 내부 결로 발생, 내구성 문제(지퍼 고장 빈번, 원단 손상), 강한 비에 대한 방수 한계, 팔 아래 등 추가적인 환기 시스템 부재, 반사 요소나 밝은 색상 부족(안전/디자인), 소매 조절 기능 없음.\\n언어: 한국어, 영어, 독일어, 이탈리아어, 프랑스어, 폴란드어, 헝가리어, 터키어, 루마니아어, 스페인어, 중국어, 베트남어 등 매우 다양한 언어의 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 장거리 및 필수 장비 요건이 있는 트레일 러닝, 가벼운 비나 바람이 부는 날의 일반 러닝, 하이킹, 백패킹 (비상용 휴대), 일상 방수/방풍 자켓.\"}, {\"product_name\": \"데카트론 TR 여성용 트레일 러닝화\", \"details\": \"데카트론 TR 여성용 트레일 러닝화\\n제품 정보\\n카테고리: 신발 > 트레일 러닝화 (여성용)\\n가격: 49,000원\\n주요 대상: 여성\\n상세 설명\\n이 제품은 트레일 러닝을 이제 막 시작하거나 쉬운 코스를 달릴 때 이상적이며, 도로 구간에서도 유연하게 활용할 수 있는 다목적 트레일 러닝화입니다. (원본 설명 기반) 일반적으로 트레일 러닝화는 거친 지면에서의 안정적인 접지력과 발 보호 기능을 제공하는 데 중점을 두며, 이 신발 역시 다양한 노면 환경에서 사용 가능하도록 설계되었습니다. (LLM 지식 기반)\\n\\n주요 특징\\n트레일 및 도로 모두에서 사용 가능한 다목적 디자인\\n비포장 및 거친 노면(흙, 진흙, 돌 등)에서의 뛰어난 접지력\\n가벼운 무게로 편안한 착화감 제공\\n(사용자 리뷰 기반) 발목 지지력 및 안정성에 대한 긍정적 피드백\\n(사용자 리뷰 기반) 통기성이 좋다는 언급 있음\\n(사용자 리뷰 기반) 신발 끈을 보관할 수 있는 포켓 기능 포함\\n사이즈 및 핏 분석 (리뷰 기반)\\n사용자 리뷰를 종합 분석한 결과, 이 제품의 사이즈와 핏에 대한 경험은 다양하게 나타났습니다. 정사이즈로 편안하게 잘 맞는다는 의견이 다수였으나, 발볼이 넓거나 발등이 높은 사용자들에게는 다소 좁게 느껴질 수 있다는 피드백이 있었습니다. 일부 사용자들은 편안함을 위해 평소 신는 신발 사이즈보다 한 치수 크게 구매하는 것을 추천했습니다. 뒤꿈치 부분에 대한 언급도 있었는데, 일부 사용자들은 초기 착용 시 뻣뻣함을 느끼거나 뒤꿈치 쓸림, 또는 내피 마모 문제를 경험했다고 합니다. 대체로는 발을 잘 잡아주어 안정적이라는 평이 많았습니다.\\n\\n사용자 리뷰 요약\\n전반적 평가: 가격 대비 우수한 성능(가성비)과 트레일 환경에서의 안정적인 접지력에 대해 높은 만족도를 보인다는 평가가 많습니다. 트레일 러닝 입문용이나 가벼운 아웃도어 활동화로 인기가 있습니다.\\n주요 장점: 편안한 착용감, 뛰어난 접지력, 가벼운 무게, 합리적인 가격, 다목적 활용성 (트레일, 도로, 워킹 등), 색상/디자인 만족도.\\n주요 단점/개선점: 일부 사용자에게는 좁게 느껴지는 핏과 그로 인한 사이즈 선택의 어려움, 일부 사례에서의 내구성 문제 (밑창 마모, 내피 손상 등), 특정 노면(예: 젖은 타일)에서의 미끄러움 가능성, 초기 착용 시 느껴지는 뻣뻣함.\\n언어: 한국어, 중국어, 프랑스어, 영어, 포르투갈어, 스페인어, 터키어, 이탈리아어, 체코어, 독일어, 헝가리어, 아랍어, 폴란드어, 루마니아어, 태국어 등 다양한 언어의 리뷰가 확인되었습니다.\\n활용 정보 (Optional)\\n추천 용도: 트레일 러닝 (입문 및 초급), 가벼운 트레킹/하이킹, 도심 및 자연에서의 워킹, 혼합 지형 달리기.\\n관리 팁: (정보 부족) 일반적으로 운동화 청소 및 관리에 준하며, 젖었을 경우 통풍이 잘 되는 곳에서 자연 건조하는 것이 좋습니다. (LLM 지식 기반)\"}], \"results_found\": true}"
+  },
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_3hXAmxKZ7qmY5rlXkR4AxIru",
+        "type": "function",
+        "function": {
+          "name": "product_search",
+          "arguments": "{\"search_keywords\":\"PW 540 레더 스포츠 워킹화\",\"num_results\":1}"
+        }
+      }
+    ],
+    "refusal": null,
+    "annotations": []
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_3hXAmxKZ7qmY5rlXkR4AxIru",
+    "name": "product_search",
+    "content": "{\"results\": [{\"product_name\": \"# 데카트론/Newfeel HW 540 여성용 가죽 워킹화\", \"details\": \"# 데카트론/Newfeel HW 540 여성용 가죽 워킹화\\n\\n## 제품 정보\\n- **가격:** 63,000원\\n- **주요 대상:** 여성 (피트니스 워킹)\\n\\n## 상세 설명\\n이 워킹화는 날씨에 구애받지 않고 피트니스 워킹을 즐길 수 있도록 설계된 편안한 가죽 운동화입니다. (LLM 지식 기반 정보: 가죽 소재는 내구성이 뛰어나고 기본적인 방수 기능을 제공하여 가벼운 비나 습한 날씨에 발을 보호하는 데 유리합니다. 워킹화는 일반적으로 오랜 시간 편안하게 걸을 수 있도록 쿠션감과 유연성을 강조하여 제작됩니다.)\\n\\n## 주요 특징\\n- 천연 가죽 갑피 (내구성 및 생활 방수)\\n- 편안한 착용감\\n- 부드러운 소재 및 쿠션감\\n- 경량성 (대체로)\\n- 우수한 접지력 (대체로)\\n- 세련된 외관 디자인\\n- 가격 대비 만족도 높음\\n\\n## 사이즈 및 핏 분석 (리뷰 기반)\\n사용자 리뷰에 따르면 HW 540 워킹화는 착용감이 **매우 편안하다**는 평가가 지배적입니다. 특히 **발등이 높은 사용자에게도 잘 맞는다**는 구체적인 피드백이 있었으며, **발볼이 넓은 사람에게도 편안하다**는 의견이 있었습니다. 24cm에 발볼이 넓은 사용자가 24.5cm를 구매했을 때 잘 맞았다고 언급한 것으로 보아, 발 형태에 따라 반 사이즈 업이 좋은 선택일 수 있습니다. 전반적으로 **발을 편안하게 감싸주고 신발 형태가 발에 잘 맞는다**는 긍정적인 핏 관련 리뷰가 많습니다.\\n\\n## 사용자 리뷰 요약\\n- **전반적 평가:** 편안한 착용감과 가죽 소재, 가격 대비 품질에 대한 만족도가 매우 높아 전반적으로 긍정적인 평가를 받고 있습니다. 재구매 의사를 밝힌 사용자가 많습니다.\\n- **주요 장점:** 뛰어난 편안함 (특히 발볼/발등 넓은 사용자에게), 가죽 소재 (생활 방수 및 내구성), 좋은 접지력 (대체로), 세련된 디자인, 가벼운 무게감, 우수한 가격 대비 성능.\\n- **주요 단점/개선점:** 새로운 제품의 접지력이 기존 제품보다 떨어지는 것 같다는 소수의 의견이 있었으며, 일부 사용자는 신발끈 주변에서 마찰감을 느껴 장시간 착용 시 불편함을 느꼈다고 합니다. 남성용 사이즈 부재에 대한 아쉬움도 언급되었습니다.\\n- **언어:** 주로 중국어 리뷰가 많으며, 일부 영어, 스페인어 리뷰가 확인되었습니다.\\n\\n## 활용 정보 (Optional)\\n- **추천 용도:** 피트니스 워킹, 일상 캐주얼, 가벼운 트레킹, 약간 습하거나 추운 날씨에 착용.\"}], \"results_found\": true}"
+  }
+]
+
+--- Full Tools Definition ---
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "description": "Searches the Decathlon and other brand product databases for product information that is semantically most similar to the user's query. **Search quality heavily depends on the detail and accuracy of 'search_keywords' based on query type analysis.** **Search results are limited by the `num_results` argument.**",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_keywords": {
+            "type": "string",
+            "description": "Use these keywords to search documents. Input the product name or its features to find the product. (IMPORTANT: The value for 'search_keywords' MUST be in Korean.)"
+          },
+          "num_results": {
+            "type": "integer",
+            "description": "The maximum number of results desired for final return after vector search. Use a small number for token optimization and call the tool multiple times if necessary.",
+            "default": 1
+          }
+        },
+        "required": [
+          "search_keywords"
+        ]
+      }
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:49] [INFO] - ChatCompletion success from o3. Tokens: 8816. Received 1 tool call(s).
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : o3
+Request TS : 2025-05-09T14:48:41.042
+Response TS: 2025-05-09T14:48:49.309
+Status Code: 200
+
+--- Response Info ---
+  ID                 : chatcmpl-BVAt7Y7Ly8MR7uKswSSROPLLkdHbX
+  Choices Count        : 1
+  Usage (P/C/T)        : 8460 / 356 / 8816
+  Content Preview      : N/A (Check tool_calls)
+  Tool Calls Count     : 1
+  Tool Calls Summ      : [{'id': 'call_fsk5ZiJ16xlHyOPrrg7ppFBs', 'function': 'product_search'}]
+
+--- Full Tool Calls Details ---
+[
+  {
+    "id": "call_fsk5ZiJ16xlHyOPrrg7ppFBs",
+    "type": "function",
+    "function": {
+      "name": "product_search",
+      "arguments": "{\"search_keywords\":\"CT900 레더 트레이너\",\"num_results\":2}"
+    }
+  }
+]
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:49] [INFO] - Sending Embedding request to text-embedding-3-large (Full details logged)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:49.310
+
+--- Request Payload Info ---
+  Messages Count: N/A
+  Input Length         : 13
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:50] [INFO] - Embedding success from text-embedding-3-large. Tokens: 15
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : embedding
+Model      : text-embedding-3-large
+Request TS : 2025-05-09T14:48:49.310
+Response TS: 2025-05-09T14:48:50.231
+Status Code: 200
+
+--- Response Info ---
+  Embeddings Count     : 1
+  Usage (P/C/T)        : 15 / ? / 15
+================================================================================
+
+[2025-05-09 14:48:50] [DEBUG] - Using 'max_completion_tokens: 1000' for o3 model family.
+================================================================================
+[2025-05-09 14:48:50] [INFO] - Sending ChatCompletion request to o3-mini (Full details logged, using 'max_completion_tokens' with value 1000)
+--------------------------------------------------------------------------------
+Event Type : api_call
+Direction  : request
+API Type   : chat_completion
+Model      : o3-mini
+Request TS : 2025-05-09T14:48:50.506
+
+--- Request Payload Info ---
+  Messages Count: 1
+  Temperature        : 1.0
+  max_completion_tokens : 1000
+  Tools Count          : 0
+  Tool Choice          : Not Specified
+
+--- Full Prompt Messages ---
+[
+  {
+    "role": "user",
+    "content": "You are a \"Slot Extraction Specialist AI\" that extracts key information from a user's natural language query (in Korean) and returns it in a structured JSON format.\n# Task Instruction\nAnalyze the given [User Input (in Korean)] (provided below) and extract the slots defined in [Slot Definitions] below. Then, create a JSON object according to the [Output Format].\n**All user input will be in Korean. The values extracted for the slots in the JSON output MUST also be in Korean.** Your internal thoughts for this task should also be in Korean.\n\n[User Input (in Korean)]:\n나 나이키 에어포스 270 신는데, 비슷한 데카트론 운동화 추천하고, 그 사이즈 까지 알려줘\n\n[Slot Definitions (Extract Korean values for these slots)]\n* `sport_type`: The sports activity the user is interested in (e.g., \"러닝\", \"축구\", \"등산\", \"캠핑\", \"수영\"). Omit if not discernible from context.\n* `product_category`: The product category the user is looking for or mentioning (e.g., \"러닝화\", \"텐트\", \"등산 스틱\", \"수영복\", \"축구공\", \"자전거 의류\"). Omit if not discernible from context.\n* `user_preference`: Explicitly stated user preferences or requirements (e.g., \"방수 기능\", \"가벼운 것\", \"초보자용\", \"발볼 넓은\", \"저렴한\", \"따뜻한\"). Extract as a list [\"조건1\", \"조건2\"] if multiple. Omit if not discernible from context.\n* `brand_mentioned`: Specific brand names mentioned by the user (e.g., \"나이키\", \"아디다스\", \"컬럼비아\"). Only extract if it's a non-Decathlon brand. Omit if not discernible from context.\n* `size_info`: Size-related information mentioned by the user (e.g., \"270mm\", \"L\", \"100\", \"M 사이즈\"). Omit if not discernible from context.\n* `feature_specific`: Specific product features or attributes requested by the user (e.g., \"고어텍스 소재\", \"충전식 램프\", \"지퍼 달린 주머니\", \"이너 팬츠 없는\"). Omit if not discernible from context.\n* `in_stock_requested`: Whether the user requested a stock check (Boolean: true). Set to true if expressions like \"재고 있는\", \"구매 가능한\" are present. Omit if not discernible from context.\n\n[Output Format and Rules]\n* You MUST output ONLY the JSON object. Do not include any other explanations.\n* From the [Slot Definitions], include only those slots in the JSON object (as key-value pairs) for which information was actually extracted from the [User Input].\n* If no information for a particular slot can be found in the [User Input], **that slot's key MUST be omitted entirely from the final JSON result.** (Caution: Do not use `null` or an empty string `\"\"` as the value.)\n* Values (in Korean) should concisely capture the core information from the user input. For slots like `user_preference` that can have multiple values, create a list ([]) for the value.\n* The final output MUST be a valid JSON in the following format: `{ \"slot_name1\": \"value1_in_korean\", \"slot_name2\": [\"value2a_in_korean\", \"value2b_in_korean\"], ... }`\n* If a slot is empty and the user's input is unrelated to any slots, do not include anything.\n\n[Example 1 (Input and output values are in Korean)]\n사용자 입력: \"안녕하세요, 캠핑 가서 쓸 가성비 좋은 4인용 텐트 있을까요?\"\nJSON 출력:\n```json\n{\n  \"sport_type\": \"캠핑\",\n  \"product_category\": \"텐트\",\n  \"user_preference\": [\"가성비 좋음\", \"4인용\"]\n}\n```\n\n[Example 2 (Input and output values are in Korean)]\n사용자 입력: \"발볼 넓은 사람도 편하게 신을 수 있는 런닝화 M 사이즈 재고 있나요?\"\nJSON 출력:\n```json\n{\n  \"product_category\": \"런닝화\",\n  \"user_preference\": [\"발볼 넓음\"],\n  \"size_info\": \"M 사이즈\",\n  \"in_stock_requested\": true\n}\n```\n\n[Example 3 (Input and output values are in Korean)]\n사용자 입력: \"나이키 에어포스랑 비슷한 데카트론 신발은 뭔가요?\"\nJSON 출력:\n```json\n{\n  \"brand_mentioned\": \"나이키\",\n  \"product_category\": \"신발\"\n}\n```\n"
+  }
+]
+  Additional Params    : {'response_format': {'type': 'json_object'}}
+================================================================================
+
+================================================================================
+[2025-05-09 14:48:59] [INFO] - ChatCompletion success from o3-mini. Tokens: 1772
+--------------------------------------------------------------------------------
+Event Type : api_response
+Direction  : response
+API Type   : chat_completion
+Model      : o3-mini
+Request TS : 2025-05-09T14:48:50.506
+Response TS: 2025-05-09T14:48:59.031
+Status Code: 200
+
+--- Response Info ---
+  ID                 : chatcmpl-BVAtGo4uWRxHcgiJaalXJdprSGO0q
+  Choices Count        : 1
+  Usage (P/C/T)        : 1026 / 746 / 1772
+
+--- Full Response Content ---
+{
+  "brand_mentioned": "나이키",
+  "product_category": "운동화",
+  "size_info": "270"
+}
+================================================================================
+
